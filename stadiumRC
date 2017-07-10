@@ -1,0 +1,369 @@
+#!/usr/bin/python3
+
+# License GPL 2. Copyright Paul D. Gilbert, 2017
+
+# python 2 uses Tkinter, python 3 tkinter
+import tkinter
+
+import gpsd
+from gpsPos import gpsPos
+
+# start gpsd (-n don't wait for device,  #-S 2947 is default port
+#sudo gpsd -n -S 2948 /dev/ttyACM0 
+
+gpsCon = gpsd.connect(host="127.0.0.1", port=2948) #2947 is default
+
+def getRCgps():
+   # update global RC and write to screen
+   global  RC
+   RC = gpsPos.getGPS()
+   writeRaceWindow()
+
+# these should come from config file
+warnWidth   = 0.1  # warning 10 percent stadium width
+centerWidth = 0.05 # center width 5 percent stadium width
+
+def makeRaceObj():
+   # This is called by plot?? and distribute to syncronize globals??
+   # info to pass to stadiumBT (boat gadget) for calculations.
+   # Info for stadiumBT is all in gps positions as that is the best for the
+   # boats' calculation of what indicators should go on.
+   # The same info is used by plot but is convert to nm in plot.
+   
+   import json
+   import time
+   
+   global raceObj
+
+   # base on current screen values so ensure correct values in globals
+   readRaceWindow() 
+
+   # y = a + b * x
+   # b = (y_1 - y_2) / (x_1 - x_2)
+   # a = y_1 - b * x_1
+   
+   # 0 or 180 axis would give infinite slope is x is longitude, 
+   # so depending on the axis treat domain as longitude (dom=True)
+   # or treat domain as latitude (dom=False)
+   if        45 <= ax <= 135 : dom = True
+   elif     225 <= ax <= 315 : dom = True
+   else                       : dom = False
+
+   for f in (cl, ax, ll, sw, RC, S, M, wn, cc, tt):  print(f)
+   print()
+
+   #  NOT !!
+   # Next are globals not on screen but used for raceObj calculation, and plot.
+   # These are positions at intersection of the start line extension and one of
+   # the lines parallel to axis used for switching indicators (LEDs) on boats.
+
+   w = sw / 1852  # stadium width in nm
+   perp = (ax - 90 ) % 360 # bearing RC to pin, RC on starboard end of line.
+   #                         This is bearing used for extensions of starting line
+
+   # Two positions on axis (S and M) give slope b.
+   if dom : b = (M.lat - S.lat) / (M.lng - S.lng)
+   else   : b = (M.lng - S.lng) / (M.lat - S.lat)
+
+   if dom :
+      if   45 <= ax <= 135 : LtoR = False
+      else                 : LtoR = True  # 225 <= ax <= 315 
+   else :
+      if   135 <= ax <= 225 : LtoR = False 
+      else                  : LtoR = True #(315 <= ax <= 360) | (0 <= ax <= 45)
+  
+   def a(p):
+      if dom : a = p.lat - b * p.lng 
+      else   : a = p.lng - b * p.lat
+      return a
+
+   # cl, M and S are not needed in this for stadiumBT calculations but
+   #  are nice for debugging.
+   r = {
+      'courseID': 0,
+      'distribution time' : time.strftime('%Y-%m-%d %H:%M:%S %Z'),
+
+      'length' :  cl,  # course length
+      'axis'   :  ax,  # axis (degrees)
+      'S'      :  (S.lat, S.lng),  # position of center of start line
+      'M'      :  (M.lat, M.lng),  # position of windward mark
+      'dom'    :  dom, # domain, function of long (true) or latitude (False)
+      'LtoR'   :  LtoR, # True if bounds increase left to right
+      'b'      :   b,  # slope constant
+      'boundL' :  a(gpsPos.move(S, perp,   w/2 )),            # constant a for left  boundary
+      'boundR' :  a(gpsPos.move(S, perp,  -w/2 )),            # constant a for right boundary
+      'warnL'  :  a(gpsPos.move(S, perp,  (w/2 - wn/1852) )), # constant a for left  warning
+      'warnR'  :  a(gpsPos.move(S, perp, -(w/2 - wn/1852) )), # constant a for right warning
+      'centerL':  a(gpsPos.move(S, perp,  cc/(2*1852) )),     # constant a for left  center
+      'centerR':  a(gpsPos.move(S, perp, -cc/(2*1852) ))      # constant a for right center
+      }
+
+   #check
+   if r['dom'] :
+      if        not LtoR : 
+         if not ( r['boundR']  < r['warnR'] < r['centerR']  <
+	          r['centerL'] < r['warnL'] < r['boundL'] ) :
+	          raise ValueError("something is messed up in 45 <= ax <= 135.")
+      elif       LtoR : 
+         if not ( r['boundL']  < r['warnL'] < r['centerL']  <
+	          r['centerR'] < r['warnR'] < r['boundR'] ) :
+	          raise ValueError("something is messed up in 225 <= ax <= 315.")
+      else :  raise ValueError("something is messed up in dom=True.")
+   
+   if not  r['dom'] :
+      if        not LtoR : 
+         if not ( r['boundR']  < r['warnR'] < r['centerR']  <
+	          r['centerL'] < r['warnL'] < r['boundL'] ) :
+	          raise ValueError("something is messed up in 135 <= ax <= 225.")
+      elif     LtoR : 
+         if not ( r['boundL']  < r['warnL'] < r['centerL']  <
+	          r['centerR'] < r['warnR'] < r['boundR'] ) :
+	          raise ValueError("something is messed up in (315 <= ax <= 360) | (0 <= ax <= 45).")
+      else :  raise ValueError("something is messed up in dom=False.")
+
+   raceObj = r
+
+# position below means a gpsPos object.
+# left and right looking up the course, from race committee (RC) to windward mark (M)
+
+# on screen
+cl   = 1.0  # course length (nm)
+ax   = 240  # course bearing (degrees)
+ll   = 100  # start line length (m)
+sw   = 200  # stadium width (m)
+RC   = gpsPos(44.210171667,-76.51047667) # RC position (default Pen. shoal)
+S    = gpsPos(0,0)  # start line center position
+M    = gpsPos(0,0)  # windward mark position 
+wn   = 0  # distance (m) from boundary at which warning is indicated (see warnWidth)
+cc   = 0  # width (m) around center axis where center is  indicated (see centerWidth)
+tt   = 0  # target start time
+
+
+def calc():
+   global  cl, ax, ll, sw, RC, S, M, wn, cc, tt
+
+   readRaceWindow() # re-write current global variables from screen data
+   
+   wn  = warnWidth * sw    # warning width from stadium width
+   cc  = centerWidth * sw  #  center width from stadium width
+
+   perp = (ax - 90 ) % 360 # bearing RC to pin, RC on starboard end of line
+
+   # center of starting line from RC position (right end), perp, and line length
+   #  half line length in nm. 1 nm = 1852 m
+   S = gpsPos.move(RC, perp, ll / (2 * 1852))
+
+   # windward mark from center of starting line, axis, and course length   
+   M = gpsPos.move(S, ax, cl)
+
+   # ADD SANITY CHECKS
+
+   # re-write screen with current globals
+   writeRaceWindow()
+
+def distribute():
+   import json 
+   makeRaceObj()  # this also syncs with screen but does no calc().
+   print(json.dumps(raceObj, indent=4))
+
+   # write to a file
+   with open("raceObj.json","w") as f: json.dump(raceObj, f, indent=4)
+
+   # read
+   # with open("raceObj.json","r") as f:  d = json.load(f)
+
+def defnRaceWindow(w):
+   # fields on RC Window main page
+   fldLabels = [
+ 	'length (nm)', # 0
+ 	'axis (degrees)',	
+ 	'start line length (m)',
+ 	'stadium width (m)',	 # 3
+ 	'RC	latitude',	 #N  Penn. shoal
+ 	'RC	longitude',	 #W
+ 	'start center latitude', # 6
+ 	'start center longitude',# 7
+ 	'mark 1 latitude',	
+ 	'mark 1 longitude',	
+ 	'warning width (m)',	 # 10
+ 	'center width (m)',	 # 11
+	'Target start time']
+
+   req    = 5  # only controls background shading for calculated fields
+   entries = []
+   i = 0
+   for f in fldLabels:
+      row = tkinter.Frame(w)
+      lab = tkinter.Label(row, width=15, text=f, anchor='w')
+      if i <= req:
+         e = tkinter.Entry(row, bg = "white")
+      else:
+         e = tkinter.Entry(row, bg = "grey")
+      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+      lab.pack(side=tkinter.LEFT)
+      e.pack(side=tkinter.RIGHT, expand=tkinter.YES, fill=tkinter.X)
+      entries.append((f, e))
+      i += 1
+   return entries
+
+def writeRaceWindow():
+   # re-write screen with current  global variables
+   # using global ents for entries
+   
+   def insert(i, v):
+      ents[i][1].insert(10, str(v))
+   
+   for i in range (0, len(ents)):
+      ents[i][1].delete(0, tkinter.END)
+   insert(0,  cl)
+   insert(1,  ax)
+   insert(2,  ll)
+   insert(3,  sw)
+   insert(4,  RC.lat)
+   insert(5,  RC.lng)
+   insert(6,  S.lat)
+   insert(7,  S.lng)
+   insert(8,  M.lat)
+   insert(9,  M.lng)
+   insert(10, wn)
+   insert(11, cc)
+   insert(12, tt)
+
+def readRaceWindow():
+   # update globals from screen
+   # using global ents for entries
+   global  cl, ax, ll, sw, RC, S, M, wn, cc, tt
+   cl = float(ents[0][1].get()) 
+   ax = float(ents[1][1].get()) 
+   ll = float(ents[2][1].get()) 
+   sw = float(ents[3][1].get())
+   RC = gpsPos(float(ents[4][1].get()), float(ents[5][1].get()))
+   S  = gpsPos(float(ents[6][1].get()), float(ents[7][1].get()))
+   M  = gpsPos(float(ents[8][1].get()), float(ents[9][1].get()))
+   wn = float(ents[10][1].get()) 
+   cc = float(ents[11][1].get()) 
+   tt = float(ents[12][1].get()) 
+
+def plotWindow(w):
+   # note that plot is based on gps and line length. NOT YET. CHANGE USE OF cl
+   #      Changing axis or course length  NOT YET. CHANGE USE OF cl without re-calc does not change plot.
+   #      This allows manual override of gps point (ie don't re-calc)
+
+   import math
+
+   global  cl, ax, ll, sw, RC, S, M, wn, cc, tt
+   readRaceWindow() #sync globals from screen
+
+   t = tkinter.Toplevel(w)
+   t.wm_title("Course Plot")
+
+   canvas_width  = 400
+   canvas_height = 400
+   w = tkinter.Canvas(t,  width=canvas_width, height=canvas_height)
+   w.pack()
+   w.create_text(canvas_width / 2,     2,            text="N")
+   w.create_text(canvas_width / 2, canvas_height-2,  text="S")
+   w.create_text(canvas_width,     canvas_height /2, text="E")
+   w.create_text(     0,           canvas_height /2, text="W")
+
+   # This cross should be right angles in the center, other than for
+   # any difference in the screen horizontal vs vertical per pixael.
+   #w.create_line(0, 0, canvas_width, canvas_height, fill="#476042", width=1)
+   #w.create_line(0, canvas_height, canvas_width, 0, fill="#476042", width=1)
+
+   #  plot coordinates need to be done in (scaled) nm. Tried to do them in
+   #  degrees (gps coordinates) but there is too much skew because a degree
+   #  longitude is too much less distance than a degree latitude.
+
+   latScale = 60.0  #  nm per degree lat
+   lngScale = 60.0 * math.cos(math.radians(RC.lat)) #   nm per degree long
+
+   #z    = cl /latScale  # course length in degrees (aprox )
+   z    = cl   # course length in nm
+
+   scale = 0.4 * canvas_height / z # pix/nm, course length is 0.4 of plot height
+
+   #plot window top left is (0,0), bottom right is (canvas_height, canvas_width)
+   # so +ve x is to right (as usual) but +ve y is down (not usual)
+   # Use canvas center as start line center, so shift everything in degrees
+   #   by start line cemter, that is subtract (xShift, yShift), 
+   #  and then to plot shift to canvas center, that is add (x0, y0).
+   Shift = S  # degrees lng and lat
+
+   x0 = int(canvas_width  / 2) # pix
+   y0 = int(canvas_height / 2) # pix
+
+   # axis (start line center to mark)
+   xm = (M.lng - Shift.lng) * lngScale * scale # pix
+   ym = (M.lat - Shift.lat) * latScale * scale # pix
+   w.create_line(x0, y0, x0 + xm, y0 - ym , fill="#476042", width=1)
+  
+   #w.create_line(0, 0, 50, 20,      fill="#476042", width=3)
+
+   # start line center (0,0)  to RC
+   xm = (RC.lng - Shift.lng) * lngScale * scale # pix
+   ym = (RC.lat - Shift.lat) * latScale * scale # pix
+
+   w.create_line(x0, y0, x0 + xm, y0 - ym , fill="#476042", width=3)
+   # other half of start line
+   w.create_line(x0, y0, x0 - xm, y0 + ym , fill="#476042", width=3)
+  
+
+def extraWindow(w):
+
+   def defaultsWindow():
+      print('DO SOMETHING')
+
+   def saveRace():
+     # no calc, confirm are as on screen and DO SOMETHING
+     readRaceWindow() #sync globals from screen
+     print('DO SOMETHING')
+
+   def debugWindow(w):
+     import json
+     print('globals')
+     for f in (cl, ax, ll, sw, RC, S, M, wn, cc, tt): print(f)
+     print()
+     print('raceObj')
+     print(json.dumps(raceObj, indent=4))
+
+   t = tkinter.Toplevel(w)
+   t.wm_title("Extra Options")
+
+   bDft = But(t, text='Set Defaults', command=(lambda : defaultsWindow()))
+
+   bDbg = But(t, text='debugInfo',    command=(lambda : debugWindow(w)))
+
+   bS = But(t, text='save race',      command=(lambda : saveRace()))
+
+   bQ = But(t, text='Abort race!!',   command=race.quit)
+
+def But(w, text='x', command='') :
+   b = tkinter.Button(w, text=text,  command=command)
+   b.pack(side=tkinter.LEFT, padx=5, pady=5)
+   return(b)
+
+if __name__ == '__main__':
+
+   race = tkinter.Tk()
+   race.wm_title("Stadium Race")
+   #race.bind('<Return>', (lambda event, e=ents: readRaceWindow(e)))   
+   race.bind('<Return>', (lambda event : readRaceWindow()))   
+
+   ents = defnRaceWindow(race)
+   writeRaceWindow()
+
+   calc() # using global ents and other global variables
+  
+
+   bGPS  = But(race, text='get RC GPS', command=(lambda : getRCgps()))
+   
+   bCalc = But(race, text='re calc',    command=(lambda : calc()))
+   
+   bDist = But(race, text='distribute', command=(lambda : distribute()))
+
+   bP    = But(race, text='plot',       command=(lambda : plotWindow(race)))
+
+   bE    = But(race, text='extra',      command=(lambda : extraWindow(race)))
+
+   race.mainloop()
