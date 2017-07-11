@@ -2,11 +2,16 @@
 
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 
+RC_IP = 'xxx.xxx.xxx.xxx' 
+RC_PORT = 9001
+
 import threading
 import time
 import logging
 import os.path
 import json
+
+import socket
 
 from gpsPos import gpsPos
 
@@ -16,32 +21,59 @@ from gpsPos import gpsPos
 gpsd_host="127.0.0.1"
 gpsd_port=2948      #2947 is default
 
+# initialized as these may be used even before a proper raceObj is generated
+courseID =None 
+
+
 #DEBUG, NOTSET, ERROR, WARNING
 logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s',)
 
 
 def distributionCheck(update, shutdown, interval):
+    # BT sends RC the cid (cousreID and distritution time) BT has.
+    # RC replies with  'ok' indicating there is no update,
+    #     or 'none' indicating no course set yet, or with updated raceObj.
+    # BT confirms receipt of update with bt# or hostname?  
+
+    import smp
+
     logging.debug('distributionCheck starting')
-    id = ''
+
     while True:
         if shutdown.wait(interval):    # effectively sleep too
            logging.debug('shutting down distributionCheck thread.')
            return() 
-        # simulate update message from RC by read file
-        if os.path.isfile("../raceObj.json"):
-           with open("../raceObj.json","r") as f:  raceObj = json.load(f)
-           if id != str(raceObj['courseID']) + ' ' + raceObj['distribution time']:
-              id  = str(raceObj['courseID']) + ' ' + raceObj['distribution time']
-              #logging.debug('new courseID: %s',  id )
-              #logging.debug('new course axis:  %f', raceObj['axis'])
-              #logging.debug('new course S: ', raceObj[S])
-              # Next could be a message to zoneSignal thread, but having a
-              # file means the gadget can recover after reboot without
-              # a connection to RC, so write to a file
-              with open("BTraceObj.json","w") as f: json.dump(raceObj, f, indent=4)
-              update.set()
-              logging.debug('update is set:')
+        
+        # check RC for update
+        logging.debug('check RC for update.')
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((RC_IP, RC_PORT))
+        
+        if (courseID == None ) :
+           cid = 'none'
+        else :
+           cid = str(courseID) + ' ' +  distributionTime
+        
+        l = smp.snd(s, cid)
+        logging.debug("BT cid " + str(cid))
+        
+        r = smp.rcv(s) 
+        #logging.debug('r ' + str(r))
+
+        if not (r in ('ok', 'none')) :
+            logging.debug('got new raceObj. Writing to file BTraceObj.json')
+            # Next could be a message to zoneSignal thread, but having a
+            # file means the gadget can recover after reboot without
+            # a connection to RC, so write string r to a file
+            with open("BTraceObj.json","w") as f: f.write(r) 
+            update.set()
+            logging.debug('Got raceObj. update is set:')
+            logging.debug('flash all lights.')
+
+        s.close()
+        logging.debug('connection closed')
+
     logging.debug('distributionCheck should not be here.')
 
 def zoneSignal(update, shutdown):
@@ -106,26 +138,26 @@ def zoneSignal(update, shutdown):
     logging.debug('zoneSignal should not be here.')
 
 if __name__ == '__main__':
-    update   = threading.Event()
-    shutdown = threading.Event()
+   update   = threading.Event()
+   shutdown = threading.Event()
 
-    threading.Thread(name='distributionCheck', 
-                    target=distributionCheck, 
-                    args=(update, shutdown, 10)).start()
+   threading.Thread(name='distributionCheck', 
+   		   target=distributionCheck, 
+   		   args=(update, shutdown,  10)).start()
 
-    threading.Thread(name='zoneSignal', 
-                    target=zoneSignal, 
-                    args=(update, shutdown)).start()
-    
-    import signal
+   threading.Thread(name='zoneSignal', 
+   		   target=zoneSignal, 
+   		   args=(update, shutdown)).start()
+   
+   import signal
 
-    def handler(signum, frame):
-        import sys
-        shutdown.set()  # to exit threads
-        logging.debug('main thread exit.')
-        sys.exit()
+   def shutdownHandler(signum, frame):
+       import sys
+       shutdown.set()  # to exit threads
+       logging.debug('main thread exit.')
+       sys.exit()
 
-    signal.signal(signal.SIGINT, handler)
+   signal.signal(signal.SIGINT, shutdownHandler)
 
-    while True: time.sleep(600) # Ctrl+c or kill to exit
+   while True: time.sleep(600) # Ctrl+c or kill to exit
 

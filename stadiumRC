@@ -2,6 +2,22 @@
 
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 
+
+import socket
+import threading
+import logging
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='(%(threadName)-9s) %(message)s',)
+
+
+# This is too automatic. SET IN CONFIG FILE. Boats need this IP address as well!
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.connect(("8.8.8.8", 80))
+RC_IP = s.getsockname()[0] 
+RC_PORT = 9001
+BUFFER_SIZE = 1024
+
 # python 2 uses Tkinter, python 3 tkinter
 import tkinter
 
@@ -22,6 +38,11 @@ def getRCgps():
 # these should come from config file
 warnWidth   = 0.1  # warning 10 percent stadium width
 centerWidth = 0.05 # center width 5 percent stadium width
+
+# initialized as these may be used even before a proper raceObj is generated
+raceObj = None
+id =None 
+
 
 def makeRaceObj():
    # This is called by plot?? and distribute to syncronize globals??
@@ -49,9 +70,6 @@ def makeRaceObj():
    elif     225 <= ax <= 315 : dom = True
    else                       : dom = False
 
-   for f in (cl, ax, ll, sw, RC, S, M, wn, cc, tt):  print(f)
-   print()
-
    #  NOT !!
    # Next are globals not on screen but used for raceObj calculation, and plot.
    # These are positions at intersection of the start line extension and one of
@@ -77,11 +95,11 @@ def makeRaceObj():
       else   : a = p.lng - b * p.lat
       return a
 
-   # cl, M and S are not needed in this for stadiumBT calculations but
+   # cl, M and S are not needed in the for stadiumBT calculations but
    #  are nice for debugging.
    r = {
       'courseID': 0,
-      'distribution time' : time.strftime('%Y-%m-%d %H:%M:%S %Z'),
+      'distributionTime' : time.strftime('%Y-%m-%d %H:%M:%S %Z'),
 
       'length' :  cl,  # course length
       'axis'   :  ax,  # axis (degrees)
@@ -126,7 +144,7 @@ def makeRaceObj():
 # position below means a gpsPos object.
 # left and right looking up the course, from race committee (RC) to windward mark (M)
 
-# on screen
+# these global variables should have values as displayed on RaceWindow screen
 cl   = 1.0  # course length (nm)
 ax   = 240  # course bearing (degrees)
 ll   = 100  # start line length (m)
@@ -142,7 +160,7 @@ tt   = 0  # target start time
 def calc():
    global  cl, ax, ll, sw, RC, S, M, wn, cc, tt
 
-   readRaceWindow() # re-write current global variables from screen data
+   readRaceWindow() # re-read current global variables from screen data
    
    wn  = warnWidth * sw    # warning width from stadium width
    cc  = centerWidth * sw  #  center width from stadium width
@@ -158,8 +176,7 @@ def calc():
 
    # ADD SANITY CHECKS
 
-   # re-write screen with current globals
-   writeRaceWindow()
+   writeRaceWindow() # re-write screen with current globals
 
 def distribute():
    import json 
@@ -315,7 +332,7 @@ def extraWindow(w):
       print('DO SOMETHING')
 
    def saveRace():
-     # no calc, confirm are as on screen and DO SOMETHING
+     # no calc, confirm globals are as on screen and DO SOMETHING
      readRaceWindow() #sync globals from screen
      print('DO SOMETHING')
 
@@ -336,14 +353,82 @@ def extraWindow(w):
 
    bS = But(t, text='save race',      command=(lambda : saveRace()))
 
-   bQ = But(t, text='Abort race!!',   command=race.quit)
+   bQ = But(t, text='Quit!!',   command=(race.quit)) #command=(race.destroy))
 
 def But(w, text='x', command='') :
    b = tkinter.Button(w, text=text,  command=command)
    b.pack(side=tkinter.LEFT, padx=5, pady=5)
    return(b)
 
+class BThandlerThread(threading.Thread):
+   # handle a connection from a BT. Check if BT is current and update if not.
+
+   def __init__(self,ip,port,sock):
+       threading.Thread.__init__(self)
+       self.ip = ip
+       self.port = port
+       self.sock = sock
+       logging.debug(" New thread started for "+ip+":"+str(port))
+   
+   def run(self):
+       import smp
+       import json
+ 
+       #course id that RC has
+       if (raceObj == None ) : 
+          RCcid = 'none'
+       else :
+          RCcid = str(raceObj['courseID']) + ' ' + raceObj['distributionTime']
+       
+       BTcid = smp.rcv(self.sock)  #course id that BT has
+       
+       logging.debug(" BTcid " + str(BTcid))
+       logging.debug(" RCcid " + str(RCcid))
+
+       if (raceObj == None ) : 
+             smp.snd(self.sock, 'none')
+             logging.debug('sent none.')
+
+       elif (BTcid == RCcid) :
+             smp.snd(self.sock, 'ok')
+             logging.debug('sent ok.')
+             
+       else :
+             logging.debug('sending new raceObj to BT')
+             smp.snd(self.sock, json.dumps(raceObj, indent=4))
+             logging.debug('new raceObj sent:')
+       
+       self.sock.close()
+       logging.debug('closed socket and closing thread.')
+
+
+def distributionHandler(shutdown):
+   # wait for connections from BTs and pass each to a BThandlerThread.
+   logging.debug('distributionHandler starting')
+
+   tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+   tcpsock.bind((RC_IP, RC_PORT))
+
+   while True:
+       if shutdown.wait(0.01):    # blocking for interval !!
+          logging.debug('shutting down distributionHandler thread.')
+          return() 
+       tcpsock.listen(5)
+       logging.debug("Waiting for incoming connections on "  + RC_IP + ":" + str(RC_PORT) + " ...")
+       (conn, (ip,port)) = tcpsock.accept()
+       logging.debug('Got connection from ' + ip + ':' + str(port))
+       BThandlerThread(ip,port,conn).start()
+
+   logging.debug('distributionHandler should not be here.')
+
+
 if __name__ == '__main__':
+   shutdown = threading.Event()
+
+   threading.Thread(name='distributionHandler', 
+                   target=distributionHandler,
+   		   args=(shutdown,)).start()  # ,) makes single arg a tuple
 
    race = tkinter.Tk()
    race.wm_title("Stadium Race")
@@ -358,7 +443,7 @@ if __name__ == '__main__':
 
    bGPS  = But(race, text='get RC GPS', command=(lambda : getRCgps()))
    
-   bCalc = But(race, text='re calc',    command=(lambda : calc()))
+   bCalc = But(race, text='re calc \n using axis',    command=(lambda : calc()))
    
    bDist = But(race, text='distribute', command=(lambda : distribute()))
 
@@ -366,4 +451,21 @@ if __name__ == '__main__':
 
    bE    = But(race, text='extra',      command=(lambda : extraWindow(race)))
 
+   import signal
+   import sys
+   import time
+
+   def shutdownHandler(signum, frame):
+       shutdown.set()  # to exit threads
+       logging.debug('signal shutdown to threads.')
+       sys.exit()
+
+   signal.signal(signal.SIGINT, shutdownHandler)
+
    race.mainloop()
+   
+   #  STILL NOT SHUTTING DOWN GRACEFULLY
+   shutdown.set()  # to exit threads
+   time.sleep(3)
+   
+   logging.debug('main thread exit.')
