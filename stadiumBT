@@ -20,9 +20,6 @@ from distribution import distributionCheck
 gpsd_host="127.0.0.1"
 gpsd_port=2948      #2947 is default
 
-# initialized as these may be used even before a proper raceObj is generated
-courseID =None 
-
 
 #DEBUG, NOTSET, ERROR, WARNING
 logging.basicConfig(level=logging.DEBUG,
@@ -31,14 +28,20 @@ logging.basicConfig(level=logging.DEBUG,
 
 def zoneSignal(update, shutdown):
 
+    # this try allows recovery after restart, using an already saved file. 
+    try :
+       with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
+       globals().update(raceObj)
+       courseLoaded = True
+    except:
+       courseLoaded = False
+
     def a(p):
       if dom : a = p.lat - b * p.lng 
       else   : a = p.lng - b * p.lat
       return a
 
     logging.debug('zoneSignal starting')
-
-    courseLoaded = False
     
     gpsd.connect(host=gpsd_host, port=gpsd_port) 
 

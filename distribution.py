@@ -1,7 +1,6 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 
 import socket
-import os.path
 import logging
 import json
 
@@ -32,10 +31,10 @@ def distributionCheck(update, shutdown, interval):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((RC_IP, RC_PORT))
         
-        if os.path.isfile("BTraceObj.json"):
+        try :
            with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
            cid = str(raceObj['courseID']) + ' ' + raceObj['distributionTime']
-        else :
+        except :
            cid = 'none'
         
         l = smp.snd(s, cid)
