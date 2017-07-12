@@ -75,7 +75,7 @@ def zoneSignal(update, shutdown):
            globals().update(raceObj)
            LEDs.update()
  
-           #logging.debug('new courseID: %s',  courseID )
+           #logging.debug('new cid: %s',  cid )
            #logging.debug('new course axis:  %f',  axis)
            #logging.debug('new course S %f,%f: ', S[0], S[1])
 

@@ -26,7 +26,7 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
         
         try :
            with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
-           cid = str(raceObj['courseID']) + ' ' + raceObj['distributionTime']
+           cid = raceObj['cid']
         except :
            cid = 'none'
         

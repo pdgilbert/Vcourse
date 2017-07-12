@@ -105,10 +105,15 @@ def makeRaceObj():
 
    # cl, M and S are not needed in the for stadiumBT calculations but
    #  are nice for debugging.
+   
+   courseDesc = 'stadium'
+   distributionTime = time.strftime('%Y-%m-%d %H:%M:%S %Z')
+   cid = str(courseDesc) + ' ' +  distributionTime
+   
    r = {
-      'courseID': 0,
-      'distributionTime' : time.strftime('%Y-%m-%d %H:%M:%S %Z'),
-
+      'cid'       : cid,
+      'courseDesc'       : courseDesc,
+      'distributionTime' : distributionTime,
       'length' :  cl,  # course length
       'axis'   :  ax,  # axis (degrees)
       'S'      :  (S.lat, S.lng),  # position of center of start line
@@ -187,17 +192,18 @@ def calc():
    writeRaceWindow() # re-write screen with current globals
 
 def distribute():
+
+   global raceObjReceived
+   
    makeRaceObj()  # this also syncs with screen but does no calc().
    print(json.dumps(raceObj, indent=4))
-
-   # write to a file
-   with open("raceObj.json","w") as f: json.dump(raceObj, f, indent=4)
 
    # clear dict of boats that have update
    raceObjReceived = {}
 
-   # read
-   # with open("raceObj.json","r") as f:  d = json.load(f)
+   # write to a file, for the record, but distribute is done with raceObj
+   with open("raceObj.json","w") as f: json.dump(raceObj, f, indent=4)
+
 
 def defnRaceWindow(w):
    # fields on RC Window main page
@@ -405,7 +411,7 @@ class BThandlerThread(threading.Thread):
        if (raceObj == None ) : 
           RCcid = 'none'
        else :
-          RCcid = str(raceObj['courseID']) + ' ' + raceObj['distributionTime']
+          RCcid = raceObj['cid']
        
        BTcid = smp.rcv(self.sock)  #course id that BT has
        
