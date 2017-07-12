@@ -2,20 +2,17 @@
 
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 
-import socket
-
-# read from config file   FIX
-#RC_IP = 'xxx.xxx.xxx.xxx' 
-RC_PORT = 9001
-
-BT_ID = socket.gethostname()
-
 import threading
+import signal
+import sys
 import time
 import logging
 import json
+import gpsd
 
+if True : import LED_simulate  as LEDs # replace with hardware file  FIX
 from gpsPos import gpsPos
+from distribution import distributionCheck
 
 # start gpsd (-n don't wait for device,  #-S 2947 is default port  FIX?
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
@@ -32,59 +29,7 @@ logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s',)
 
 
-def distributionCheck(update, shutdown, interval):
-    # BT sends RC the cid (cousreID and distritution time) BT has.
-    # RC replies with  'ok' indicating there is no update,
-    #     or 'none' indicating no course set yet, or with updated raceObj.
-    # BT confirms receipt of update with bt# or hostname?  
-
-    import smp
-
-    logging.debug('distributionCheck starting')
-
-    while True:
-        if shutdown.wait(interval):    # effectively sleep too
-           logging.debug('shutting down distributionCheck thread.')
-           return() 
-        
-        # check RC for update
-        #logging.debug('check RC for update.')
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((RC_IP, RC_PORT))
-        
-        if (courseID == None ) :
-           cid = 'none'
-        else :
-           cid = str(courseID) + ' ' +  distributionTime
-        
-        l = smp.snd(s, cid)
-        #logging.debug("BT cid " + str(cid))
-        
-        r = smp.rcv(s) 
-        #logging.debug('r ' + str(r))
-
-        if not (r in ('ok', 'none')) :
-            logging.debug('got new raceObj. Writing to file BTraceObj.json')
-            # Next could be a message to zoneSignal thread, but having a
-            # file means the gadget can recover after reboot without
-            # a connection to RC, so write string r to a file
-            with open("BTraceObj.json","w") as f: f.write(r) 
-            update.set()
-            logging.debug('flash all lights.')
-
-            l = smp.snd(s, BT_ID)
-            logging.debug("confirmed  receipt BT " + str(BT_ID))
-
-        s.close()
-        #logging.debug('connection closed')
-
-    logging.debug('distributionCheck should not be here.')
-
 def zoneSignal(update, shutdown):
-
-    import gpsd
-
-    if True : import LED_simulate  as LEDs # replace with hardware file  FIX
 
     def a(p):
       if dom : a = p.lat - b * p.lng 
@@ -107,7 +52,8 @@ def zoneSignal(update, shutdown):
            with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
 
            globals().update(raceObj)
-           
+           LEDs.update()
+ 
            #logging.debug('new courseID: %s',  courseID )
            #logging.debug('new course axis:  %f',  axis)
            #logging.debug('new course S %f,%f: ', S[0], S[1])
@@ -155,10 +101,8 @@ if __name__ == '__main__':
    		   target=zoneSignal, 
    		   args=(update, shutdown)).start()
    
-   import signal
 
    def shutdownHandler(signum, frame):
-       import sys
        shutdown.set()  # to exit threads
        print('main thread exit.')
        sys.exit()
