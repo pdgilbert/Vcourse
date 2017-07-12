@@ -18,6 +18,8 @@ RC_IP = s.getsockname()[0]
 RC_PORT = 9001
 BUFFER_SIZE = 1024
 
+raceObjReceived = {}
+
 # python 2 uses Tkinter, python 3 tkinter
 import tkinter
 
@@ -186,6 +188,9 @@ def distribute():
    # write to a file
    with open("raceObj.json","w") as f: json.dump(raceObj, f, indent=4)
 
+   # clear dict of boats that have update
+   raceObjReceived = {}
+
    # read
    # with open("raceObj.json","r") as f:  d = json.load(f)
 
@@ -325,6 +330,19 @@ def plotWindow(w):
    # other half of start line
    w.create_line(x0, y0, x0 - xm, y0 + ym , fill="#476042", width=3)
   
+def updateStatus(w):
+   import json
+   
+   t = tkinter.Toplevel(w)
+   t.wm_title("Update Status")
+
+   # print(raceObjReceived)
+   for f in raceObjReceived :
+      row = tkinter.Frame(t)
+      lab = tkinter.Label(row, width=15, text=f + ' ' + str(raceObjReceived[f]), anchor='w')
+      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+      lab.pack(side=tkinter.LEFT)
+ 
 
 def extraWindow(w):
 
@@ -347,13 +365,15 @@ def extraWindow(w):
    t = tkinter.Toplevel(w)
    t.wm_title("Extra Options")
 
-   bDft = But(t, text='Set Defaults', command=(lambda : defaultsWindow()))
+   bDft  = But(t, text='Set Defaults', command=(lambda : defaultsWindow()))
 
-   bDbg = But(t, text='debugInfo',    command=(lambda : debugWindow(w)))
+   bDbg  = But(t, text='debugInfo',    command=(lambda : debugWindow(w)))
 
-   bS = But(t, text='save race',      command=(lambda : saveRace()))
+   bP    = But(race, text='plot',      command=(lambda : plotWindow(w)))
 
-   bQ = But(t, text='Quit!!',   command=(race.quit)) #command=(race.destroy))
+   bS    = But(t, text='save race',    command=(lambda : saveRace()))
+
+   bQ    = But(t, text='Quit!!',       command=(race.quit)) #command=(race.destroy))
 
 def But(w, text='x', command='') :
    b = tkinter.Button(w, text=text,  command=command)
@@ -368,11 +388,13 @@ class BThandlerThread(threading.Thread):
        self.ip = ip
        self.port = port
        self.sock = sock
-       logging.debug(" New thread started for "+ip+":"+str(port))
+       #logging.debug(" New thread started for "+ip+":"+str(port))
    
    def run(self):
        import smp
        import json
+       
+       global raceObjReceived
  
        #course id that RC has
        if (raceObj == None ) : 
@@ -382,24 +404,27 @@ class BThandlerThread(threading.Thread):
        
        BTcid = smp.rcv(self.sock)  #course id that BT has
        
-       logging.debug(" BTcid " + str(BTcid))
-       logging.debug(" RCcid " + str(RCcid))
+       #logging.debug(" BTcid " + str(BTcid))
+       #logging.debug(" RCcid " + str(RCcid))
 
        if (raceObj == None ) : 
              smp.snd(self.sock, 'none')
-             logging.debug('sent none.')
+             #logging.debug('sent none.')
 
        elif (BTcid == RCcid) :
              smp.snd(self.sock, 'ok')
-             logging.debug('sent ok.')
+             #logging.debug('sent ok.')
              
        else :
-             logging.debug('sending new raceObj to BT')
+             #logging.debug('sending new raceObj to BT')
              smp.snd(self.sock, json.dumps(raceObj, indent=4))
-             logging.debug('new raceObj sent:')
-       
+             #logging.debug('new raceObj sent:')
+             r = smp.rcv(self.sock) 
+             logging.debug('ADD BT_ID TO LIST. ' + r)
+             raceObjReceived[r] = True 
+
        self.sock.close()
-       logging.debug('closed socket and closing thread.')
+       #logging.debug('closed socket and closing thread.')
 
 
 def distributionHandler(shutdown):
@@ -415,9 +440,9 @@ def distributionHandler(shutdown):
           logging.debug('shutting down distributionHandler thread.')
           return() 
        tcpsock.listen(5)
-       logging.debug("Waiting for incoming connections on "  + RC_IP + ":" + str(RC_PORT) + " ...")
+       #logging.debug("Waiting for incoming connections on "  + RC_IP + ":" + str(RC_PORT) + " ...")
        (conn, (ip,port)) = tcpsock.accept()
-       logging.debug('Got connection from ' + ip + ':' + str(port))
+       #logging.debug('Got connection from ' + ip + ':' + str(port))
        BThandlerThread(ip,port,conn).start()
 
    logging.debug('distributionHandler should not be here.')
@@ -441,15 +466,16 @@ if __name__ == '__main__':
    calc() # using global ents and other global variables
   
 
-   bGPS  = But(race, text='get RC GPS', command=(lambda : getRCgps()))
+   bGPS  = But(race, text='get RC GPS',     command=(lambda : getRCgps()))
    
    bCalc = But(race, text='re calc \n using axis',    command=(lambda : calc()))
    
-   bDist = But(race, text='distribute', command=(lambda : distribute()))
+   bDist = But(race, text='distribute',     command=(lambda : distribute()))
 
-   bP    = But(race, text='plot',       command=(lambda : plotWindow(race)))
+   bU    = But(race, text='update\nStatus', command=(lambda : updateStatus(race)))
+   bP    = But(race, text='plot',           command=(lambda : plotWindow(race)))
 
-   bE    = But(race, text='extra',      command=(lambda : extraWindow(race)))
+   bE    = But(race, text='extra',          command=(lambda : extraWindow(race)))
 
    import signal
    import sys

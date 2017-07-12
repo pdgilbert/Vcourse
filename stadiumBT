@@ -2,20 +2,22 @@
 
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 
-RC_IP = 'xxx.xxx.xxx.xxx' 
+import socket
+
+# read from config file   FIX
+#RC_IP = 'xxx.xxx.xxx.xxx' 
 RC_PORT = 9001
+
+BT_ID = socket.gethostname()
 
 import threading
 import time
 import logging
-import os.path
 import json
-
-import socket
 
 from gpsPos import gpsPos
 
-# start gpsd (-n don't wait for device,  #-S 2947 is default port
+# start gpsd (-n don't wait for device,  #-S 2947 is default port  FIX?
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
 
 gpsd_host="127.0.0.1"
@@ -46,7 +48,7 @@ def distributionCheck(update, shutdown, interval):
            return() 
         
         # check RC for update
-        logging.debug('check RC for update.')
+        #logging.debug('check RC for update.')
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((RC_IP, RC_PORT))
         
@@ -56,7 +58,7 @@ def distributionCheck(update, shutdown, interval):
            cid = str(courseID) + ' ' +  distributionTime
         
         l = smp.snd(s, cid)
-        logging.debug("BT cid " + str(cid))
+        #logging.debug("BT cid " + str(cid))
         
         r = smp.rcv(s) 
         #logging.debug('r ' + str(r))
@@ -68,11 +70,13 @@ def distributionCheck(update, shutdown, interval):
             # a connection to RC, so write string r to a file
             with open("BTraceObj.json","w") as f: f.write(r) 
             update.set()
-            logging.debug('Got raceObj. update is set:')
             logging.debug('flash all lights.')
 
+            l = smp.snd(s, BT_ID)
+            logging.debug("confirmed  receipt BT " + str(BT_ID))
+
         s.close()
-        logging.debug('connection closed')
+        #logging.debug('connection closed')
 
     logging.debug('distributionCheck should not be here.')
 
@@ -102,20 +106,20 @@ def zoneSignal(update, shutdown):
 
            globals().update(raceObj)
            
-           logging.debug('new courseID: %s',  courseID )
-           logging.debug('new course axis:  %f',  axis)
-           logging.debug('new course S %f,%f: ', S[0], S[1])
+           #logging.debug('new courseID: %s',  courseID )
+           #logging.debug('new course axis:  %f',  axis)
+           #logging.debug('new course S %f,%f: ', S[0], S[1])
 
            courseLoaded = True
            update.clear()
-           logging.debug('update is clear:')
+           #logging.debug('update is clear:')
         
         if courseLoaded :
             # run main signal setting loop here
             #logging.debug('in zone?')
             aa = a(gpsPos.getGPS()) # this is a in y = a + b * x
             
-            logging.debug('aa %f', aa)
+            #logging.debug('aa %f', aa)
             # LtoR, # True if bounds increase left to right
              
             if LtoR :
@@ -133,7 +137,7 @@ def zoneSignal(update, shutdown):
                elif            aa >    warnL : logging.debug('flash red warnL')
                else                          : logging.debug('no light')
 
-            time.sleep(20)  # REALLY SHORTER
+            time.sleep(20)  # REALLY SHORTER  FIX
 
     logging.debug('zoneSignal should not be here.')
 
