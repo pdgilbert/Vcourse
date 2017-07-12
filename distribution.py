@@ -6,14 +6,7 @@ import json
 
 import smp
 
-# read from config file   FIX
-#RC_IP = 'xxx.xxx.xxx.xxx' 
-RC_PORT = 9001
-
-BT_ID = socket.gethostname()
-
-
-def distributionCheck(update, shutdown, interval):
+def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
     # BT sends RC the cid (cousreID and distritution time) BT has.
     # RC replies with  'ok' indicating there is no update,
     #     or 'none' indicating no course set yet, or with updated raceObj.

@@ -14,6 +14,24 @@ if True : import LED_simulate  as LEDs # replace with hardware file  FIX
 from gpsPos import gpsPos
 from distribution import distributionCheck
 
+
+# Read config variable RC_IP, RC_PORT, BT_ID  from file BTconfig
+# in the working directory. 
+#    IF THE FILE IS NOT AVAILABLE THE PROGRAM WILL FAIL.
+#The file is json and can be generated in python by 
+# import json
+#  (edit next line example as required)
+# config = {'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001, 'BT_ID' : 'boat 1'}
+# json.dump(config, open('BTconfig', 'w'))
+# The file can also be editted by hand with care to preserve the dict structure.
+
+# read config
+config = json.load(open('BTconfig'))   
+RC_IP   = config['RC_IP']
+RC_PORT = int(config['RC_PORT'])
+BT_ID   = config['BT_ID']
+
+
 # start gpsd (-n don't wait for device,  #-S 2947 is default port  FIX?
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
 
@@ -93,12 +111,13 @@ def zoneSignal(update, shutdown):
     logging.debug('zoneSignal should not be here.')
 
 if __name__ == '__main__':
+
    update   = threading.Event()
    shutdown = threading.Event()
 
    threading.Thread(name='distributionCheck', 
    		   target=distributionCheck, 
-   		   args=(update, shutdown,  10)).start()
+   		   args=(update, shutdown,  10, RC_IP, RC_PORT, BT_ID)).start()
 
    threading.Thread(name='zoneSignal', 
    		   target=zoneSignal, 
