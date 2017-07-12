@@ -84,6 +84,8 @@ def zoneSignal(update, shutdown):
 
     import gpsd
 
+    if True : import LED_simulate  as LEDs # replace with hardware file  FIX
+
     def a(p):
       if dom : a = p.lat - b * p.lng 
       else   : a = p.lng - b * p.lat
@@ -123,19 +125,19 @@ def zoneSignal(update, shutdown):
             # LtoR, # True if bounds increase left to right
              
             if LtoR :
-               if   boundL  >  aa            : logging.debug('zone  red LtoR boundL')
-               elif  warnL  >  aa            : logging.debug('flash red LtoR warnL')
-               elif centerL <= aa <= centerR : logging.debug('flash green LtoR center')
-               elif            aa >   boundR : logging.debug('zone  red LtoR boundR')
-               elif            aa >    warnR : logging.debug('flash red LtoR warnR')
-               else                          : logging.debug('no light LtoR ')
+               if   boundL  >  aa            : LEDs.bound('LtoR boundL')
+               elif  warnL  >  aa            : LEDs.warn('LtoR warnL')
+               elif centerL <= aa <= centerR : LEDs.center('LtoR center')
+               elif            aa >   boundR : LEDs.bound('LtoR boundR')
+               elif            aa >    warnR : LEDs.warn('LtoR warnR')
+               else                          : LEDs.off('LtoR ')
             else :
-               if    boundR >  aa            : logging.debug('zone  red boundR')
-               elif   warnR >  aa            : logging.debug('flash red warnR')
-               elif centerR <= aa <= centerL : logging.debug('flash green center')
-               elif            aa >   boundL : logging.debug('zone  red boundL')
-               elif            aa >    warnL : logging.debug('flash red warnL')
-               else                          : logging.debug('no light')
+               if    boundR >  aa            : LEDs.bound('boundR')
+               elif   warnR >  aa            : LEDs.warn('warnR')
+               elif centerR <= aa <= centerL : LEDs.center('center')
+               elif            aa >   boundL : LEDs.bound('boundL')
+               elif            aa >    warnL : LEDs.warn('warnL')
+               else                          : LEDs.off()
 
             time.sleep(20)  # REALLY SHORTER  FIX
 
@@ -158,7 +160,7 @@ if __name__ == '__main__':
    def shutdownHandler(signum, frame):
        import sys
        shutdown.set()  # to exit threads
-       logging.debug('main thread exit.')
+       print('main thread exit.')
        sys.exit()
 
    signal.signal(signal.SIGINT, shutdownHandler)
