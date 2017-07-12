@@ -17,13 +17,13 @@ logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s',)
 
 
-# Read config variable RC_IP, RC_PORT, BUFFER_SIZE  from file RCconfig
+# Read config variable RC_IP, RC_PORT  from file RCconfig
 # in the working directory. 
 #    IF THE FILE IS NOT AVAILABLE THE PROGRAM WILL FAIL.
 #The file is json and can be generated in python by 
 # import json
 #  (edit next line example as required)
-# config = {'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001, 'BUFFER_SIZE' : 1024}
+# config = {'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001}
 # json.dump(config, open('RCconfig', 'w'))
 # The file can also be editted by hand with care to preserve the dict structure.
 
@@ -31,7 +31,6 @@ logging.basicConfig(level=logging.DEBUG,
 config = json.load(open('RCconfig'))   
 RC_IP   = config['RC_IP']
 RC_PORT = int(config['RC_PORT'])
-BUFFER_SIZE   = int(config['BUFFER_SIZE'])
 
 
 raceObjReceived = {}
@@ -437,8 +436,7 @@ def distributionHandler(shutdown):
    # wait for connections from BTs and pass each to a BThandlerThread.
    logging.debug('distributionHandler starting')
    
-   global RC_IP, RC_PORT, BUFFER_SIZE  
-   logging.debug(RC_IP)
+   global RC_IP, RC_PORT  
    
    tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
