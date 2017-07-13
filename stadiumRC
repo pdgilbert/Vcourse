@@ -267,7 +267,7 @@ def defnRaceWindow(w):
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
       lab.pack(side=tkinter.LEFT)
       e.pack(side=tkinter.RIGHT, expand=tkinter.YES, fill=tkinter.X)
-      entries.append((f, e))
+      entries.append((e))
       i += 1
    return entries
 
@@ -276,10 +276,10 @@ def writeRaceWindow():
    # using global ents for entries
    
    def insert(i, v):
-      ents[i][1].insert(10, str(v))
+      ents[i].insert(10, str(v))
    
    for i in range (0, len(ents)):
-      ents[i][1].delete(0, tkinter.END)
+      ents[i].delete(0, tkinter.END)
    insert(0,  cl)
    insert(1,  ax)
    insert(2,  ll)
@@ -298,16 +298,16 @@ def readRaceWindow():
    # update globals from screen
    # using global ents for entries
    global  cl, ax, ll, sw, RC, S, M, wn, cc, tt
-   cl = float(ents[0][1].get()) 
-   ax = float(ents[1][1].get()) 
-   ll = float(ents[2][1].get()) 
-   sw = float(ents[3][1].get())
-   RC = gpsPos(float(ents[4][1].get()), float(ents[5][1].get()))
-   S  = gpsPos(float(ents[6][1].get()), float(ents[7][1].get()))
-   M  = gpsPos(float(ents[8][1].get()), float(ents[9][1].get()))
-   wn = float(ents[10][1].get()) 
-   cc = float(ents[11][1].get()) 
-   tt = float(ents[12][1].get()) 
+   cl = float(ents[0].get()) 
+   ax = float(ents[1].get()) 
+   ll = float(ents[2].get()) 
+   sw = float(ents[3].get())
+   RC = gpsPos(float(ents[4].get()), float(ents[5].get()))
+   S  = gpsPos(float(ents[6].get()), float(ents[7].get()))
+   M  = gpsPos(float(ents[8].get()), float(ents[9].get()))
+   wn = float(ents[10].get()) 
+   cc = float(ents[11].get()) 
+   tt = float(ents[12].get()) 
 
 def plotWindow(w):
    # note that plot is based on gps and line length. NOT YET. CHANGE USE OF cl
@@ -512,27 +512,34 @@ if __name__ == '__main__':
    #calc() # using global ents and other global variables
   
 
-   bGPS  = But(race, text='get RC GPS',     command=(lambda : getRCgps()))
+   bGPS   = But(race, text='get RC GPS',     command=(lambda : getRCgps()))
    
    bCalcA = But(race, text='calc using\n RC & axis',    command=(lambda : calcA()))
    
    bCalcM = But(race, text='calc using\n RC & mark',    command=(lambda : calcM()))
    
-   bDist = But(race, text='distribute',     command=(lambda : distribute()))
+   bDist  = But(race, text='distribute',     command=(lambda : distribute()))
 
-   bU    = But(race, text='update\nStatus', command=(lambda : updateStatus(race)))
-   bP    = But(race, text='plot',           command=(lambda : plotWindow(race)))
+   bU     = But(race, text='update\nStatus', command=(lambda : updateStatus(race)))
+   bP     = But(race, text='plot',           command=(lambda : plotWindow(race)))
 
-   bE    = But(race, text='extra',          command=(lambda : extraWindow(race)))
+   bE      = But(race, text='extra',          command=(lambda : extraWindow(race)))
 
    import signal
    import sys
    import time
 
-   def shutdownHandler(signum, frame):
+   def shutdownHandler(signum, frame, shutdown):
        shutdown.set()  # to exit threads
-       logging.debug('signal shutdown to threads.')
+       logging.debug('signal shutdown to threads from shutdownHandler.')
+       time.sleep(10) # this needs to wait for threats to shutdown, otherwise they have to be killed.
+       #                PROBABLY NEED A LOCK
        sys.exit()
+
+   threading.Thread(name='shutdownHandler', 
+                   target=shutdownHandler,
+   		   args=(signum, frame, shutdown)).start()  
+
 
    signal.signal(signal.SIGINT, shutdownHandler)
 
@@ -540,6 +547,8 @@ if __name__ == '__main__':
    
    #  STILL NOT SHUTTING DOWN GRACEFULLY
    shutdown.set()  # to exit threads
-   time.sleep(3)
+   logging.debug('signal shutdown to threads from main.')
+   time.sleep(10) # this needs to wait for threats to shutdown, otherwise they have to be killed.
+   #                PROBABLY NEED A LOCK
    
    logging.debug('main thread exit.')
