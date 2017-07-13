@@ -10,6 +10,7 @@ import json
 import time
 import tkinter
 import gpsd
+import math
 
 from gpsPos import gpsPos
 
@@ -169,8 +170,13 @@ wn   = 0  # distance (m) from boundary at which warning is indicated (see warnWi
 cc   = 0  # width (m) around center axis where center is  indicated (see centerWidth)
 tt   = 0  # target start time
 
+def calcA():
+   # calculate raceObj using axis,
+   #   RC position as right end of start line, perp to axis and line length to get center 
+   #   of start line; axis and  course length, to get mark;
+   #   axis, stadium width, and warning width to get boundaries and warning lines;
+   #   axis, center of start, and center width to get center indicator lines.
 
-def calc():
    global  cl, ax, ll, sw, RC, S, M, wn, cc, tt
 
    readRaceWindow() # re-read current global variables from screen data
@@ -186,9 +192,35 @@ def calc():
 
    # windward mark from center of starting line, axis, and course length   
    M = gpsPos.move(S, ax, cl)
+   
+   writeRaceWindow() # re-write screen with current globals
 
-   # ADD SANITY CHECKS
+def calcM():
+   # calculate raceObj using RC position and mark M to get aprox axis, then adjust
+   #   axis (ax) by a correction angle for S to M rather than RC to M,
+   #   assuming RC on starboard end of line. Then calculate as in calcA, excluding M. 
 
+   global  cl, ax, ll, sw, RC, S, M, wn, cc, tt
+
+   readRaceWindow() # re-read current global variables from screen data
+   
+   correction = math.degrees(math.asin(ll /(2* 1852 * cl)))
+   #logging.debug('correction' + str(correction))
+   h   = gpsPos.heading(RC, M)
+   #logging.debug('h' + str(h))
+
+   #now ax is bearing RC to point 1/2 line length right of M, RC on starboard end of line.
+   ax  = (h + correction)  % 360 #
+
+   wn  = warnWidth * sw    # warning width from stadium width
+   cc  = centerWidth * sw  #  center width from stadium width
+
+   perp = (ax - 90 ) % 360 # bearing RC to pin, RC on starboard end of line
+
+   # center of starting line from RC position (right end), perp, and line length
+   #  half line length in nm. 1 nm = 1852 m
+   S = gpsPos.move(RC, perp, ll / (2 * 1852))
+   
    writeRaceWindow() # re-write screen with current globals
 
 def distribute():
@@ -432,7 +464,8 @@ class BThandlerThread(threading.Thread):
              #logging.debug('new raceObj sent:')
              r = smp.rcv(self.sock) 
              logging.debug('ADD BT_ID TO LIST. ' + r)
-             raceObjReceived[r] = True 
+             raceObjReceived[r] = time.strftime('%Y-%m-%d %H:%M:%S %Z')
+ 
 
        self.sock.close()
        #logging.debug('closed socket and closing thread.')
@@ -476,12 +509,14 @@ if __name__ == '__main__':
    ents = defnRaceWindow(race)
    writeRaceWindow()
 
-   calc() # using global ents and other global variables
+   #calc() # using global ents and other global variables
   
 
    bGPS  = But(race, text='get RC GPS',     command=(lambda : getRCgps()))
    
-   bCalc = But(race, text='re calc \n using axis',    command=(lambda : calc()))
+   bCalcA = But(race, text='calc using\n RC & axis',    command=(lambda : calcA()))
+   
+   bCalcM = But(race, text='calc using\n RC & mark',    command=(lambda : calcM()))
    
    bDist = But(race, text='distribute',     command=(lambda : distribute()))
 
