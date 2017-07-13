@@ -6,7 +6,7 @@ import threading
 import signal
 import sys
 import time
-import logging
+#import logging
 import json
 import gpsd
 
@@ -42,8 +42,7 @@ gpsd_port=2948      #2947 is default
 
 
 #DEBUG, NOTSET, ERROR, WARNING
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-9s) %(message)s',)
+#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
 
 def zoneSignal(update, shutdown):
@@ -71,7 +70,7 @@ def zoneSignal(update, shutdown):
            return() 
         if update.wait(0.01):   # blocking for wait time!
            # read new file here
-           logging.debug('updating raceObj')
+           #logging.debug('updating raceObj')
            with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
 
            globals().update(raceObj)
@@ -110,7 +109,6 @@ def zoneSignal(update, shutdown):
 
             time.sleep(3)  # REALLY SHORTER  FIX
 
-    logging.debug('zoneSignal should not be here.')
     raise Exception('zoneSignal should not be here.')
 
 if __name__ == '__main__':

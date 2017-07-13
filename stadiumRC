@@ -486,7 +486,7 @@ def distributionHandler(shutdown):
        if shutdown.wait(0.01): # blocking for interval !! 
           logging.debug('shutting down distributionHandler thread.')
           return() 
-       tcpsock.listen(5)
+       tcpsock.listen(5)  # STALLS HERE LISTENING WITH NO CONNECTIONS, SO NEVER LOOPS  TO shutdown.
        #logging.debug("Waiting for incoming connections on "  + RC_IP + ":" + str(RC_PORT) + " ...")
        (conn, (ip,port)) = tcpsock.accept()
        #logging.debug('Got connection from ' + ip + ':' + str(port))

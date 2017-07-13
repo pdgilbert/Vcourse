@@ -1,7 +1,7 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 
 import socket
-import logging
+#import logging
 import json
 import time
 
@@ -41,7 +41,7 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
     	    #logging.debug('r ' + str(r))
 
     	    if not (r in ('ok', 'none')) :
-                logging.debug('got new raceObj. Writing to file BTraceObj.json')
+                #logging.debug('got new raceObj. Writing to file BTraceObj.json')
                 # Next could be a message to zoneSignal thread, but having a
                 # file means the gadget can recover after reboot without
                 # a connection to RC, so write string r to a file
@@ -49,7 +49,7 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
                 update.set()
 
                 l = smp.snd(s, BT_ID)
-                logging.debug("sent  receipt BT " + str(BT_ID))
+                #logging.debug("sent  receipt BT " + str(BT_ID))
 
     	    s.close()
 
