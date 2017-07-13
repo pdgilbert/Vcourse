@@ -529,7 +529,7 @@ if __name__ == '__main__':
    import sys
    import time
 
-   def shutdownHandler(signum, frame, shutdown):
+   def shutdownHandler(shutdown):
        shutdown.set()  # to exit threads
        logging.debug('signal shutdown to threads from shutdownHandler.')
        time.sleep(10) # this needs to wait for threats to shutdown, otherwise they have to be killed.
@@ -538,7 +538,8 @@ if __name__ == '__main__':
 
    threading.Thread(name='shutdownHandler', 
                    target=shutdownHandler,
-   		   args=(signum, frame, shutdown)).start()  
+   		   args=(shutdown, )).start()  # ,) makes single arg a tuple
+
 
 
    signal.signal(signal.SIGINT, shutdownHandler)
