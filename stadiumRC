@@ -482,7 +482,8 @@ def distributionHandler(shutdown):
    tcpsock.bind((RC_IP, RC_PORT))
 
    while True:
-       if shutdown.wait(0.01):    # blocking for interval !!
+       # often not getting shutdown signal. Seems to work better when a BT has connected. FIX
+       if shutdown.wait(0.01): # blocking for interval !! 
           logging.debug('shutting down distributionHandler thread.')
           return() 
        tcpsock.listen(5)
@@ -525,27 +526,9 @@ if __name__ == '__main__':
 
    bE      = But(race, text='extra',          command=(lambda : extraWindow(race)))
 
-   import signal
-   import sys
-   import time
-
-   def shutdownHandler(shutdown):
-       shutdown.set()  # to exit threads
-       logging.debug('signal shutdown to threads from shutdownHandler.')
-       time.sleep(10) # this needs to wait for threats to shutdown, otherwise they have to be killed.
-       #                PROBABLY NEED A LOCK
-       sys.exit()
-
-   threading.Thread(name='shutdownHandler', 
-                   target=shutdownHandler,
-   		   args=(shutdown, )).start()  # ,) makes single arg a tuple
-
-
-
-   signal.signal(signal.SIGINT, shutdownHandler)
-
    race.mainloop()
-   
+
+   import time
    #  STILL NOT SHUTTING DOWN GRACEFULLY
    shutdown.set()  # to exit threads
    logging.debug('signal shutdown to threads from main.')
