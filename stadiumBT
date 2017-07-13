@@ -11,7 +11,9 @@ import json
 import gpsd
 
 if True : import LED_simulate  as LEDs # replace with hardware file  FIX
+
 from gpsPos import gpsPos
+
 from distribution import distributionCheck
 
 
@@ -59,13 +61,13 @@ def zoneSignal(update, shutdown):
       else   : a = p.lng - b * p.lat
       return a
 
-    logging.debug('zoneSignal starting')
+    print('zoneSignal starting')
     
     gpsd.connect(host=gpsd_host, port=gpsd_port) 
 
     while True:
         if shutdown.wait(0.01): # blocking for wait time.
-           logging.debug('shutting down zoneSignal thread!')
+           print('shutting down zoneSignal thread!')
            return() 
         if update.wait(0.01):   # blocking for wait time!
            # read new file here
@@ -106,9 +108,10 @@ def zoneSignal(update, shutdown):
                elif            aa >    warnL : LEDs.warn('warnL')
                else                          : LEDs.off()
 
-            time.sleep(20)  # REALLY SHORTER  FIX
+            time.sleep(3)  # REALLY SHORTER  FIX
 
     logging.debug('zoneSignal should not be here.')
+    raise Exception('zoneSignal should not be here.')
 
 if __name__ == '__main__':
 
