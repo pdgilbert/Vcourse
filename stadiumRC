@@ -529,10 +529,14 @@ if __name__ == '__main__':
    race.mainloop()
 
    import time
+   import sys
    #  STILL NOT SHUTTING DOWN GRACEFULLY
+   #print(sys._current_frames())
+    
    shutdown.set()  # to exit threads
    logging.debug('signal shutdown to threads from main.')
    time.sleep(10) # this needs to wait for threats to shutdown, otherwise they have to be killed.
    #                PROBABLY NEED A LOCK
    
    logging.debug('main thread exit.')
+   print(sys._current_frames())

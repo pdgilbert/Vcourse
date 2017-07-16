@@ -9,8 +9,15 @@ import time
 #import logging
 import json
 import gpsd
+import os
 
-if True : import LED_simulate  as LEDs # replace with hardware file  FIX
+#os.uname()[4] == 'armv6l' is True on Pi Zero W,  but will not distinguish other boards. Maybe better ideas
+# at https://github.com/adafruit/Adafruit_Python_GPIO/blob/master/Adafruit_GPIO/Platform.py
+
+if os.uname()[4] == 'armv6l' :
+   import LED_piZeroW   as LEDs 
+else :
+   import LED_simulate  as LEDs 
 
 from gpsPos import gpsPos
 
@@ -62,11 +69,16 @@ def zoneSignal(update, shutdown):
 
     print('zoneSignal starting')
     
-    gpsd.connect(host=gpsd_host, port=gpsd_port) 
+    try:
+       gpsd.connect(host=gpsd_host, port=gpsd_port) 
+   except RuntimeError:
+       print("Error stadiumBT cannot connect to GPS deamon. Usual problem?")
+       raise Exception('stadiumBT will not work without GPS.')
 
     while True:
         if shutdown.wait(0.01): # blocking for wait time.
            print('shutting down zoneSignal thread!')
+           LEDs.cleanup()
            return() 
         if update.wait(0.01):   # blocking for wait time!
            # read new file here

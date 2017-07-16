@@ -16,3 +16,4 @@ def  off(x ='')    : print('no light '    + str(x))
 
 def  update(x ='') : print('flash all lights ' + str(x))
 
+def  cleanup(x ='') : print('cleanup for shutdown ' + str(x))
