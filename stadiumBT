@@ -71,9 +71,17 @@ def zoneSignal(update, shutdown):
     
     try:
        gpsd.connect(host=gpsd_host, port=gpsd_port) 
-   except RuntimeError:
+    except:
        print("Error stadiumBT cannot connect to GPS deamon. Usual problem?")
        raise Exception('stadiumBT will not work without GPS.')
+       sys.exit()
+
+    try:
+           z = a(gpsPos.getGPS()) # try now so fail can provide a message
+    except:
+       print("Error stadiumBT cannot get GPS position, deamon is working. Is GPS connected?")
+       raise Exception('stadiumBT will not work without GPS.')
+       sys.exit()
 
     while True:
         if shutdown.wait(0.01): # blocking for wait time.
