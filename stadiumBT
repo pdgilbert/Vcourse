@@ -79,9 +79,11 @@ def zoneSignal(update, shutdown):
     try:
            z = a(gpsPos.getGPS()) # try now so fail can provide a message
     except:
-       print("Error stadiumBT cannot get GPS position, deamon is working. Is GPS connected?")
+       print("stadiumBT cannot get GPS position, deamon is working.")
+       print("Waiting 20 seconds. Check the GPS connected if there are more errors!!!")
        raise Exception('stadiumBT will not work without GPS.')
-       sys.exit()
+       # dont sys.exit(), it may just not be ready
+       time.sleep(20)
 
     while True:
         if shutdown.wait(0.01): # blocking for wait time.
