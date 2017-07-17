@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.DEBUG,
 #The file is json and can be generated in python by 
 # import json
 #  (edit next line example as required)
-# config = {'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001}
+# config = {'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001, "GPS_HOST": "127.0.0.1",  "GPS_PORT": 2947}
 # json.dump(config, open('RCconfig', 'w'))
 # The file can also be editted by hand with care to preserve the dict structure.
 
@@ -32,14 +32,15 @@ logging.basicConfig(level=logging.DEBUG,
 config = json.load(open('RCconfig'))   
 RC_IP   = config['RC_IP']
 RC_PORT = int(config['RC_PORT'])
-
+GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
+GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
 raceObjReceived = {}
 
 # start gpsd (-n don't wait for device,  #-S 2947 is default port
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
 
-gpsCon = gpsd.connect(host="127.0.0.1", port=2948) #2947 is default
+gpsCon = gpsd.connect(host=GPS_HOST, port=GPS_PORT)
 
 def getRCgps():
    # update global RC and write to screen

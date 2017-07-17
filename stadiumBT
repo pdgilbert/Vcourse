@@ -30,22 +30,21 @@ from distribution import distributionCheck
 #The file is json and can be generated in python by 
 # import json
 #  (edit next line example as required)
-# config = {'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001, 'BT_ID' : 'boat 1'}
+# config = {'BT_ID' : 'boat 1', 'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001, "GPS_HOST": "127.0.0.1",  "GPS_PORT": 2947}
 # json.dump(config, open('BTconfig', 'w'))
 # The file can also be editted by hand with care to preserve the dict structure.
 
 # read config
 config = json.load(open('BTconfig'))   
+BT_ID   = config['BT_ID']
 RC_IP   = config['RC_IP']
 RC_PORT = int(config['RC_PORT'])
-BT_ID   = config['BT_ID']
+GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
+GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
 
 # start gpsd (-n don't wait for device,  #-S 2947 is default port  FIX?
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
-
-gpsd_host="127.0.0.1"
-gpsd_port=2948      #2947 is default
 
 
 #DEBUG, NOTSET, ERROR, WARNING
@@ -70,7 +69,7 @@ def zoneSignal(update, shutdown):
     print('zoneSignal starting')
     
     try:
-       gpsd.connect(host=gpsd_host, port=gpsd_port) 
+       gpsd.connect(host=GPS_HOST, port=GPS_PORT) 
     except:
        print("Error stadiumBT cannot connect to GPS deamon. Usual problem?")
        raise Exception('stadiumBT will not work without GPS.')
