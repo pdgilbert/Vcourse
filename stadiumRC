@@ -35,6 +35,21 @@ RC_PORT = int(config['RC_PORT'])
 GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
 GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
+# position below means a gpsPos object.
+# left and right looking up the course, from race committee (RC) to windward mark (M)
+
+# these global variables should have values as displayed on RaceWindow screen
+cl   = 1.0          # course length (nm)
+ax   = 240          # course bearing (degrees)
+ll   = 100          # start line length (m)
+sw   = 200          # stadium width (m)
+RC   = gpsPos(44.210171667,-76.51047667) # RC position (default Pen. shoal)
+S    = gpsPos(0,0)  # start line center position
+M    = gpsPos(0,0)  # windward mark position 
+wn   = 20           # distance (m) from boundary at which warning is indicated
+cc   = 20           # width (m) around center axis where center is  indicated 
+tt   = 0            # target start time
+
 raceObjReceived = {}
 
 # start gpsd (-n don't wait for device,  #-S 2947 is default port
@@ -151,21 +166,6 @@ def makeRaceObj():
       else :  raise ValueError("something is messed up in dom=False.")
 
    raceObj = r
-
-# position below means a gpsPos object.
-# left and right looking up the course, from race committee (RC) to windward mark (M)
-
-# these global variables should have values as displayed on RaceWindow screen
-cl   = 1.0  # course length (nm)
-ax   = 240  # course bearing (degrees)
-ll   = 100  # start line length (m)
-sw   = 200  # stadium width (m)
-RC   = gpsPos(44.210171667,-76.51047667) # RC position (default Pen. shoal)
-S    = gpsPos(0,0)  # start line center position
-M    = gpsPos(0,0)  # windward mark position 
-wn   = 20  # distance (m) from boundary at which warning is indicated
-cc   = 20  # width (m) around center axis where center is  indicated 
-tt   = 0  # target start time
 
 def calcA():
    # calculate raceObj using axis,
