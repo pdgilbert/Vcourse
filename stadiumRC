@@ -239,6 +239,8 @@ def distribute():
 
 def defnRaceWindow(w):
    # fields on RC Window main page
+   # NB This functionand the next two (writeRaceWindow and readRaceWindow) MUST be
+   #    co-ordinated if fiels are changed !!!
    fldLabels = [
  	'length (nm)', # 0
  	'axis (degrees)',	
@@ -254,13 +256,15 @@ def defnRaceWindow(w):
  	'center width (m)',	 # 11
 	'Target start time']
 
-   req    = 5  # only controls background shading for calculated fields
+   # white=True, grey=False
+   # for background shading for calculated fields
+   req  = [ True, True, True, True, True, True, False, False, False, False, False, False, False ]
    entries = []
    i = 0
    for f in fldLabels:
       row = tkinter.Frame(w)
       lab = tkinter.Label(row, width=15, text=f, anchor='w')
-      if i <= req:
+      if req[i]:
          e = tkinter.Entry(row, bg = "white")
       else:
          e = tkinter.Entry(row, bg = "grey")

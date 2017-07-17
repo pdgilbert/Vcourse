@@ -109,25 +109,31 @@ def zoneSignal(update, shutdown):
         if courseLoaded :
             # run main signal setting loop here
             #logging.debug('in zone?')
-            aa = a(gpsPos.getGPS()) # this is a in y = a + b * x
-            
-            #logging.debug('aa %f', aa)
-            # LtoR, # True if bounds increase left to right
-             
-            if LtoR :
-               if   boundL  >  aa            : LEDs.bound('LtoR boundL')
-               elif  warnL  >  aa            : LEDs.warn('LtoR warnL')
-               elif centerL <= aa <= centerR : LEDs.center('LtoR center')
-               elif            aa >   boundR : LEDs.bound('LtoR boundR')
-               elif            aa >    warnR : LEDs.warn('LtoR warnR')
-               else                          : LEDs.off('LtoR ')
-            else :
-               if    boundR >  aa            : LEDs.bound('boundR')
-               elif   warnR >  aa            : LEDs.warn('warnR')
-               elif centerR <= aa <= centerL : LEDs.center('center')
-               elif            aa >   boundL : LEDs.bound('boundL')
-               elif            aa >    warnL : LEDs.warn('warnL')
-               else                          : LEDs.off()
+            try:
+                p = gpsPos.getGPS() 
+                aa = a(p) # this is a in y = a + b * x
+                ps= '  @ ' +  str(p.lat) + '  ' + str(p.lng)  # only for debugging
+                
+                #logging.debug('aa %f', aa)
+                # LtoR, # True if bounds increase left to right
+                 
+                if LtoR :
+                   if   boundL  >  aa            : LEDs.bound('LtoR boundL' + ps)
+                   elif  warnL  >  aa            : LEDs.warn('LtoR warnL' + ps)
+                   elif centerL <= aa <= centerR : LEDs.center('LtoR center' + ps)
+                   elif            aa >   boundR : LEDs.bound('LtoR boundR' + ps)
+                   elif            aa >    warnR : LEDs.warn('LtoR warnR' + ps)
+                   else                          : LEDs.off('LtoR ' + ps)
+                else :
+                   if    boundR >  aa            : LEDs.bound('boundR' + ps)
+                   elif   warnR >  aa            : LEDs.warn('warnR' + ps)
+                   elif centerR <= aa <= centerL : LEDs.center('center' + ps)
+                   elif            aa >   boundL : LEDs.bound('boundL' + ps)
+                   elif            aa >    warnL : LEDs.warn('warnL' + ps)
+                   else                          : LEDs.off()
+
+            except:
+               print("No GPS fix yet")
 
             time.sleep(3)  # REALLY SHORTER  FIX
 
