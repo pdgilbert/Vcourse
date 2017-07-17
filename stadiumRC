@@ -48,10 +48,6 @@ def getRCgps():
    RC = gpsPos.getGPS()
    writeRaceWindow()
 
-# these should come from config file
-warnWidth   = 0.1  # warning 10 percent stadium width
-centerWidth = 0.05 # center width 5 percent stadium width
-
 # initialized as these may be used even before a proper raceObj is generated
 raceObj = None
 id =None 
@@ -167,8 +163,8 @@ sw   = 200  # stadium width (m)
 RC   = gpsPos(44.210171667,-76.51047667) # RC position (default Pen. shoal)
 S    = gpsPos(0,0)  # start line center position
 M    = gpsPos(0,0)  # windward mark position 
-wn   = 0  # distance (m) from boundary at which warning is indicated (see warnWidth)
-cc   = 0  # width (m) around center axis where center is  indicated (see centerWidth)
+wn   = 20  # distance (m) from boundary at which warning is indicated
+cc   = 20  # width (m) around center axis where center is  indicated 
 tt   = 0  # target start time
 
 def calcA():
@@ -182,9 +178,6 @@ def calcA():
 
    readRaceWindow() # re-read current global variables from screen data
    
-   wn  = warnWidth * sw    # warning width from stadium width
-   cc  = centerWidth * sw  #  center width from stadium width
-
    perp = (ax - 90 ) % 360 # bearing RC to pin, RC on starboard end of line
 
    # center of starting line from RC position (right end), perp, and line length
@@ -212,9 +205,6 @@ def calcM():
 
    #now ax is bearing RC to point 1/2 line length right of M, RC on starboard end of line.
    ax  = (h + correction)  % 360 #
-
-   wn  = warnWidth * sw    # warning width from stadium width
-   cc  = centerWidth * sw  #  center width from stadium width
 
    perp = (ax - 90 ) % 360 # bearing RC to pin, RC on starboard end of line
 
