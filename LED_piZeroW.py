@@ -60,31 +60,31 @@ blue.ChangeDutyCycle(20)
 
 
 def  off(x ='')    : 
-   logging.debug('no light '    + str(x))
+   print('no light '    + str(x))
    red.stop()
    green.stop()
    blue.stop()
    GPIO.output(CHANNELS, GPIO.LOW) 
 
 def  bound(x ='')  : 
-   logging.debug('zone  red '   + str(x))
+   print('zone  red '   + str(x))
    off()  
    GPIO.output(RED,   GPIO.HIGH)
 
 def  warn(x ='')   : 
-   logging.debug('flash red '   + str(x))
+   print('flash red '   + str(x))
    off()  
    red.start(1)            # arg is suppose to be dc, but I'm not sure it is.
    red.ChangeFrequency(FAST)  # where freq is the new frequency in Hz
 
 def  center(x ='') : 
-   logging.debug('flash green ' + str(x))
+   print('flash green ' + str(x))
    off()  
    green.start(1)            # arg is suppose to be dc, but I'm not sure it is.
    green.ChangeFrequency(MEDIUM)  # where freq is the new frequency in Hz
 
 def  update(x ='') : 
-   logging.debug('flash all lights ' + str(x))
+   print('flash all lights ' + str(x))
    off()  
    red.start(1)            # arg is suppose to be dc, but I'm not sure it is.
    green.start(1)            # arg is suppose to be dc, but I'm not sure it is.
@@ -94,12 +94,12 @@ def  update(x ='') :
    off()  
 
 def  cleanup(x ='') :
-   logging.debug('cleanup for shutdown ' + str(x))
+   lprint('cleanup GPIO for shutdown ' + str(x))
    # this cleans up GPIO.setup too
    GPIO.cleanup()  # GPIO.cleanup(RED)   GPIO.cleanup( CHANNELS )
 
 def  systemProblem(x ='')  : 
-   logging.debug('system problem blue'   + str(x))
+   print('system problem blue'   + str(x))
    off()  
    GPIO.output(BLUE,   GPIO.HIGH)
 
