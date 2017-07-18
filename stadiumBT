@@ -134,7 +134,7 @@ def zoneSignal(update, shutdown):
             except:
                LEDs.systemProblem('. No GPS fix.')
 
-            time.sleep(3)  # REALLY SHORTER  FIX
+            time.sleep(0.1) 
 
     raise Exception('zoneSignal should not be here.')
 
