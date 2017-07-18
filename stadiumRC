@@ -44,7 +44,7 @@ def writeDefaultRaceParms():
       defaultRace = { 'fl':fl, 'dc':dc, 'ty':ty, 'cl':cl, 'ax':ax, 'll':ll, 'sw':sw, 
                       'RC.lat':RC.lat, 'RC.lng':RC.lng, 'S.lat':S.lat, 'S.lng':S.lng, 'M.lat':M.lat, 'M.lng':M.lng,
                       'wn':wn, 'cc':cc, 'tt':tt }
-      with open("defaultRace","w") as f:  json.dump(defaultRace, f)
+      with open("defaultRace","w") as f:   json.dump(defaultRace, f)
    except :
       print('write failure')
 
@@ -442,15 +442,15 @@ def extraWindow(w):
    t = tkinter.Toplevel(w)
    t.wm_title("Extra Options")
 
-   bWD  = But(t, text='Save Defaults',    command=(lambda : writeDefault()))
+   bWD  = But(t, text='Save\nRace Defaults',    command=(lambda : writeDefault()))
 
-   bRD  = But(t, text='Re-read Defaults', command=(lambda : readDefault()))
+   bRD  = But(t, text='Re-read\n Race Defaults', command=(lambda : readDefault()))
 
    bDbg = But(t, text='debugInfo',        command=(lambda : debugWindow(w)))
 
    bP   = But(t, text='plot',             command=(lambda : plotWindow(w)))
 
-   bS   = But(t, text='save race',        command=(lambda : saveRace()))
+   #bS   = But(t, text='save race\ndistribution',        command=(lambda : saveRace()))
 
    #bQ  = But(t, text='Quit!!',           command=(race.quit)) #command=(race.destroy))
 

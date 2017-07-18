@@ -8,7 +8,7 @@
 #GPIO.VERSION
 
 import time
-import logging
+#import logging
 
 try:
     import RPi.GPIO as GPIO
@@ -17,7 +17,7 @@ except RuntimeError:
     raise Exception('LED_piZeroW module will not work without RPi.GPIO.')
 
 
-logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
 RED    = 12
 GREEN  = 16

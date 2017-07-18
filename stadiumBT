@@ -77,6 +77,8 @@ def zoneSignal(update, shutdown):
           elif now == 2 : LEDs.warn(x)
           elif now == 3 : LEDs.center(x)
           elif now == 4 : LEDs.systemProblem(x)
+          else : raise ValueError("LED now status incorrect.")
+
        return now
 
     print('zoneSignal starting')
@@ -147,7 +149,7 @@ def zoneSignal(update, shutdown):
             except:
                st = status(st, 4, '. No GPS fix.')
 
-            time.sleep(0.1) 
+            time.sleep(0.5) 
 
     raise Exception('zoneSignal should not be here.')
 
