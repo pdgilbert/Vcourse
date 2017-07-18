@@ -40,25 +40,18 @@ GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 # these global variables should have values as displayed on RaceWindow screen
 
 def writeDefaultRaceParms():
-   #readRaceWindow() # ensure globals are up to date with screen
    try : 
-      logging.debug('writing defaultRace')
       defaultRace = { 'fl':fl, 'dc':dc, 'ty':ty, 'cl':cl, 'ax':ax, 'll':ll, 'sw':sw, 
                       'RC.lat':RC.lat, 'RC.lng':RC.lng, 'S.lat':S.lat, 'S.lng':S.lng, 'M.lat':M.lat, 'M.lng':M.lng,
                       'wn':wn, 'cc':cc, 'tt':tt }
-      print(defaultRace)
       with open("defaultRace","w") as f:  json.dump(defaultRace, f)
-      logging.debug('wrrote defaultRace')
    except :
       print('write failure')
 
 def readDefaultRaceParms():
    global  fl, dc, ty, cl, ax, ll, sw, RC, S, M, wn, cc, tt
    try : 
-      logging.debug('reading defaultRace')
       with open("defaultRace") as f:  defaultRace = json.load(f)   
-      logging.debug('read  defaultRace')
-      print(defaultRace)
       fl   = defaultRace['fl']
       dc   = defaultRace['dc']
       ty   = defaultRace['ty']
@@ -86,7 +79,6 @@ def readDefaultRaceParms():
       wn   = 20           # distance (m) from boundary at which warning is indicated
       cc   = 20           # width (m) around center axis where center is  indicated 
       tt   = 0            # target start time
-   #writeRaceWindow() # ensure screen is up to date with globals
 
 readDefaultRaceParms()
 
@@ -231,18 +223,19 @@ def calcA():
    writeRaceWindow() # re-write screen with current globals
 
 def calcM():
-   # calculate raceObj using RC position and mark M to get aprox axis, then adjust
+   # calculate raceObj using RC position and mark M to get course length, aprox axis, then adjust
    #   axis (ax) by a correction angle for S to M rather than RC to M,
    #   assuming RC on starboard end of line. Then calculate as in calcA, excluding M. 
 
-   global  ax, S
+   global  ax, S, cl
 
    readRaceWindow() # re-read current global variables from screen data
    
+   cl = RC.nm(M)  # course length using RC to M.
+
    correction = math.degrees(math.asin(ll /(2* 1852 * cl)))
    #logging.debug('correction' + str(correction))
    h   = gpsPos.heading(RC, M)
-   #logging.debug('h' + str(h))
 
    #now ax is bearing RC to point 1/2 line length right of M, RC on starboard end of line.
    ax  = (h + correction)  % 360 #
@@ -582,4 +575,4 @@ if __name__ == '__main__':
    #                PROBABLY NEED A LOCK
    
    logging.debug('main thread exit.')
-   print(sys._current_frames())
+   #print(sys._current_frames())

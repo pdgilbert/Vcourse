@@ -62,15 +62,13 @@ class gpsPos(object):
         if not isinstance(x, gpsPos):
            raise ValueError("x must be a gpsPos object")
 
-        #  nm per degree lat
-        #latScale = 60.0
-	#  nm per degree long at current latitude                  
-        lngScale = 60.0 * math.cos(math.radians(self.lat)) 
+        latScale = 60.0  #  nm per degree lat
+        lngScale = 60.0 * math.cos(math.radians(self.lat))  #  nm per degree long at current latitude
         
         N = (x.lat - self.lat) * latScale
         E = (x.lng - self.lng) * lngScale
         distance = math.sqrt(math.pow(N,2) + math.pow(E,2))
-        return {'N' : N, 'E' : E, 'distance' : distance}
+        return distance
     
     @classmethod
     def getGPS(cls):

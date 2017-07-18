@@ -1,5 +1,9 @@
 __pycache__/
 raceObj.json
+BTraceObj.json
 RCconfig
+BTconfig
 zot*
 boat*/
+defaultRace*
+stadiumBT.log
