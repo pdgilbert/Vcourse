@@ -66,6 +66,19 @@ def zoneSignal(update, shutdown):
       else   : a = p.lng - b * p.lat
       return a
 
+    st = 0  
+
+    def status(st, now, x=''):
+       # return new status and change LEDs if needed
+       #LED status  (PWM flickers too fast if constantly reset, so set only on change)
+       if now != st :
+          if   now == 0 : LEDs.off(x)
+          elif now == 1 : LEDs.bound(x)
+          elif now == 2 : LEDs.warn(x)
+          elif now == 3 : LEDs.center(x)
+          elif now == 4 : LEDs.systemProblem(x)
+       return now
+
     print('zoneSignal starting')
     
     try:
@@ -117,22 +130,22 @@ def zoneSignal(update, shutdown):
                 # LtoR, # True if bounds increase left to right
                  
                 if LtoR :
-                   if   boundL  >  aa            : LEDs.bound('LtoR boundL' + ps)
-                   elif  warnL  >  aa            : LEDs.warn('LtoR warnL' + ps)
-                   elif centerL <= aa <= centerR : LEDs.center('LtoR center' + ps)
-                   elif            aa >   boundR : LEDs.bound('LtoR boundR' + ps)
-                   elif            aa >    warnR : LEDs.warn('LtoR warnR' + ps)
-                   else                          : LEDs.off('LtoR ' + ps)
+                   if   boundL  >  aa            : st = status(st, 1, 'LtoR boundL' + ps) 
+                   elif  warnL  >  aa            : st = status(st, 2, 'LtoR warnL' + ps)
+                   elif centerL <= aa <= centerR : st = status(st, 3, 'LtoR center' + ps)
+                   elif            aa >   boundR : st = status(st, 1, 'LtoR boundR' + ps)
+                   elif            aa >    warnR : st = status(st, 2, 'LtoR warnR' + ps)
+                   else                          : st = status(st, 0, 'LtoR ' + ps)
                 else :
-                   if    boundR >  aa            : LEDs.bound('boundR' + ps)
-                   elif   warnR >  aa            : LEDs.warn('warnR' + ps)
-                   elif centerR <= aa <= centerL : LEDs.center('center' + ps)
-                   elif            aa >   boundL : LEDs.bound('boundL' + ps)
-                   elif            aa >    warnL : LEDs.warn('warnL' + ps)
-                   else                          : LEDs.off()
+                   if    boundR >  aa            : st = status(st, 1, 'boundR' + ps)
+                   elif   warnR >  aa            : st = status(st, 2, 'warnR' + ps)
+                   elif centerR <= aa <= centerL : st = status(st, 3, 'center' + ps)
+                   elif            aa >   boundL : st = status(st, 1, 'boundL' + ps)
+                   elif            aa >    warnL : st = status(st, 2, 'warnL' + ps)
+                   else                          : st = status(st, 0)
 
             except:
-               LEDs.systemProblem('. No GPS fix.')
+               st = status(st, 4, '. No GPS fix.')
 
             time.sleep(0.1) 
 
