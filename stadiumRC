@@ -37,18 +37,58 @@ GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
 # position below means a gpsPos object.
 # left and right looking up the course, from race committee (RC) to windward mark (M)
-
 # these global variables should have values as displayed on RaceWindow screen
-cl   = 1.0          # course length (nm)
-ax   = 240          # course bearing (degrees)
-ll   = 100          # start line length (m)
-sw   = 200          # stadium width (m)
-RC   = gpsPos(44.210171667,-76.51047667) # RC position (default Pen. shoal)
-S    = gpsPos(0,0)  # start line center position
-M    = gpsPos(0,0)  # windward mark position 
-wn   = 20           # distance (m) from boundary at which warning is indicated
-cc   = 20           # width (m) around center axis where center is  indicated 
-tt   = 0            # target start time
+
+def writeDefaultRaceParms():
+   #readRaceWindow() # ensure globals are up to date with screen
+   try : 
+      logging.debug('writing defaultRace')
+      defaultRace = { 'fl':fl, 'dc':dc, 'ty':ty, 'cl':cl, 'ax':ax, 'll':ll, 'sw':sw, 
+                      'RC.lat':RC.lat, 'RC.lng':RC.lng, 'S.lat':S.lat, 'S.lng':S.lng, 'M.lat':M.lat, 'M.lng':M.lng,
+                      'wn':wn, 'cc':cc, 'tt':tt }
+      print(defaultRace)
+      with open("defaultRace","w") as f:  json.dump(defaultRace, f)
+      logging.debug('wrrote defaultRace')
+   except :
+      print('write failure')
+
+def readDefaultRaceParms():
+   global  fl, dc, ty, cl, ax, ll, sw, RC, S, M, wn, cc, tt
+   try : 
+      logging.debug('reading defaultRace')
+      with open("defaultRace") as f:  defaultRace = json.load(f)   
+      logging.debug('read  defaultRace')
+      print(defaultRace)
+      fl   = defaultRace['fl']
+      dc   = defaultRace['dc']
+      ty   = defaultRace['ty']
+      cl   = defaultRace['cl']
+      ax   = defaultRace['ax']
+      ll   = defaultRace['ll']
+      sw   = defaultRace['sw']
+      RC   = gpsPos(defaultRace['RC.lat'], defaultRace['RC.lng'])
+      S    = gpsPos(defaultRace[ 'S.lat'], defaultRace[ 'S.lng'])
+      M    = gpsPos(defaultRace[ 'M.lat'], defaultRace[ 'M.lng'])
+      wn   = defaultRace['wn']
+      cc   = defaultRace['cc']
+      tt   = defaultRace['tt']
+   except :
+      fl   = 'FX'         # fleet
+      dc   = 'race 1'     # description
+      ty   = 'stadium'    # course type
+      cl   = 1.0          # course length (nm)
+      ax   = 240          # course bearing (degrees)
+      ll   = 100          # start line length (m)
+      sw   = 200          # stadium width (m)
+      RC   = gpsPos(44.210171667,-76.51047667) # RC position (default Pen. shoal)
+      S    = gpsPos(0,0)  # start line center position
+      M    = gpsPos(0,0)  # windward mark position 
+      wn   = 20           # distance (m) from boundary at which warning is indicated
+      cc   = 20           # width (m) around center axis where center is  indicated 
+      tt   = 0            # target start time
+   #writeRaceWindow() # ensure screen is up to date with globals
+
+readDefaultRaceParms()
 
 raceObjReceived = {}
 
@@ -119,13 +159,14 @@ def makeRaceObj():
    # cl, M and S are not needed in the for stadiumBT calculations but
    #  are nice for debugging.
    
-   courseDesc = 'stadium'
+   courseDesc = 'arbitrary'
    distributionTime = time.strftime('%Y-%m-%d %H:%M:%S %Z')
-   cid = str(courseDesc) + ' ' +  distributionTime
+   cid = dc + ' ' +  distributionTime
    
    r = {
       'cid'       : cid,
-      'courseDesc'       : courseDesc,
+      'courseDesc'       : dc,
+      'courseType'       : 'stadium',
       'distributionTime' : distributionTime,
       'length' :  cl,  # course length
       'axis'   :  ax,  # axis (degrees)
@@ -174,7 +215,7 @@ def calcA():
    #   axis, stadium width, and warning width to get boundaries and warning lines;
    #   axis, center of start, and center width to get center indicator lines.
 
-   global  cl, ax, ll, sw, RC, S, M, wn, cc, tt
+   global  S, M
 
    readRaceWindow() # re-read current global variables from screen data
    
@@ -194,7 +235,7 @@ def calcM():
    #   axis (ax) by a correction angle for S to M rather than RC to M,
    #   assuming RC on starboard end of line. Then calculate as in calcA, excluding M. 
 
-   global  cl, ax, ll, sw, RC, S, M, wn, cc, tt
+   global  ax, S
 
    readRaceWindow() # re-read current global variables from screen data
    
@@ -233,32 +274,35 @@ def defnRaceWindow(w):
    # NB This functionand the next two (writeRaceWindow and readRaceWindow) MUST be
    #    co-ordinated if fiels are changed !!!
    fldLabels = [
- 	'length (nm)', # 0
+ 	'fleet', 
+ 	'decription', 
+ 	'course type', 
+ 	'length (nm)', 
  	'axis (degrees)',	
  	'start line length (m)',
- 	'stadium width (m)',	 # 3
- 	'RC	latitude',	 #N  Penn. shoal
- 	'RC	longitude',	 #W
- 	'start center latitude', # 6
- 	'start center longitude',# 7
+ 	'stadium width (m)',	 
+ 	'RC	latitude',
+ 	'RC	longitude',
+ 	'start center latitude', 
+ 	'start center longitude',
  	'mark 1 latitude',	
  	'mark 1 longitude',	
- 	'warning width (m)',	 # 10
- 	'center width (m)',	 # 11
+ 	'warning width (m)',
+ 	'center width (m)',
 	'Target start time']
 
-   # white=True, grey=False
+   # white=True, grey=False   CONSIDER USING THIS TO GREY CALCULATED VALUES
    # for background shading for calculated fields
-   req  = [ True, True, True, True, True, True, False, False, False, False, False, False, False ]
+   #calculated  = [ True, True, True, True, True, True, True, True, True, False, False, False, False, False, False, False ]
    entries = []
    i = 0
    for f in fldLabels:
       row = tkinter.Frame(w)
       lab = tkinter.Label(row, width=15, text=f, anchor='w')
-      if req[i]:
-         e = tkinter.Entry(row, bg = "white")
-      else:
-         e = tkinter.Entry(row, bg = "grey")
+      #if calculated[i]:
+      e = tkinter.Entry(row, bg = "white")
+      #else:
+      #   e = tkinter.Entry(row, bg = "grey")
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
       lab.pack(side=tkinter.LEFT)
       e.pack(side=tkinter.RIGHT, expand=tkinter.YES, fill=tkinter.X)
@@ -275,34 +319,29 @@ def writeRaceWindow():
    
    for i in range (0, len(ents)):
       ents[i].delete(0, tkinter.END)
-   insert(0,  cl)
-   insert(1,  ax)
-   insert(2,  ll)
-   insert(3,  sw)
-   insert(4,  RC.lat)
-   insert(5,  RC.lng)
-   insert(6,  S.lat)
-   insert(7,  S.lng)
-   insert(8,  M.lat)
-   insert(9,  M.lng)
-   insert(10, wn)
-   insert(11, cc)
-   insert(12, tt)
+
+   i = 0
+   for v in (fl, dc, ty, cl, ax, ll, sw, RC.lat, RC.lng, S.lat, S.lng, M.lat, M.lng, wn, cc, tt):
+      insert(i,  v)
+      i += 1
 
 def readRaceWindow():
    # update globals from screen
    # using global ents for entries
-   global  cl, ax, ll, sw, RC, S, M, wn, cc, tt
-   cl = float(ents[0].get()) 
-   ax = float(ents[1].get()) 
-   ll = float(ents[2].get()) 
-   sw = float(ents[3].get())
-   RC = gpsPos(float(ents[4].get()), float(ents[5].get()))
-   S  = gpsPos(float(ents[6].get()), float(ents[7].get()))
-   M  = gpsPos(float(ents[8].get()), float(ents[9].get()))
-   wn = float(ents[10].get()) 
-   cc = float(ents[11].get()) 
-   tt = float(ents[12].get()) 
+   global  fl, dc, ty, cl, ax, ll, sw, RC, S, M, wn, cc, tt
+   fl = str(ents[0].get())
+   dc = str(ents[1].get())
+   ty = str(ents[2].get())
+   cl = float(ents[3].get()) 
+   ax = float(ents[4].get()) 
+   ll = float(ents[5].get()) 
+   sw = float(ents[6].get())
+   RC = gpsPos(float(ents[7].get()),  float(ents[8].get()))
+   S  = gpsPos(float(ents[9].get()),  float(ents[10].get()))
+   M  = gpsPos(float(ents[11].get()), float(ents[12].get()))
+   wn = float(ents[13].get()) 
+   cc = float(ents[14].get()) 
+   tt = float(ents[15].get()) 
 
 def plotWindow(w):
    # note that plot is based on gps and line length. NOT YET. CHANGE USE OF cl
@@ -384,8 +423,15 @@ def updateStatus(w):
 
 def extraWindow(w):
 
-   def defaultsWindow():
-      print('DO SOMETHING')
+   def readDefault():
+     # no calc
+     readDefaultRaceParms()
+     writeRaceWindow() #sync screen from globals
+
+   def writeDefault():
+     # no calc
+     readRaceWindow() #sync globals from screen
+     writeDefaultRaceParms()
 
    def saveRace():
      # no calc, confirm globals are as on screen and DO SOMETHING
@@ -403,15 +449,17 @@ def extraWindow(w):
    t = tkinter.Toplevel(w)
    t.wm_title("Extra Options")
 
-   bDft  = But(t, text='Set Defaults', command=(lambda : defaultsWindow()))
+   bWD  = But(t, text='Save Defaults',    command=(lambda : writeDefault()))
 
-   bDbg  = But(t, text='debugInfo',    command=(lambda : debugWindow(w)))
+   bRD  = But(t, text='Re-read Defaults', command=(lambda : readDefault()))
 
-   bP    = But(race, text='plot',      command=(lambda : plotWindow(w)))
+   bDbg = But(t, text='debugInfo',        command=(lambda : debugWindow(w)))
 
-   bS    = But(t, text='save race',    command=(lambda : saveRace()))
+   bP   = But(t, text='plot',             command=(lambda : plotWindow(w)))
 
-   bQ    = But(t, text='Quit!!',       command=(race.quit)) #command=(race.destroy))
+   bS   = But(t, text='save race',        command=(lambda : saveRace()))
+
+   #bQ  = But(t, text='Quit!!',           command=(race.quit)) #command=(race.destroy))
 
 def But(w, text='x', command='') :
    b = tkinter.Button(w, text=text,  command=command)
@@ -517,7 +565,7 @@ if __name__ == '__main__':
    bDist  = But(race, text='distribute',     command=(lambda : distribute()))
 
    bU     = But(race, text='update\nStatus', command=(lambda : updateStatus(race)))
-   bP     = But(race, text='plot',           command=(lambda : plotWindow(race)))
+   #bP     = But(race, text='plot',           command=(lambda : plotWindow(race)))
 
    bE      = But(race, text='extra',          command=(lambda : extraWindow(race)))
 
