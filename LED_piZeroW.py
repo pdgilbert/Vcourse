@@ -97,3 +97,9 @@ def  cleanup(x ='') :
    logging.debug('cleanup for shutdown ' + str(x))
    # this cleans up GPIO.setup too
    GPIO.cleanup()  # GPIO.cleanup(RED)   GPIO.cleanup( CHANNELS )
+
+def  systemProblem(x ='')  : 
+   logging.debug('system problem blue'   + str(x))
+   GPIO.output(CHANNELS, GPIO.LOW)  # sets all CHANNELS to GPIO.LOW first
+   GPIO.output(BLUE,   GPIO.HIGH)
+
