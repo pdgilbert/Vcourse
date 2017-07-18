@@ -94,7 +94,7 @@ def  update(x ='') :
    off()  
 
 def  cleanup(x ='') :
-   lprint('cleanup GPIO for shutdown ' + str(x))
+   print('cleanup GPIO for shutdown ' + str(x))
    # this cleans up GPIO.setup too
    GPIO.cleanup()  # GPIO.cleanup(RED)   GPIO.cleanup( CHANNELS )
 
