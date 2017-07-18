@@ -76,7 +76,8 @@ def zoneSignal(update, shutdown):
           elif now == 1 : LEDs.bound(x)
           elif now == 2 : LEDs.warn(x)
           elif now == 3 : LEDs.center(x)
-          elif now == 4 : LEDs.systemProblem(x)
+          elif now == 4 : LEDs.update(x)
+          elif now == 5 : LEDs.systemProblem(x)
           else : raise ValueError("LED now status incorrect.")
 
        return now
@@ -110,8 +111,8 @@ def zoneSignal(update, shutdown):
            with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
 
            globals().update(raceObj)
-           LEDs.update()
- 
+           st = status(st, 4)
+
            #logging.debug('new cid: %s',  cid )
            #logging.debug('new course axis:  %f',  axis)
            #logging.debug('new course S %f,%f: ', S[0], S[1])
@@ -147,7 +148,7 @@ def zoneSignal(update, shutdown):
                    else                          : st = status(st, 0)
 
             except:
-               st = status(st, 4, '. No GPS fix.')
+               st = status(st, 5, '. No GPS fix.')
 
             time.sleep(0.5) 
 
