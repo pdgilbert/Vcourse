@@ -249,7 +249,10 @@ def calcM():
    writeRaceWindow() # re-write screen with current globals
 
 def distribute():
-
+   # This works by creating a new version of the global object RaceObj, the distributionHandler
+   # compares the cid of this with that sent by BT when they connect.
+   # There is no "signal" to distributionHandler or BTs. It depends on them checking in.
+   
    global raceObjReceived
    
    makeRaceObj()  # this also syncs with screen but does no calc().
@@ -258,8 +261,17 @@ def distribute():
    # clear dict of boats that have update
    raceObjReceived = {}
 
-   # write to a file, for the record, but distribute is done with raceObj
-   with open("raceObj.json","w") as f: json.dump(raceObj, f, indent=4)
+   # write raceObj and also global object info to a file, for the record, but distribute is done with raceObj
+   with open('distributedCourses/raceObj' + raceObj['cid'] + '.json',"w") as f:
+      f.write("\n")
+      f.write("raceObj:\n")
+      json.dump(raceObj, f, indent=4)
+      Race = { 'fl':fl, 'dc':dc, 'ty':ty, 'cl':cl, 'ax':ax, 'll':ll, 'sw':sw, 
+               'RC.lat':RC.lat, 'RC.lon':RC.lon, 'S.lat':S.lat, 'S.lon':S.lon, 'M.lat':M.lat, 'M.lon':M.lon,
+               'wn':wn, 'cc':cc, 'tt':tt }
+      f.write("\n")
+      f.write("Race:\n")
+      json.dump(Race, f, indent=4)
 
 
 def defnRaceWindow(w):
