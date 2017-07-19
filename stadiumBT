@@ -70,22 +70,22 @@ def zoneSignal(update, shutdown):
 
     p = gpsPos(None, None)
     t = open("track.txt","w") 
-    st = 0  
+    st = 'off'  
 
     def status(p, st, now, x=''):
        # return new status and change LEDs if needed
        #LED status  (PWM flickers too fast if constantly reset, so set only on change)
        if now != st :
-          if   now == 0 : LEDs.off(x)
-          elif now == 1 : LEDs.bound(x)
-          elif now == 2 : LEDs.warn(x)
-          elif now == 3 : LEDs.center(x)
-          elif now == 4 : LEDs.update(x)
-          elif now == 5 : LEDs.systemProblem(x)
+          if   now == 'off'           : LEDs.off(x)
+          elif now == 'bound'         : LEDs.bound(x)
+          elif now == 'warn'          : LEDs.warn(x)
+          elif now == 'center'        : LEDs.center(x)
+          elif now == 'update'        : LEDs.update(x)
+          elif now == 'systemProblem' : LEDs.systemProblem(x)
           else : raise ValueError("LED now status (" + str(now) + ") incorrect.")
 
        # and, BTW, record track
-       t.write(str(p.lat) + ' ' + str(p.lng) + ' status ' + str(now) + '\n' )
+       t.write(str(p.lat) + ' ' + str(p.lng) + ' status ' + now + '\n' )
        return now
 
     
@@ -99,7 +99,7 @@ def zoneSignal(update, shutdown):
     try:
            z = a(gpsPos.getGPS()) # try now so fail can provide a message
     except:
-       print("stadiumBT cannot get GPS position, deamon is working.")
+       print("stadiumBT cannot get GPS position, daemon is working.")
        print("Waiting 20 seconds. Check the GPS connected if there are more errors!!!")
        # this kills thread  raise Exception('stadiumBT will not work without GPS.')
        # dont sys.exit(), it may just not be ready
@@ -117,13 +117,14 @@ def zoneSignal(update, shutdown):
            with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
 
            globals().update(raceObj)
-           st = status(p, st, 4)
+           st = status(p, st, 'update')
 
            #logging.debug('new cid: %s',  cid )
            #logging.debug('new course axis:  %f',  axis)
            #logging.debug('new course S %f,%f: ', S[0], S[1])
 
            courseLoaded = True
+           t.write('new course loaded: ' + cid + '\n' )
            update.clear()
            #logging.debug('update is clear:')
         
@@ -139,22 +140,22 @@ def zoneSignal(update, shutdown):
                 # LtoR, # True if bounds increase left to right
                  
                 if LtoR :
-                   if   boundL  >  aa            : st = status(p, st, 1, 'LtoR boundL' + ps) 
-                   elif  warnL  >  aa            : st = status(p, st, 2, 'LtoR warnL' + ps)
-                   elif centerL <= aa <= centerR : st = status(p, st, 3, 'LtoR center' + ps)
-                   elif            aa >   boundR : st = status(p, st, 1, 'LtoR boundR' + ps)
-                   elif            aa >    warnR : st = status(p, st, 2, 'LtoR warnR' + ps)
-                   else                          : st = status(p, st, 0, 'LtoR ' + ps)
+                   if   boundL  >  aa            : st = status(p, st, 'bound',  'LtoR boundL' + ps) 
+                   elif  warnL  >  aa            : st = status(p, st, 'warn',   'LtoR warnL'  + ps)
+                   elif centerL <= aa <= centerR : st = status(p, st, 'center', 'LtoR center' + ps)
+                   elif            aa >   boundR : st = status(p, st, 'bound',  'LtoR boundR' + ps)
+                   elif            aa >    warnR : st = status(p, st, 'warn',   'LtoR warnR'  + ps)
+                   else                          : st = status(p, st, 'off',     'LtoR '      + ps)
                 else :
-                   if    boundR >  aa            : st = status(p, st, 1, 'boundR' + ps)
-                   elif   warnR >  aa            : st = status(p, st, 2, 'warnR' + ps)
-                   elif centerR <= aa <= centerL : st = status(p, st, 3, 'center' + ps)
-                   elif            aa >   boundL : st = status(p, st, 1, 'boundL' + ps)
-                   elif            aa >    warnL : st = status(p, st, 2, 'warnL' + ps)
-                   else                          : st = status(p, st, 0)
+                   if    boundR >  aa            : st = status(p, st, 'bound',  'boundR'      + ps)
+                   elif   warnR >  aa            : st = status(p, st, 'warn',   'warnR'       + ps)
+                   elif centerR <= aa <= centerL : st = status(p, st, 'center', 'center'      + ps)
+                   elif            aa >   boundL : st = status(p, st, 'bound',  'boundL'      + ps)
+                   elif            aa >    warnL : st = status(p, st, 'warn',   'warnL'       + ps)
+                   else                          : st = status(p, st, 'off')
 
             except:
-               st = status(p, st, 5, '. No GPS fix.')
+               st = status(p, st, 'systemProblem', '. No GPS fix.')
 
             time.sleep(0.5) 
 
