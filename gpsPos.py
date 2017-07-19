@@ -47,7 +47,7 @@ class gpsPos(object):
     
     def longitude(self): return self.lng
 
-    def __init__(self, lat, lng):
+    def __init__(self, lat, lng, time=None):
         if (lat != None) :
            if not (-90 <= lat <= 90):
               raise ValueError("must have  -90 <=  latitude <= 90")
@@ -55,9 +55,12 @@ class gpsPos(object):
         if (lng != None) :
            if not (-180 <= lng <= 180):
               raise ValueError("must have  -180 <= longitude <= 180")
+
+        if (time == None) : time = '' 
         
-        self.lat = lat
-        self.lng = lng
+        self.lat  = lat
+        self.lng  = lng
+        self.time = time
 
     def nm(self, x):
         #nm N and E  between two gpsPos, self and x
@@ -76,7 +79,7 @@ class gpsPos(object):
     def getGPS(cls):
       import gpsd
       p = gpsd.get_current()
-      return(gpsPos(p.position()[0], p.position()[1]))
+      return(gpsPos(p.lat, p.lon, p.time))
 
     @classmethod
     def move(cls, pt, axis, distance):

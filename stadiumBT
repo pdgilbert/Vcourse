@@ -85,7 +85,7 @@ def zoneSignal(update, shutdown):
           else : raise ValueError("LED now status (" + str(now) + ") incorrect.")
 
        # and, BTW, record track
-       t.write(str(p.lat) + ' ' + str(p.lng) + ' status ' + now + '\n' )
+       t.write(str(p.lat) + ' ' + str(p.lng) + ' @ ' + p.time +' status ' + now + '\n' )
        return now
 
     
