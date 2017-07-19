@@ -42,7 +42,7 @@ GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 def writeDefaultRaceParms():
    try : 
       defaultRace = { 'fl':fl, 'dc':dc, 'ty':ty, 'cl':cl, 'ax':ax, 'll':ll, 'sw':sw, 
-                      'RC.lat':RC.lat, 'RC.lng':RC.lng, 'S.lat':S.lat, 'S.lng':S.lng, 'M.lat':M.lat, 'M.lng':M.lng,
+                      'RC.lat':RC.lat, 'RC.lon':RC.lon, 'S.lat':S.lat, 'S.lon':S.lon, 'M.lat':M.lat, 'M.lon':M.lon,
                       'wn':wn, 'cc':cc, 'tt':tt }
       with open("defaultRace","w") as f:   json.dump(defaultRace, f)
    except :
@@ -59,9 +59,9 @@ def readDefaultRaceParms():
       ax   = defaultRace['ax']
       ll   = defaultRace['ll']
       sw   = defaultRace['sw']
-      RC   = gpsPos(defaultRace['RC.lat'], defaultRace['RC.lng'])
-      S    = gpsPos(defaultRace[ 'S.lat'], defaultRace[ 'S.lng'])
-      M    = gpsPos(defaultRace[ 'M.lat'], defaultRace[ 'M.lng'])
+      RC   = gpsPos(defaultRace['RC.lat'], defaultRace['RC.lon'])
+      S    = gpsPos(defaultRace[ 'S.lat'], defaultRace[ 'S.lon'])
+      M    = gpsPos(defaultRace[ 'M.lat'], defaultRace[ 'M.lon'])
       wn   = defaultRace['wn']
       cc   = defaultRace['cc']
       tt   = defaultRace['tt']
@@ -133,8 +133,8 @@ def makeRaceObj():
    #                         This is bearing used for extensions of starting line
 
    # Two positions on axis (S and M) give slope b.
-   if dom : b = (M.lat - S.lat) / (M.lng - S.lng)
-   else   : b = (M.lng - S.lng) / (M.lat - S.lat)
+   if dom : b = (M.lat - S.lat) / (M.lon - S.lon)
+   else   : b = (M.lon - S.lon) / (M.lat - S.lat)
 
    if dom :
       if   45 <= ax <= 135 : LtoR = False
@@ -144,8 +144,8 @@ def makeRaceObj():
       else                  : LtoR = True #(315 <= ax <= 360) | (0 <= ax <= 45)
   
    def a(p):
-      if dom : a = p.lat - b * p.lng 
-      else   : a = p.lng - b * p.lat
+      if dom : a = p.lat - b * p.lon 
+      else   : a = p.lon - b * p.lat
       return a
 
    # cl, M and S are not needed in the for stadiumBT calculations but
@@ -162,8 +162,8 @@ def makeRaceObj():
       'distributionTime' : distributionTime,
       'length' :  cl,  # course length
       'axis'   :  ax,  # axis (degrees)
-      'S'      :  (S.lat, S.lng),  # position of center of start line
-      'M'      :  (M.lat, M.lng),  # position of windward mark
+      'S'      :  (S.lat, S.lon),  # position of center of start line
+      'M'      :  (M.lat, M.lon),  # position of windward mark
       'dom'    :  dom, # domain, function of long (true) or latitude (False)
       'LtoR'   :  LtoR, # True if bounds increase left to right
       'b'      :   b,  # slope constant
@@ -314,7 +314,7 @@ def writeRaceWindow():
       ents[i].delete(0, tkinter.END)
 
    i = 0
-   for v in (fl, dc, ty, cl, ax, ll, sw, RC.lat, RC.lng, S.lat, S.lng, M.lat, M.lng, wn, cc, tt):
+   for v in (fl, dc, ty, cl, ax, ll, sw, RC.lat, RC.lon, S.lat, S.lon, M.lat, M.lon, wn, cc, tt):
       insert(i,  v)
       i += 1
 
@@ -368,7 +368,7 @@ def plotWindow(w):
    #  longitude is too much less distance than a degree latitude.
 
    latScale = 60.0  #  nm per degree lat
-   lngScale = 60.0 * math.cos(math.radians(RC.lat)) #   nm per degree long
+   lonScale = 60.0 * math.cos(math.radians(RC.lat)) #   nm per degree long
 
    #z    = cl /latScale  # course length in degrees (aprox )
    z    = cl   # course length in nm
@@ -380,20 +380,20 @@ def plotWindow(w):
    # Use canvas center as start line center, so shift everything in degrees
    #   by start line cemter, that is subtract (xShift, yShift), 
    #  and then to plot shift to canvas center, that is add (x0, y0).
-   Shift = S  # degrees lng and lat
+   Shift = S  # degrees lon and lat
 
    x0 = int(canvas_width  / 2) # pix
    y0 = int(canvas_height / 2) # pix
 
    # axis (start line center to mark)
-   xm = (M.lng - Shift.lng) * lngScale * scale # pix
+   xm = (M.lon - Shift.lon) * lonScale * scale # pix
    ym = (M.lat - Shift.lat) * latScale * scale # pix
    w.create_line(x0, y0, x0 + xm, y0 - ym , fill="#476042", width=1)
   
    #w.create_line(0, 0, 50, 20,      fill="#476042", width=3)
 
    # start line center (0,0)  to RC
-   xm = (RC.lng - Shift.lng) * lngScale * scale # pix
+   xm = (RC.lon - Shift.lon) * lonScale * scale # pix
    ym = (RC.lat - Shift.lat) * latScale * scale # pix
 
    w.create_line(x0, y0, x0 + xm, y0 - ym , fill="#476042", width=3)

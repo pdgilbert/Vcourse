@@ -40,26 +40,26 @@ class gpsPos(object):
 
     Attributes:
         lat: A float  -90 <=  lat <= 90
-        lng: A float  -180 <= lng <= 180
+        lon: A float  -180 <= lon <= 180
     """
     
     def latitude(self) : return self.lat
     
-    def longitude(self): return self.lng
+    def longitude(self): return self.lon
 
-    def __init__(self, lat, lng, time=None):
+    def __init__(self, lat, lon, time=None):
         if (lat != None) :
            if not (-90 <= lat <= 90):
               raise ValueError("must have  -90 <=  latitude <= 90")
         
-        if (lng != None) :
-           if not (-180 <= lng <= 180):
+        if (lon != None) :
+           if not (-180 <= lon <= 180):
               raise ValueError("must have  -180 <= longitude <= 180")
 
         if (time == None) : time = '' 
         
         self.lat  = lat
-        self.lng  = lng
+        self.lon  = lon
         self.time = time
 
     def nm(self, x):
@@ -68,10 +68,10 @@ class gpsPos(object):
            raise ValueError("x must be a gpsPos object")
 
         latScale = 60.0  #  nm per degree lat
-        lngScale = 60.0 * math.cos(math.radians(self.lat))  #  nm per degree long at current latitude
+        lonScale = 60.0 * math.cos(math.radians(self.lat))  #  nm per degree long at current latitude
         
         N = (x.lat - self.lat) * latScale
-        E = (x.lng - self.lng) * lngScale
+        E = (x.lon - self.lon) * lonScale
         distance = math.sqrt(math.pow(N,2) + math.pow(E,2))
         return distance
     
@@ -92,12 +92,12 @@ class gpsPos(object):
 
         latScale = 60.0  # nm per degree lat
         # nm per degree long at pt latitude
-        lngScale = 60.0 * math.cos(math.radians(pt.lat)) 
+        lonScale = 60.0 * math.cos(math.radians(pt.lat)) 
 
-        lng = (distance * math.cos(math.radians(theta)) / lngScale) + pt.lng
+        lon = (distance * math.cos(math.radians(theta)) / lonScale) + pt.lon
         lat = (distance * math.sin(math.radians(theta)) / latScale) + pt.lat
 
-        return cls(lat, lng)
+        return cls(lat, lon)
 
     @classmethod
     def heading(cls, pt, target):
@@ -105,7 +105,7 @@ class gpsPos(object):
         # N is +ve y,  E is +ve x. Math angle is counterclockwise (counter compass).
 	# tan(y/x) cannot ditinguish NE from SW or NW from SE. atan2(y, x) does.
         Dy =   target.lat - pt.lat
-        Dx =  (target.lng - pt.lng) * math.cos(math.radians(pt.lat)) 
+        Dx =  (target.lon - pt.lon) * math.cos(math.radians(pt.lat)) 
         if (Dx == 0) and (Dy == 0) :
            raise ValueError("pt and target are the same points. No heading.")
         h = (90 - math.degrees(math.atan2(Dy , Dx))) % 360

@@ -64,8 +64,8 @@ def zoneSignal(update, shutdown):
        courseLoaded = False
 
     def a(p):
-      if dom : a = p.lat - b * p.lng 
-      else   : a = p.lng - b * p.lat
+      if dom : a = p.lat - b * p.lon 
+      else   : a = p.lon - b * p.lat
       return a
 
     p = gpsPos(None, None)
@@ -85,7 +85,7 @@ def zoneSignal(update, shutdown):
           else : raise ValueError("LED now status (" + str(now) + ") incorrect.")
 
        # and, BTW, record track
-       t.write(str(p.lat) + ' ' + str(p.lng) + ' @ ' + p.time +' status ' + now + '\n' )
+       t.write(str(p.lat) + ' ' + str(p.lon) + ' @ ' + p.time +' status ' + now + '\n' )
        return now
 
     
@@ -134,7 +134,7 @@ def zoneSignal(update, shutdown):
             try:
                 p = gpsPos.getGPS() 
                 aa = a(p) # this is a in y = a + b * x
-                ps= '  @ ' +  str(p.lat) + '  ' + str(p.lng)  # only for debugging
+                ps= '  @ ' +  str(p.lat) + '  ' + str(p.lon)  # only for debugging
                 
                 #logging.debug('aa %f', aa)
                 # LtoR, # True if bounds increase left to right
