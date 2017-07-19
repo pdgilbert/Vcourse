@@ -69,7 +69,7 @@ def zoneSignal(update, shutdown):
       return a
 
     p = gpsPos(None, None)
-    f = open("track.txt","w") 
+    t = open("track.txt","w") 
     st = 0  
 
     def status(p, st, now, x=''):
@@ -85,7 +85,7 @@ def zoneSignal(update, shutdown):
           else : raise ValueError("LED now status (" + str(now) + ") incorrect.")
 
        # and, BTW, record track
-       f.write(str(p.lat) + ' ' + str(p.lng) + ' status ' + str(now) )
+       t.write(str(p.lat) + ' ' + str(p.lng) + ' status ' + str(now) + '\n' )
        return now
 
     
@@ -109,7 +109,7 @@ def zoneSignal(update, shutdown):
         if shutdown.wait(0.01): # blocking for wait time.
            print('shutting down zoneSignal thread!')
            LEDs.cleanup()
-           f.close()
+           t.close()
            return() 
         if update.wait(0.01):   # blocking for wait time!
            # read new file here
