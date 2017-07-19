@@ -48,11 +48,13 @@ class gpsPos(object):
     def longitude(self): return self.lng
 
     def __init__(self, lat, lng):
-        if not (-90 <= lat <= 90):
-           raise ValueError("must have  -90 <=  latitude <= 90")
+        if (lat != None) :
+           if not (-90 <= lat <= 90):
+              raise ValueError("must have  -90 <=  latitude <= 90")
         
-        if not (-180 <= lng <= 180):
-           raise ValueError("must have  -180 <= longitude <= 180")
+        if (lng != None) :
+           if not (-180 <= lng <= 180):
+              raise ValueError("must have  -180 <= longitude <= 180")
         
         self.lat = lat
         self.lng = lng
