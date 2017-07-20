@@ -2,6 +2,7 @@
 
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 
+# need  export PYTHONPATH=/path/to/Vcourse/lib
 import threading
 import signal
 import sys
@@ -53,25 +54,6 @@ GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
 def zoneSignal(update, shutdown):
 
-    print('zoneSignal starting')
-
-    # this try allows recovery after restart, using an already saved file. 
-    try :
-       with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
-       globals().update(raceObj)
-       courseLoaded = True
-    except:
-       courseLoaded = False
-
-    def a(p):
-      if dom : a = p.lat - b * p.lon 
-      else   : a = p.lon - b * p.lat
-      return a
-
-    p = gpsPos(None, None)
-    t = open("track.txt","w") 
-    st = 'off'  
-
     def status(p, st, now, x=''):
        # return new status and change LEDs if needed
        #LED status  (PWM flickers too fast if constantly reset, so set only on change)
@@ -88,6 +70,25 @@ def zoneSignal(update, shutdown):
        t.write(str(p.lat) + ' ' + str(p.lon) + ' @ ' + p.time +' status ' + now + '\n' )
        return now
 
+    print('zoneSignal starting')
+    st = 'off'  
+
+    # this try allows recovery after restart, using an already saved file. 
+    try :
+       with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
+       globals().update(raceObj)
+       courseLoaded = True
+    except:
+       courseLoaded = False
+
+    def a(p):
+      if dom : a = p.lat - b * p.lon 
+      else   : a = p.lon - b * p.lat
+      return a
+
+    p = gpsPos(None, None)
+    t = open("track.txt","w") 
+
     
     try:
        gpsd.connect(host=GPS_HOST, port=GPS_PORT) 
@@ -97,7 +98,7 @@ def zoneSignal(update, shutdown):
        sys.exit()
 
     try:
-           z = a(gpsPos.getGPS()) # try now so fail can provide a message
+       z = a(gpsPos.getGPS()) # try now so fail can provide a message
     except:
        print("stadiumBT cannot get GPS position, daemon is working.")
        print("Waiting 20 seconds. Check the GPS connected if there are more errors!!!")

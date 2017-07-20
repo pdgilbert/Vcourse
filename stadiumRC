@@ -2,6 +2,7 @@
 
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 
+# need  export PYTHONPATH=/path/to/Vcourse/lib
 
 import socket
 import threading
@@ -121,7 +122,7 @@ def makeRaceObj():
    # or treat domain as latitude (dom=False)
    if        45 <= ax <= 135 : dom = True
    elif     225 <= ax <= 315 : dom = True
-   else                       : dom = False
+   else                      : dom = False
 
    #  NOT !!
    # Next are globals not on screen but used for raceObj calculation, and plot.
