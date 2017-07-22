@@ -71,7 +71,10 @@ def  off(x ='')    :
 def  bound(x ='')  : 
    print('zone  red '   + str(x))
    off()  
-   GPIO.output(RED,   GPIO.HIGH)
+   #GPIO.output(RED,   GPIO.HIGH)
+   red.start(99)            # arg is suppose to be dc, but I'm not sure it is.
+   red.ChangeDutyCycle(99)
+   red.ChangeFrequency(0.1)  
 
 def  warn(x ='')   : 
    print('flash red '   + str(x))
