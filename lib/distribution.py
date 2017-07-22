@@ -6,14 +6,14 @@
 # BT confirms receipt of update with bt# or hostname?  
 
 import socket
-import logging
+#import logging
 import json
 import time
 import threading
 
 import smp
 
-logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
 def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
     # this function is used by BT
@@ -27,7 +27,7 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
         
         # check RC for update. 
         # Wrapped in try for case when connection fails (wifi out of range).
-        logging.debug('BT check with RC for update.')
+        #logging.debug('BT check with RC for update.')
 
         try :
     	    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -40,10 +40,10 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
     	       cid = 'none'
     	    
     	    l = smp.snd(s, cid)
-    	    logging.debug("BT cid " + str(cid))
+    	    #logging.debug("BT cid " + str(cid))
     	    
     	    r = smp.rcv(s) 
-    	    logging.debug('r ' + str(r))
+    	    #logging.debug('r ' + str(r))
 
     	    if not (r in ('ok', 'none')) :
                 #logging.debug('got new raceObj. Writing to file BTraceObj.json')
@@ -54,12 +54,12 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
                 update.set()
 
                 l = smp.snd(s, BT_ID)
-                logging.debug("sent  receipt BT " + str(BT_ID))
+                #logging.debug("sent  receipt BT " + str(BT_ID))
 
     	    s.close()
 
         except :
-           logging.debug('no connection.')
+           #logging.debug('no connection.')
            time.sleep(1)
 
         time.sleep(interval)
@@ -70,11 +70,8 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
 ####### following are used by RC #######
 
 def distributer(dist):
-   # wait for a connection from a BT and pass it to BThandlerThread
-   logging.debug('distributer starting. Using RC_IP ' + str(dist.RC_IP) + ':' +str(dist.RC_PORT))
    # wait for connections from BTs and pass each to a BThandlerThread.
-   logging.debug('distributer started thread? ')
-   
+   print('distributer starting. Using RC_IP ' + str(dist.RC_IP) + ':' +str(dist.RC_PORT))
    
    tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -83,15 +80,15 @@ def distributer(dist):
    while True:
        # often not getting shutdown signal. Seems to work better when a BT has connected. FIX
        if dist.shutdown.wait(0.01): # blocking for interval !! 
-          logging.debug('shutting down distributionHandler thread.')
+          print('shutting down distributionHandler thread.')
           return() 
        tcpsock.listen(5)  # STALLS HERE LISTENING WITH NO CONNECTIONS, SO NEVER LOOPS  TO shutdown.
-       logging.debug("Waiting for incoming connections on "  + dist.RC_IP + ":" + str(dist.RC_PORT) + " ...")
+       #logging.debug("Waiting for incoming connections on "  + dist.RC_IP + ":" + str(dist.RC_PORT) + " ...")
        (conn, (ip,port)) = tcpsock.accept()
-       logging.debug('Got connection from ' + ip + ':' + str(port))
+       #logging.debug('Got connection from ' + ip + ':' + str(port))
        BThandlerThread(ip,port,conn, dist).start()
 
-   logging.debug('distributionHandler should not be here.')
+   raise Exception('distributionHandler should not be here.')
 
 class BThandlerThread(threading.Thread):
    # handle a connection from a BT. Check if BT is current and update if not.
@@ -104,7 +101,6 @@ class BThandlerThread(threading.Thread):
        self.port = port
        self.sock = sock
        self.dist = dist
-       logging.debug(" New thread started for "+ip+":"+str(port))
    
    def run(self):
        import smp
@@ -118,8 +114,8 @@ class BThandlerThread(threading.Thread):
        
        BTcid = smp.rcv(self.sock)  #course id that BT has
        
-       logging.debug(" BTcid " + str(BTcid))
-       logging.debug(" RCcid " + str(RCcid))
+       #logging.debug(" BTcid " + str(BTcid))
+       #logging.debug(" RCcid " + str(RCcid))
 
        if (self.dist.raceObj == None ) : 
              smp.snd(self.sock, 'none')
@@ -130,11 +126,11 @@ class BThandlerThread(threading.Thread):
              #logging.debug('sent ok.')
              
        else :
-             logging.debug('sending new raceObj to BT')
+             #logging.debug('sending new raceObj to BT')
              smp.snd(self.sock, json.dumps(self.dist.raceObj, indent=4))
              #logging.debug('new raceObj sent:')
              bt = smp.rcv(self.sock) 
-             logging.debug('ADD BT_ID TO LIST. ' + bt)
+             #logging.debug('ADD BT_ID TO LIST. ' + bt)
              self.dist.received( bt, time.strftime('%Y-%m-%d %H:%M:%S %Z'))
  
 
@@ -160,7 +156,6 @@ class distribution():
       #  which uses global parameters.
       self.raceObj.clear()
       self.raceObj.update(newraceObj)
-      print(json.dumps(self.raceObj, indent=4))
 
    def received(self, bt, tm):
       self.raceObjReceived.update({str(bt) : tm})
@@ -170,12 +165,7 @@ class distribution():
       # compares the cid of this with that sent by BT when they connect.
       # There is no "signal" to distributionHandler or BTs. It depends on them checking in.
             
-      ## NEED THIS     FIX
-      #makeRaceObj()  # this also syncs with screen but does no calc().
-      #self.raceObj.clear()
-      #self.raceObj.append(newraceObj)
-      logging.debug(" in distribute printing self.raceObj")
-      print(json.dumps(self.raceObj, indent=4))
+      #print(json.dumps(self.raceObj, indent=4))
    
       # clear dict of boats that have update
       self.raceObjReceived.clear()

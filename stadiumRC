@@ -100,7 +100,7 @@ def getRCgps():
 
 
 def makeRaceObj():
-   # This is called by plot?? and distribute to syncronize globals??
+   # This  syncronizes globals dist, generates raceObj, calls distribute
    # info to pass to stadiumBT (boat gadget) for calculations.
    # Info for stadiumBT is all in gps positions as that is the best for the
    # boats' calculation of what indicators should go on.
@@ -198,6 +198,7 @@ def makeRaceObj():
       else :  raise ValueError("something is messed up in dom=False.")
 
    dist.newRace(r)
+   dist.distribute()
 
 def calcA():
    # calculate race parameters using axis,
@@ -393,7 +394,6 @@ def updateStatus(w):
    t.wm_title("Update Status")
 
    #  using global dist
-   print(dist.raceObjReceived)
    for f in dist.raceObjReceived :
       row = tkinter.Frame(t)
       lab = tkinter.Label(row, width=15, text=f + ' ' + str(dist.raceObjReceived[f]), anchor='w')
@@ -471,18 +471,15 @@ if __name__ == '__main__':
 
    #calc() # using global ents and other global variables
   
-
    bGPS   = But(race, text='get RC GPS',     command=(lambda : getRCgps()))
    
    bCalcA = But(race, text='calc using\n RC & axis',    command=calcA)
    
    bCalcM = But(race, text='calc using\n RC & mark',    command=calcM)
    
-   bMk    = But(race, text='mkRace',         command=(lambda : makeRaceObj()))
-   bDist  = But(race, text='distribute',     command=(lambda : dist.distribute()))
+   bDist    = But(race, text='distribute',    command=(lambda : makeRaceObj()))
 
    bU     = But(race, text='update\nStatus', command=(lambda : updateStatus(race)))
-   #bP     = But(race, text='plot',          command=(lambda : plotWindow(race)))
 
    bE      = But(race, text='extra',         command=(lambda : extraWindow(race)))
 

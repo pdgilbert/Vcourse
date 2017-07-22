@@ -64,7 +64,9 @@ def  off(x ='')    :
    red.stop()
    green.stop()
    blue.stop()
-   GPIO.output(CHANNELS, GPIO.LOW) 
+   GPIO.output(CHANNELS, GPIO.LOW)
+   #shutoff can be a bit slow and happen after next on signal, so
+   time.sleep(0.1)
 
 def  bound(x ='')  : 
    print('zone  red '   + str(x))
