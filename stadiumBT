@@ -78,6 +78,7 @@ def zoneSignal(update, shutdown):
        with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
        globals().update(raceObj)
        courseLoaded = True
+       print("Existing BT course loaded.")
     except:
        courseLoaded = False
 
@@ -158,7 +159,7 @@ def zoneSignal(update, shutdown):
             except:
                st = status(p, st, 'systemProblem', '. No GPS fix.')
 
-            time.sleep(0.5) 
+            time.sleep(0.1) #0.5 worked but is a bit slow
 
     raise Exception('zoneSignal should not be here.')
 
