@@ -24,7 +24,7 @@ GREEN  = 16
 BLUE   = 18  # not currently used
 
 SLOW     = 0.5
-MEDIUM   = 1.0
+MEDIUM   = 1.0 # can miss this with quick look
 FAST     = 2.0
 VERYFAST = 4.0
 
@@ -66,7 +66,7 @@ def  off(x ='')    :
    blue.stop()
    #GPIO.output(CHANNELS, GPIO.LOW)
    #shutoff can be a bit slow and happen after next on signal, so
-   #time.sleep(0.1)
+   time.sleep(0.1)
 
 def  bound(x ='')  : 
    print('zone  red '   + str(x))
@@ -86,7 +86,7 @@ def  center(x ='') :
    print('flash green ' + str(x))
    off()  
    green.start(20)            # arg is suppose to be dc, but I'm not sure it is.
-   green.ChangeFrequency(MEDIUM)  # where freq is the new frequency in Hz
+   green.ChangeFrequency(FAST)  # where freq is the new frequency in Hz
 
 def  update(x ='') : 
    print('flash all lights ' + str(x))
