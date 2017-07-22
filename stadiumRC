@@ -85,7 +85,6 @@ def readDefaultRaceParms():
 
 readDefaultRaceParms()
 
-raceObjReceived = {}
 
 # start gpsd (-n don't wait for device,  #-S 2947 is default port
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
@@ -98,9 +97,6 @@ def getRCgps():
    RC = gpsPos.getGPS()
    writeRaceWindow()
 
-# initialized as these may be used even before a proper raceObj is generated
-raceObj = None
-id =None 
 
 
 def makeRaceObj():
@@ -110,7 +106,7 @@ def makeRaceObj():
    # boats' calculation of what indicators should go on.
    # The same info is used by plot but is convert to nm in plot.
       
-   global raceObj
+   global dist
 
    # base on current screen values so ensure correct values in globals
    readRaceWindow() 
@@ -201,10 +197,10 @@ def makeRaceObj():
 	          raise ValueError("something is messed up in (315 <= ax <= 360) | (0 <= ax <= 45).")
       else :  raise ValueError("something is messed up in dom=False.")
 
-   raceObj = r
+   dist.newRace(r)
 
 def calcA():
-   # calculate raceObj using axis,
+   # calculate race parameters using axis,
    #   RC position as right end of start line, perp to axis and line length to get center 
    #   of start line; axis and  course length, to get mark;
    #   axis, stadium width, and warning width to get boundaries and warning lines;
@@ -226,7 +222,7 @@ def calcA():
    writeRaceWindow() # re-write screen with current globals
 
 def calcM():
-   # calculate raceObj using RC position and mark M to get course length, aprox axis, then adjust
+   # calculate race parameters using RC position and mark M to get course length, aprox axis, then adjust
    #   axis (ax) by a correction angle for S to M rather than RC to M,
    #   assuming RC on starboard end of line. Then calculate as in calcA, excluding M. 
 
@@ -250,31 +246,6 @@ def calcM():
    S = gpsPos.move(RC, perp, ll / (2 * 1852))
    
    writeRaceWindow() # re-write screen with current globals
-
-def distribute():
-   # This works by creating a new version of the global object RaceObj, the distributionHandler
-   # compares the cid of this with that sent by BT when they connect.
-   # There is no "signal" to distributionHandler or BTs. It depends on them checking in.
-   
-   global raceObjReceived
-   
-   makeRaceObj()  # this also syncs with screen but does no calc().
-   print(json.dumps(raceObj, indent=4))
-
-   # clear dict of boats that have update
-   raceObjReceived = {}
-
-   # write raceObj and also global object info to a file, for the record, but distribute is done with raceObj
-   with open('distributedCourses/raceObj' + raceObj['cid'] + '.json',"w") as f:
-      f.write("\n")
-      f.write("raceObj:\n")
-      json.dump(raceObj, f, indent=4)
-      Race = { 'fl':fl, 'dc':dc, 'ty':ty, 'cl':cl, 'ax':ax, 'll':ll, 'sw':sw, 
-               'RC.lat':RC.lat, 'RC.lon':RC.lon, 'S.lat':S.lat, 'S.lon':S.lon, 'M.lat':M.lat, 'M.lon':M.lon,
-               'wn':wn, 'cc':cc, 'tt':tt }
-      f.write("\n")
-      f.write("Race:\n")
-      json.dump(Race, f, indent=4)
 
 
 def defnRaceWindow(w):
@@ -421,10 +392,11 @@ def updateStatus(w):
    t = tkinter.Toplevel(w)
    t.wm_title("Update Status")
 
-   # print(raceObjReceived)
-   for f in raceObjReceived :
+   #  using global dist
+   print(dist.raceObjReceived)
+   for f in dist.raceObjReceived :
       row = tkinter.Frame(t)
-      lab = tkinter.Label(row, width=15, text=f + ' ' + str(raceObjReceived[f]), anchor='w')
+      lab = tkinter.Label(row, width=15, text=f + ' ' + str(dist.raceObjReceived[f]), anchor='w')
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
       lab.pack(side=tkinter.LEFT)
  
@@ -452,7 +424,7 @@ def extraWindow(w):
      for f in (cl, ax, ll, sw, RC, S, M, wn, cc, tt): print(f)
      print()
      print('raceObj')
-     print(json.dumps(raceObj, indent=4))
+     dist.prt()
 
    t = tkinter.Toplevel(w)
    t.wm_title("Extra Options")
@@ -478,9 +450,16 @@ def But(w, text='x', command='') :
 if __name__ == '__main__':
    shutdown = threading.Event()
 
-   threading.Thread(name='distributionHandler', 
-                   target=distribution.distributionHandler,
-   		   args=(shutdown, RC_IP, RC_PORT)).start()  # ,) makes single arg a tuple
+   dist = distribution.distribution(shutdown, RC_IP, RC_PORT, 
+                     raceObj= { 'cid' : 'not set' }, 
+		     raceObjReceived = {})
+   
+   #  (x,) makes single arg x a tuple
+   #  Can distributer be made into a method of dist object?
+   #  (On first attempt I had trouble getting threading to start.)
+   threading.Thread(name='distributer', 
+                   target=distribution.distributer,
+   		   args=(dist,)).start()     
 
    race = tkinter.Tk()
    race.wm_title("Stadium Race")
@@ -495,16 +474,17 @@ if __name__ == '__main__':
 
    bGPS   = But(race, text='get RC GPS',     command=(lambda : getRCgps()))
    
-   bCalcA = But(race, text='calc using\n RC & axis',    command=(lambda : calcA()))
+   bCalcA = But(race, text='calc using\n RC & axis',    command=calcA)
    
-   bCalcM = But(race, text='calc using\n RC & mark',    command=(lambda : calcM()))
+   bCalcM = But(race, text='calc using\n RC & mark',    command=calcM)
    
-   bDist  = But(race, text='distribute',     command=(lambda : distribute()))
+   bMk    = But(race, text='mkRace',         command=(lambda : makeRaceObj()))
+   bDist  = But(race, text='distribute',     command=(lambda : dist.distribute()))
 
    bU     = But(race, text='update\nStatus', command=(lambda : updateStatus(race)))
-   #bP     = But(race, text='plot',           command=(lambda : plotWindow(race)))
+   #bP     = But(race, text='plot',          command=(lambda : plotWindow(race)))
 
-   bE      = But(race, text='extra',          command=(lambda : extraWindow(race)))
+   bE      = But(race, text='extra',         command=(lambda : extraWindow(race)))
 
    race.mainloop()
 

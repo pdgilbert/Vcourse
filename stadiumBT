@@ -7,7 +7,7 @@ import threading
 import signal
 import sys
 import time
-#import logging
+import logging
 import json
 import gpsd
 import os
@@ -49,7 +49,7 @@ GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
 
 #DEBUG, NOTSET, ERROR, WARNING
-#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
 
 def zoneSignal(update, shutdown):
