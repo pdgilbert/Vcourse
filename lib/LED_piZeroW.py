@@ -36,7 +36,7 @@ GPIO.setmode(GPIO.BOARD) # use board pin numbers not broadcom GPIO.setmode(GPIO.
 #    BCM 24 = pin 18
 # https://pinout.xyz/pinout/io_pi_zero#
  
-#GPIO.setwarnings(False) # for warnings in the case something else may be using pins?
+GPIO.setwarnings(True) # for warnings in the case something else may be using pins?
 
 #GPIO.setup(RED,GPIO.OUT)        # set pin 12 as an output
 GPIO.setup(CHANNELS, GPIO.OUT)   # set CHANNELS pins as an output
@@ -64,9 +64,9 @@ def  off(x ='')    :
    red.stop()
    green.stop()
    blue.stop()
-   #GPIO.output(CHANNELS, GPIO.LOW)
+   GPIO.output(CHANNELS, GPIO.LOW)
    #shutoff can be a bit slow and happen after next on signal, so
-   time.sleep(0.1)
+   time.sleep(0.5)
 
 def  bound(x ='')  : 
    print('zone  red '   + str(x))
@@ -85,7 +85,8 @@ def  warn(x ='')   :
 def  center(x ='') : 
    print('flash green ' + str(x))
    off()  
-   green.start(20)            # arg is suppose to be dc, but I'm not sure it is.
+   green.start(1)            # arg is suppose to be dc, but I'm not sure it is.
+   green.ChangeDutyCycle(20)
    green.ChangeFrequency(FAST)  # where freq is the new frequency in Hz
 
 def  update(x ='') : 
