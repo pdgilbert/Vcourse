@@ -50,13 +50,13 @@ GPIO.output(CHANNELS, GPIO.LOW)  # initially set all off
 red = GPIO.PWM(RED, SLOW) #  (channel, frequency)
 #red.ChangeFrequency(2)    # where freq is the new frequency in Hz
 #red.ChangeDutyCycle(0.5)  # where 0.0 <= dc <= 100.0 is duty cycle (percent time on)
-red.ChangeDutyCycle(20)
+#red.ChangeDutyCycle(20)
 
 green = GPIO.PWM(GREEN, SLOW) 
-green.ChangeDutyCycle(20)
+#green.ChangeDutyCycle(20)
 
 blue = GPIO.PWM(BLUE, SLOW) 
-blue.ChangeDutyCycle(20)
+#blue.ChangeDutyCycle(20)
 
 
 def  off(x ='')    : 
@@ -64,35 +64,35 @@ def  off(x ='')    :
    red.stop()
    green.stop()
    blue.stop()
-   GPIO.output(CHANNELS, GPIO.LOW)
+   #GPIO.output(CHANNELS, GPIO.LOW)
    #shutoff can be a bit slow and happen after next on signal, so
-   time.sleep(0.1)
+   #time.sleep(0.1)
 
 def  bound(x ='')  : 
    print('zone  red '   + str(x))
    off()  
    #GPIO.output(RED,   GPIO.HIGH)
-   red.start(99)            # arg is suppose to be dc, but I'm not sure it is.
-   red.ChangeDutyCycle(99)
+   red.start(99)            # arg is duty cycle. 99=mostly on
+   #red.ChangeDutyCycle(99)
    red.ChangeFrequency(0.1)  
 
 def  warn(x ='')   : 
    print('flash red '   + str(x))
    off()  
-   red.start(1)            # arg is suppose to be dc, but I'm not sure it is.
+   red.start(20)             # arg is duty cycle..
    red.ChangeFrequency(FAST)  # where freq is the new frequency in Hz
 
 def  center(x ='') : 
    print('flash green ' + str(x))
    off()  
-   green.start(1)            # arg is suppose to be dc, but I'm not sure it is.
+   green.start(20)            # arg is suppose to be dc, but I'm not sure it is.
    green.ChangeFrequency(MEDIUM)  # where freq is the new frequency in Hz
 
 def  update(x ='') : 
    print('flash all lights ' + str(x))
    off()  
-   red.start(1)            # arg is suppose to be dc, but I'm not sure it is.
-   green.start(1)            # arg is suppose to be dc, but I'm not sure it is.
+   red.start(20)            # arg is suppose to be dc, but I'm not sure it is.
+   green.start(20)            # arg is suppose to be dc, but I'm not sure it is.
    red.ChangeFrequency(FAST)  # where freq is the new frequency in Hz
    green.ChangeFrequency(FAST)  # where freq is the new frequency in Hz
    time.sleep(20)
@@ -106,5 +106,6 @@ def  cleanup(x ='') :
 def  systemProblem(x ='')  : 
    print('system problem blue'   + str(x))
    off()  
-   GPIO.output(BLUE,   GPIO.HIGH)
+   blue.start(99)            # arg is duty cycle. 99=mostly on
+   blue.ChangeFrequency(0.1)  
 
