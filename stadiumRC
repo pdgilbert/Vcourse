@@ -86,15 +86,17 @@ def readDefaultRaceParms():
 readDefaultRaceParms()
 
 
-# start gpsd (-n don't wait for device,  #-S 2947 is default port
-#sudo gpsd -n -S 2948 /dev/ttyACM0 
-
-gpsCon = gpsd.connect(host=GPS_HOST, port=GPS_PORT)
-
 def getRCgps():
    # update global RC and write to screen
    global  RC
-   RC = gpsPos.getGPS()
+   try : 
+      gpsCon = gpsd.connect(host=GPS_HOST, port=GPS_PORT)
+      print('established gpsd connection ' + str(GPS_HOST) + ':' +  str(GPS_PORT))
+      RC = gpsPos.getGPS()
+   except :
+      RC   = gpsPos(90.0, 0.0)  # this is really an error condition
+      print('attempted gpsd connection '   + str(GPS_HOST) + ':' +  str(GPS_PORT))
+      print('gpsd connection failed. No RC automatic position available.')
    writeRaceWindow()
 
 
