@@ -1,0 +1,63 @@
+########## Race Committee control program - stadiumRC ##########
+
+stadiumRC startup tries to connect to gpsd. No auto RC position is available
+if it does not (lat=90, lon=0 is reported if gpsd is not connected.) So
+
+1/ start gpsd (-n don't wait for device)
+   With gps puck in laptop usb:
+     sudo gpsd -n -S 2947 /dev/ttyACM0 # default port
+     sudo gpsd -n -S 2948 /dev/ttyACM0 # Note NOT default port
+    (Note that gpsd startup is problematic.)
+     and set RCconfig
+    test with eg 
+    gpsmon 127.0.0.1:2947
+
+   Alternatively, start something like gps2net on phone and set RCconfig 
+    (Note that I have not yet got stadiumRC to connect)
+
+    test with eg 
+    gpsmon 192.168.2.180:6000
+
+
+2/ edit RCconfig in startup dir if necessary
+3/ possibly edit defaultRace  in RC startup dir
+
+4/ start stadiumRC (in some directory (eg RC)
+      /path/to/stadiumRC 
+   eg
+      ../stadiumRC   
+
+
+
+########## Individual boat gizmo LED control program - stadiumBT ##########
+
+#####
+stadiumBT can be simulated on a laptop with gps. LEDs are not used but
+colour status is reported in the console. This needs gpsd started as
+above and then, eg:
+    cd boat
+   ../stadiumBT   
+
+  (stop with ^c in console)
+
+#####
+stadiumBT on a gizmo (raspberryPi) with LEDs:
+
+configure and "burn" micro SD as in PiZeroWnotes.txt
+
+plug in micro SD
+plug in gps puck
+power up
+
+When working, this should start up software, poll gps,  and begin 
+checking with RC for course info.
+
+
+## debugging ##
+(discover Pi IP by connecting to monitor or looking at wifi hub)
+Connect from laptop to Pi. user/password as set in PiZeroWnotes.txt
+(May not be needed if keys are set.)
+Vcourse/ from github is useful for development, but may need lots of pulling.
+
+Look at file ~/runAtBoot  for current version of startup instructions.
+
