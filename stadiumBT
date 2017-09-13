@@ -71,6 +71,7 @@ def zoneSignal(update, shutdown):
        return now
 
     print('zoneSignal starting')
+    log.write('zoneSignal starting\n')
     st = 'off'  
 
     # this try allows recovery after restart, using an already saved file. 
@@ -79,6 +80,7 @@ def zoneSignal(update, shutdown):
        globals().update(raceObj)
        courseLoaded = True
        print("Existing BT course loaded.")
+       log.write("Existing BT course loaded.\n")
     except:
        courseLoaded = False
 
@@ -95,6 +97,7 @@ def zoneSignal(update, shutdown):
        gpsd.connect(host=GPS_HOST, port=GPS_PORT) 
     except:
        print("Error stadiumBT cannot connect to GPS daemon. Usual problem?")
+       log.write("Error stadiumBT cannot connect to GPS daemon. Usual problem?\n")
        raise Exception('stadiumBT will not work without GPS.')
        sys.exit()
 
@@ -102,7 +105,9 @@ def zoneSignal(update, shutdown):
        z = a(gpsPos.getGPS()) # try now so fail can provide a message
     except:
        print("stadiumBT cannot get GPS position, daemon is working.")
-       print("Waiting 20 seconds. Check the GPS connected if there are more errors!!!")
+       log.write("stadiumBT cannot get GPS position, daemon is working.\n")
+       print("Waiting 20 seconds. Check that GPS is connected if there are more errors!!!\n")
+       log.write("Waiting 20 seconds. Check that GPS is connected if there are more errors!!!")
        # this kills thread  raise Exception('stadiumBT will not work without GPS.')
        # dont sys.exit(), it may just not be ready
        time.sleep(20)
@@ -110,6 +115,7 @@ def zoneSignal(update, shutdown):
     while True:
         if shutdown.wait(0.01): # blocking for wait time.
            print('shutting down zoneSignal thread!')
+           log.write('shutting down zoneSignal thread!\n')
            LEDs.cleanup()
            t.close()
            return() 
@@ -164,14 +170,19 @@ def zoneSignal(update, shutdown):
     raise Exception('zoneSignal should not be here.')
 
 if __name__ == '__main__':
+   log = open("stadiumBT.log","w") 
 
    update   = threading.Event()
    shutdown = threading.Event()
 
+   print('main thread starting distributionCheck thread.')
+   log.write('main thread starting distributionCheck thread.\n')
    threading.Thread(name='distributionCheck', 
    		   target=distributionCheck, 
    		   args=(update, shutdown,  10, RC_IP, RC_PORT, BT_ID)).start()
 
+   print('main thread starting zoneSignal thread.')
+   log.write('main thread starting zoneSignal thread.\n')
    threading.Thread(name='zoneSignal', 
    		   target=zoneSignal, 
    		   args=(update, shutdown)).start()
@@ -179,7 +190,13 @@ if __name__ == '__main__':
 
    def shutdownHandler(signum, frame):
        shutdown.set()  # to exit threads
+       time.sleep(10)
        print('main thread exit.')
+       log.write('main thread exit.\n')
+       log.flush()
+       log.close()
+       sys.stdout.flush()
+       sys.stderr.flush()
        sys.exit()
 
    signal.signal(signal.SIGINT, shutdownHandler)
