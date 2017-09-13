@@ -188,6 +188,7 @@ if __name__ == '__main__':
    # consider myThread.daemon = True so threads shut down
 
    def shutdownHandler(signum, frame):
+       logging.info('main thread setting shutdown signal.')
        shutdown.set()  # to exit threads
        time.sleep(10)
        logging.info('main thread exit.')
