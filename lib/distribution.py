@@ -47,7 +47,7 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
     	    #logging.debug('r ' + str(r))
 
     	    if not (r in ('ok', 'none')) :
-                logging.debug('got new raceObj. Writing to file BTraceObj.json')
+                logging.info('got new raceObj. Writing to file BTraceObj.json')
                 # Next could be a message to zoneSignal thread, but having a
                 # file means the gadget can recover after reboot without
                 # a connection to RC, so write string r to a file

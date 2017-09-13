@@ -122,13 +122,13 @@ def zoneSignal(update, shutdown):
            return() 
         if update.wait(0.01):   # blocking for wait time!
            # read new file here
-           logging.debug('updating raceObj')
+           logging.info('updating to new raceObj')
            with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
 
            globals().update(raceObj)
            st = status(p, st, 'update')
 
-           logging.debug('new cid: %s',  cid )
+           logging.info('  new cid: %s',  cid )
            logging.debug('new course axis:  %f',  axis)
            logging.debug('new course S %f,%f: ', S[0], S[1])
 
