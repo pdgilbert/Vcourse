@@ -7,7 +7,7 @@ import threading
 import signal
 import sys
 import time
-#import logging
+import logging
 import json
 import gpsd
 import os
@@ -48,11 +48,16 @@ GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
 
 
-#DEBUG, NOTSET, ERROR, WARNING
-#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+#in decreasing order CRITICAL, ERROR, WARNING. INFO, DEBUG
+# level logs everything higher. NOTSET looks to parent levels
 
+# filemode='w' will start a new log file each run. Otherwise appending is done.
+logging.basicConfig(filename='stadiumBT.log', level=logging.INFO, 
+   format='(%(threadName)-9s) %(message)s',)
 
 def zoneSignal(update, shutdown):
+
+    logging.info('zoneSignal starting')
 
     def status(p, st, now, x=''):
        # return new status and change LEDs if needed
@@ -64,14 +69,14 @@ def zoneSignal(update, shutdown):
           elif now == 'center'        : LEDs.center(x)
           elif now == 'update'        : LEDs.update(x)
           elif now == 'systemProblem' : LEDs.systemProblem(x)
-          else : raise ValueError("LED now status (" + str(now) + ") incorrect.")
+          else :
+             logging.warning("LED now status (" + str(now) + ") incorrect.")
+             raise ValueError("LED now status (" + str(now) + ") incorrect.")
 
        # and, BTW, record track
        t.write(str(p.lat) + ' ' + str(p.lon) + ' @ ' + p.time +' status ' + now + '\n' )
        return now
 
-    print('zoneSignal starting')
-    log.write('zoneSignal starting\n')
     st = 'off'  
 
     # this try allows recovery after restart, using an already saved file. 
@@ -79,8 +84,7 @@ def zoneSignal(update, shutdown):
        with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
        globals().update(raceObj)
        courseLoaded = True
-       print("Existing BT course loaded.")
-       log.write("Existing BT course loaded.\n")
+       logging.info("Existing BT course loaded.")
     except:
        courseLoaded = False
 
@@ -96,49 +100,46 @@ def zoneSignal(update, shutdown):
     try:
        gpsd.connect(host=GPS_HOST, port=GPS_PORT) 
     except:
-       print("Error stadiumBT cannot connect to GPS daemon. Usual problem?")
-       log.write("Error stadiumBT cannot connect to GPS daemon. Usual problem?\n")
-       raise Exception('stadiumBT will not work without GPS.')
-       sys.exit()
+       logging.critical('stadiumBT cannot connect to GPS at ' + GPS_HOST + ':' + str(GPS_PORT))
+       logging.critical('stadiumBT will not work without GPS.')
+       # this kills thread raise Exception('stadiumBT will not work without GPS.')
+       # sys.exit() need to shut down main, but then what?
 
     try:
        z = a(gpsPos.getGPS()) # try now so fail can provide a message
     except:
-       print("stadiumBT cannot get GPS position, daemon is working.")
-       log.write("stadiumBT cannot get GPS position, daemon is working.\n")
-       print("Waiting 20 seconds. Check that GPS is connected if there are more errors!!!\n")
-       log.write("Waiting 20 seconds. Check that GPS is connected if there are more errors!!!")
+       logging.warning("stadiumBT cannot get GPS position. Is gpsd working?")
+       logging.warning("Waiting 20 seconds. Check that GPS is connected if there are more errors!!!\n")
        # this kills thread  raise Exception('stadiumBT will not work without GPS.')
        # dont sys.exit(), it may just not be ready
        time.sleep(20)
 
     while True:
         if shutdown.wait(0.01): # blocking for wait time.
-           print('shutting down zoneSignal thread!')
-           log.write('shutting down zoneSignal thread!\n')
+           logging.info('shutting down zoneSignal thread!')
            LEDs.cleanup()
            t.close()
            return() 
         if update.wait(0.01):   # blocking for wait time!
            # read new file here
-           #logging.debug('updating raceObj')
+           logging.debug('updating raceObj')
            with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
 
            globals().update(raceObj)
            st = status(p, st, 'update')
 
-           #logging.debug('new cid: %s',  cid )
-           #logging.debug('new course axis:  %f',  axis)
-           #logging.debug('new course S %f,%f: ', S[0], S[1])
+           logging.debug('new cid: %s',  cid )
+           logging.debug('new course axis:  %f',  axis)
+           logging.debug('new course S %f,%f: ', S[0], S[1])
 
            courseLoaded = True
            t.write('new course loaded: ' + cid + '\n' )
            update.clear()
-           #logging.debug('update is clear:')
+           logging.debug('update is clear:')
         
         if courseLoaded :
             # run main signal setting loop here
-            #logging.debug('in zone?')
+            logging.debug('in zone?')
             try:
                 p = gpsPos.getGPS() 
                 aa = a(p) # this is a in y = a + b * x
@@ -170,33 +171,26 @@ def zoneSignal(update, shutdown):
     raise Exception('zoneSignal should not be here.')
 
 if __name__ == '__main__':
-   log = open("stadiumBT.log","w") 
 
    update   = threading.Event()
    shutdown = threading.Event()
 
-   print('main thread starting distributionCheck thread.')
-   log.write('main thread starting distributionCheck thread.\n')
+   logging.info('main thread starting distributionCheck thread.')
    threading.Thread(name='distributionCheck', 
    		   target=distributionCheck, 
    		   args=(update, shutdown,  10, RC_IP, RC_PORT, BT_ID)).start()
 
-   print('main thread starting zoneSignal thread.')
-   log.write('main thread starting zoneSignal thread.\n')
+   logging.info('main thread starting zoneSignal thread.')
    threading.Thread(name='zoneSignal', 
    		   target=zoneSignal, 
    		   args=(update, shutdown)).start()
    
+   # consider myThread.daemon = True so threads shut down
 
    def shutdownHandler(signum, frame):
        shutdown.set()  # to exit threads
        time.sleep(10)
-       print('main thread exit.')
-       log.write('main thread exit.\n')
-       log.flush()
-       log.close()
-       sys.stdout.flush()
-       sys.stderr.flush()
+       logging.info('main thread exit.')
        sys.exit()
 
    signal.signal(signal.SIGINT, shutdownHandler)

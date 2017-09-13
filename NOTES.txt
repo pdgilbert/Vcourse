@@ -34,7 +34,7 @@ if it does not (lat=90, lon=0 is reported if gpsd is not connected.) So
 #####
 stadiumBT can be simulated on a laptop with gps. LEDs are not used but
 colour status is reported in the console. This needs gpsd started as
-above and then, eg:
+above for stadiumRC and then, eg:
     cd boat
    ../stadiumBT   
 
