@@ -398,7 +398,7 @@ def updateStatus(w):
    #  using global dist
    for f in dist.raceObjReceived :
       row = tkinter.Frame(t)
-      lab = tkinter.Label(row, width=15, text=f + ' ' + str(dist.raceObjReceived[f]), anchor='w')
+      lab = tkinter.Label(row, width=30, text=f + ' ' + str(dist.raceObjReceived[f]), anchor='w')
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
       lab.pack(side=tkinter.LEFT)
  
