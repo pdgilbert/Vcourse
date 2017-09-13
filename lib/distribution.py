@@ -19,6 +19,7 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
     # this function is used by BT
 
     print('distributionCheck starting')
+    print('   ' + BT_ID + ' watching for RC at ' + RC_IP + ':' + str(RC_PORT))
 
     while True:
         if shutdown.wait(0.1):    # effectively sleep too
