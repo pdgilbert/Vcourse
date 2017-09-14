@@ -171,7 +171,7 @@ def zoneSignal(update, shutdown):
     raise Exception('zoneSignal should not be here.')
 
 if __name__ == '__main__':
-
+   logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    update   = threading.Event()
    shutdown = threading.Event()
 
@@ -190,11 +190,13 @@ if __name__ == '__main__':
    def shutdownHandler(signum, frame):
        logging.info('main thread setting shutdown signal.')
        shutdown.set()  # to exit threads
-       time.sleep(10)
-       logging.info('main thread exit.')
+       time.sleep(5)
+       logging.info('main thread exit.' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
        sys.exit()
 
-   signal.signal(signal.SIGINT, shutdownHandler)
+   # ^C works if process is not deamonized with &
+   signal.signal(signal.SIGINT,  shutdownHandler) # ^C, kill -2
+   signal.signal(signal.SIGTERM, shutdownHandler) # kill -15 (default)
 
    while True: time.sleep(600) # Ctrl+c or kill to exit
 
