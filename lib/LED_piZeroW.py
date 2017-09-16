@@ -8,12 +8,12 @@
 #GPIO.VERSION
 
 import time
-#import logging
+import logging
 
 try:
     import RPi.GPIO as GPIO
 except RuntimeError:
-    print("Error importing RPi.GPIO!  Wrong hardware? or possibly need root privileges.")
+    logging.critical("Error importing RPi.GPIO!  Wrong hardware? or possibly need root privileges.")
     raise Exception('LED_piZeroW module will not work without RPi.GPIO.')
 
 
@@ -100,12 +100,13 @@ def  update(x ='') :
    off()  
 
 def  cleanup(x ='') :
-   print('cleanup GPIO for shutdown ' + str(x))
+   logging.info('cleanup GPIO for shutdown ' + str(x))
    # this cleans up GPIO.setup too
    GPIO.cleanup()  # GPIO.cleanup(RED)   GPIO.cleanup( CHANNELS )
 
 def  systemProblem(x ='')  : 
    print('system problem blue'   + str(x))
+   logging.warning('system problem blue'   + str(x))
    off()  
    blue.start(99)            # arg is duty cycle. 99=mostly on
    blue.ChangeFrequency(0.1)  
