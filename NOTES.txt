@@ -1,3 +1,40 @@
+########## BT User notes ##########
+
+The BT (boat gizmo) should be completely automated. Power-up and it works.
+See PiZeroWnotes.txt for details on building gizmo.
+
+########## RC User notes ##########
+
+-RC configuration for GPS and host:port are in file RCconfig. Note that RCconfig
+must match BTconfig for RC host IP and port.
+
+-RC default course settings are in file defaultRace
+
+-distributed raceObj are recorded in distributedCourses/
+
+-ADD SOME NOTES ABOUT SETTING AND DISTRIBUTING THE RACE INFO.
+
+########## To Do notes  ##########
+
+-is occassional segfault fixed?
+
+-unit testing
+
+-clean up stadiumRC shutdown
+-stadiumBT needs GPS to start on boot (and stadiumBT needs to start on boot)
+-transfer tracks back to RC
+-calsS using start line center and M1
+
+-reorganize raceparms as a class
+
+-need course change distribution from pin and from M1, as well as RC
+-consider setting up AP on a router
+-consider ad hoc / mesh network
+
+
+
+########## development Notes ##########
+
 ########## Race Committee control program - stadiumRC ##########
 
 stadiumRC startup tries to connect to gpsd. No auto RC position is available

@@ -172,7 +172,7 @@ class distribution():
       self.raceObjReceived.clear()
    
       # write raceObj [NOT and also global object info] to a file, for the record, but distribute is done with raceObj
-      with open('distributedCourses/raceObj' + self.raceObj['cid'] + '.json',"w") as f:
+      with open('distributedCourses/raceObj-' + self.raceObj['cid'] + '.json',"w") as f:
          f.write("\n")
          f.write("raceObj:\n")
          json.dump(self.raceObj, f, indent=4)

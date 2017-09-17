@@ -6,12 +6,14 @@
 
 import socket
 import threading
+import signal
 import logging
 import json
 import time
 import tkinter
 import gpsd
 import math
+import sys
 
 from gpsPos import gpsPos
 
@@ -485,17 +487,23 @@ if __name__ == '__main__':
 
    bE      = But(race, text='extra',         command=(lambda : extraWindow(race)))
 
-   race.mainloop()
+   def shutdownHandler(signum, frame):
+       logging.info('main thread shutdownHandler setting shutdown signal.')
+       shutdown.set()  # to exit threads
+       time.sleep(5)
+       logging.info('main thread exit.' +time.strftime('%Y-%m-%d %H:%M:%S %Z')+ '\n')
+       sys.exit()
 
-   import time
-   import sys
-   #  STILL NOT SHUTTING DOWN GRACEFULLY
-   #print(sys._current_frames())
-    
-   shutdown.set()  # to exit threads
-   logging.debug('signal shutdown to threads from main.')
-   time.sleep(10) # this needs to wait for threats to shutdown, otherwise they have to be killed.
-   #                PROBABLY NEED A LOCK
+   # ^C works if process is not deamonized with &
+   signal.signal(signal.SIGINT,  shutdownHandler) # ^C, kill -2
+   signal.signal(signal.SIGTERM, shutdownHandler) # kill -15 (default)
+
+   race.mainloop()
    
-   logging.debug('main thread exit.')
-   #print(sys._current_frames())
+   # still not shutting dowm gracefully
+
+   logging.info('main thread setting shutdown signal.')
+   shutdown.set()  # to exit threads
+   time.sleep(5)
+   logging.info('main thread exit.' +time.strftime('%Y-%m-%d %H:%M:%S %Z')+ '\n')
+   sys.exit()
