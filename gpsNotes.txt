@@ -1,13 +1,8 @@
-The normal command line gpsd start up for default port 2947 and gps usb 
-plugged in on /dev/ttyACM0 is
-   gpsd  /dev/ttyACM0
+If
+     gpsmon  127.0.0.1:2947
+shows data then all is working correctly. Following instructions are for
+the case when there are problems.
 
-The actual device to us in the above can be versified with
-  dmesg | tail # should show it mounted (eg USB ACM   ttyACM0 )
-
-If not, check
-  lsusb  # should indicate U-Blox AG or other GPS device
-  
 Typically the boot process should start gpsd (when all works correctly)
   service --status-all # will show + for gpsd if it is running
 or
@@ -24,6 +19,20 @@ The service and whether it is enabled on boot is controlled by
 
    systemctl status gpsd
 
+
+Verify actual gps device to use with
+  dmesg | tail
+
+Assuming gps shows gps on /dev/ttyACM0  (eg USB ACM   ttyACM0 ), the command
+line gpsd start up for default port 2947 and gps usb 
+plugged in on /dev/ttyACM0 is
+   gpsd  /dev/ttyACM0   # possibly as root ??
+
+verify
+  ps -elf | grep gps
+
+If not, check
+  lsusb  # should indicate U-Blox AG or other GPS device
 
 There seems to be a difficulty between hotplug and usb gps at boot up in 2017-07-05-raspbian-jessie-lite and several other OS releases as the switch
 to systemd is causing headaches. gpsd is started (by gspd.socket?) when gps is pluggged into usb (and fails with device busy)

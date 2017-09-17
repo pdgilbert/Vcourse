@@ -171,7 +171,7 @@ def zoneSignal(update, shutdown):
     raise Exception('zoneSignal should not be here.')
 
 if __name__ == '__main__':
-   logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
+   logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S.%f %Z'))
    update   = threading.Event()
    shutdown = threading.Event()
 
