@@ -74,6 +74,9 @@ def zoneSignal(update, shutdown):
              raise ValueError("LED now status (" + str(now) + ") incorrect.")
 
        # and, BTW, record track
+       #p.time comes from the gps. If fractional seconds are available I think
+       #  they will be printed, but for now all seem to be .000.
+       #  This may be something that can be set on the gps ?
        t.write(str(p.lat) + ' ' + str(p.lon) + ' @ ' + p.time +' status ' + now + '\n' )
        return now
 
@@ -171,7 +174,7 @@ def zoneSignal(update, shutdown):
     raise Exception('zoneSignal should not be here.')
 
 if __name__ == '__main__':
-   logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S.%f %Z'))
+   logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    update   = threading.Event()
    shutdown = threading.Event()
 
