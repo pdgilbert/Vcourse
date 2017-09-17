@@ -1,0 +1,89 @@
+The normal command line gpsd start up for default port 2947 and gps usb 
+plugged in on /dev/ttyACM0 is
+   gpsd  /dev/ttyACM0
+
+The actual device to us in the above can be versified with
+  dmesg | tail # should show it mounted (eg USB ACM   ttyACM0 )
+
+If not, check
+  lsusb  # should indicate U-Blox AG or other GPS device
+  
+Typically the boot process should start gpsd (when all works correctly)
+  service --status-all # will show + for gpsd if it is running
+or
+  service --status-all | grep gpsd
+
+The service and whether it is enabled on boot is controlled by
+   sudo systemctl stop gpsd
+   sudo systemctl stop gspd.socket
+   sudo systemctl disable gpsd
+   sudo systemctl enable gpsd
+   sudo systemctl start gpsd
+   sudo systemctl daemon-reload
+   sudo systemctl reenable gpsd.service
+
+   systemctl status gpsd
+
+
+There seems to be a difficulty between hotplug and usb gps at boot up in 2017-07-05-raspbian-jessie-lite and several other OS releases as the switch
+to systemd is causing headaches. gpsd is started (by gspd.socket?) when gps is pluggged into usb (and fails with device busy)
+
+If 
+   cat /dev/ttyACM0
+and
+   gpsmon  /dev/ttyACM0
+shows data but
+   gpsmon
+   gpsmon  localhost
+   gpsmon  127.0.0.1:2947
+
+do not then the problem is probably gpsd startup or hotplug
+
+(with X it shoud also be possible to run xgps or cgps and show data from gpsd.)
+
+BTW
+gpsmon -L # lists a table showing which GPS device types gpsmon has
+       built-in support for, and which generic commands can be applied...
+
+
+****************  CLEANUP BELOW ###############
+netstat -l
+tcp        0      0 localhost:gpsd          *:*                     LISTEN  
+... and  LISTENING     25544    /var/run/gpsd.sock
+
+netstat -pant |grep 2947
+tcp        0      0 127.0.0.1:2947          0.0.0.0:*               LISTEN      -               
+tcp6       0      0 ::1:2947                :::*                    LISTEN      -
+
+ netstat -lnpt
+ 
+more /etc/default/gpsd
+more /lib/systemd/system/gpsd.socket
+
+ 
+check hotplug issues run
+ tail -f /var/log/syslog
+and plug, unplug usb gps mouse
+
+sudo killall gpsd ??
+http://www.catb.org/gpsd/troubleshooting.html
+run xgps or cgps. #should show data from gpsd
+# sudo gpsd -N -D3 -F /var/run/gpsd.sock
+# sudo gpsd -D 5 -N -n /dev/ttyACM0
+
+ -n  don't wait
+ -N  don't deamonize
+ -D  debug level
+ 
+ see man gpsd re UPP/TCP gpsd://  feeds
+ 
+
+lsof -i4
+lsof -i:2947
+# sudo gpsd -D 5 -N -n /dev/ttyACM0
+Problem seems to be that systemd grabs loaclhost:2947 and does not release it,
+so gpsd reports "Device or resource busy" and fails.
+Starting on another port works.
+  sudo gpsd -D 5 -N -n -S 2948 /dev/ttyACM0  #-S 2947 is default port
+  sudo gpsd  -S 2948 /dev/ttyACM0  #-S 2947 is default port
+  xgps 127.0.0.1:2948
