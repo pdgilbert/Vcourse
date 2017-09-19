@@ -1,0 +1,26 @@
+#!/usr/bin/python3
+
+# License GPL 2. Copyright Paul D. Gilbert, 2017
+
+# need  export PYTHONPATH=/path/to/Vcourse/lib
+
+import logging
+import LED_piZeroW   as LEDs 
+
+LEDs.off(x)
+
+LEDs.systemProblem(x)  # blink blue
+sleep(2)
+LEDs.off(x)
+
+LEDs.warn(x)           # blink red
+sleep(2)
+LEDs.off(x)
+
+LEDs.update(x)         # blink red and greem
+sleep(2)
+LEDs.off(x)
+
+LEDs.center(x)         # blink green
+sleep(2)
+LEDs.off(x)
