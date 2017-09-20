@@ -1,4 +1,4 @@
-If
+On BT, if
      gpsmon  127.0.0.1:2947
 shows data then all is working correctly. Following instructions are for
 the case when there are problems.
@@ -63,7 +63,43 @@ BTW
 gpsmon -L # lists a table showing which GPS device types gpsmon has
        built-in support for, and which generic commands can be applied...
 
+****************  connect RC to phone GPS with GPS2Net ###############
+  -connect phone to RC wifi
+  -start GPS and GPS2Net
+  -note the port (6000) and IP address (under share)
 
+  -on the RC computer test with gpsmon, eg
+      gpsmon  10.42.0.223:6000
+  
+  -because stadiumRC fails connecting to phone (python module bug?), 
+    start gpsd (sudo seems optional) and direct it to the phone, eg
+      gpsd    tcp://10.42.0.223:6000
+    or with debug and no deamonize
+      gpsd  -D 3 -N   tcp://10.42.0.223:6000
+
+    The IP and port above are those of the phone. The gpsd will get data from
+    it, but listen on default 127.0.0.1:2947 and pass data along to connecting
+    clients. (stadiumRC python seems to like gpsd better than GPS2Net.)
+
+    If it can't bind to IPv4 port gpsd, "Address already in use"
+    (You can see what process with    netstat -pant | grep 2947   )
+    You could try to stop the process, or just use a non-default port:
+
+      gpsd -S 2948 tcp://10.42.0.223:6000  # use port 2948
+    or with debug and no deamonize
+      gpsd -D 3 -N -S 2948 tcp://10.42.0.223:6000
+
+  -test with gpsmon, eg
+      gpsmon  127.0.0.1:2947
+      gpsmon  127.0.0.1:2948
+
+  -edit RCconfig to indicate the GPS port if changed (IP is that of the gpsd 
+      running on the RC machine (127.0.0.1)
+
+  -(re)start stadiumRC # Note that the first click on "get RC GPS" might 
+     return (0,0) as the connection or GPS seem to take awhile to wake up.
+     Try again after a few seconds.
+ 
 ****************  CLEANUP BELOW ###############
 netstat -l
 tcp        0      0 localhost:gpsd          *:*                     LISTEN  

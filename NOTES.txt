@@ -9,7 +9,6 @@ interface used by the sailors is the LEDs.
 
 ########## To Do notes  ##########
 -clean up these notes
--phone GPS to RC
 
 -mounting mechanism for cases
 -check cases are waterproof
@@ -25,7 +24,9 @@ going if GPS returns).
 -unit testing
 
 -transfer tracks back to RC
-
+-tracks in local time (optional?) rather than UTC, but this seems to be a
+ problem since time comes from GPS not computer clock.
+ 
 -reorganize raceparms as a class
 
 -consider whether a local DNS would simplify configuration. (The IP address
@@ -34,6 +35,7 @@ going if GPS returns).
 -need course change distribution from pin and from M1, as well as RC
 -consider setting up AP on a router
 -consider ad hoc / mesh network
+-consider hardware and case alternatives
 
 ########## BT User notes ##########
 
@@ -67,6 +69,18 @@ See PiZeroWnotes.txt for details on building the gizmo and wpa_supplicant file.
   a line for each boat identifier, exactly as indicated in the BTconfig "BT_ID".
   "Update Status" in the RC panel will then use this list to indacte boats 
   which have not received course updates.
+
+-My USB GPS dongle seems to be relatively "plug and play" for getting 
+   RC GPS. If there are problems, considerations are the same as for BT. See
+   PiZeroWnotes.txt for more details on that.
+   
+-See gpsNotes.txt regarding using GPS2Net on a phone to provide GPS for RC.
+  (The phone needs to have real GPS and I have only tested on Android.)
+
+-If RC is mobile (not anchored) the "get RC GPS" button can be used and the 
+  RC position copy and pasted. This could be useful, for example, to find the
+  actual start line center, rather than that calculated using assumed RC
+  position at the starboard end of the line.
 
 -distributed raceObj are recorded in distributedCourses/
 
