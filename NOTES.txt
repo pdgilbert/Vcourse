@@ -1,3 +1,30 @@
+
+########## To Do notes  ##########
+-clean up these notes
+-phone GPS to RC
+
+-mounting mechanism for cases
+-check cases are waterproof
+
+-make stadiumBT more robust against GPS failure (so it keeps 
+going if GPS returns).
+
+-clean up stadiumRC shutdown
+-update Status list add indication of boats not updated.
+
+-is occassional segfault fixed? 
+segfault if GPS is disconnected? 
+
+-unit testing
+
+-transfer tracks back to RC
+
+-reorganize raceparms as a class
+
+-need course change distribution from pin and from M1, as well as RC
+-consider setting up AP on a router
+-consider ad hoc / mesh network
+
 ########## BT User notes ##########
 
 The BT (boat gizmo) should be completely automated. Power-up and it works.
@@ -19,24 +46,6 @@ must match BTconfig for RC host IP and port.
 reading, more at higher speeds.
 
 So, adjust boarder warning widths accordingly.
-
-########## To Do notes  ##########
-
--is occassional segfault fixed?
-
--unit testing
-
--clean up stadiumRC shutdown
--stadiumBT needs GPS to start on boot (and stadiumBT needs to start on boot)
--transfer tracks back to RC
--calsS using start line center and M1
-
--reorganize raceparms as a class
-
--need course change distribution from pin and from M1, as well as RC
--consider setting up AP on a router
--consider ad hoc / mesh network
-
 
 
 ########## development Notes ##########

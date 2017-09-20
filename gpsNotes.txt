@@ -8,6 +8,15 @@ Typically the boot process should start gpsd (when all works correctly)
 or
   service --status-all | grep gpsd
 
+Howeever, it can be running but not working. I had to edit /etc/default/gpsd to
+
+DEVICES="/dev/ttyACM0"
+GPSD_OPTIONS="-n"
+
+Then
+   systemctl daemon-reload; systemctl reenable gpsd.service
+This and more troubleshooting hints are in section Ubuntu/Debian of http://www.catb.org/gpsd/troubleshooting.htm
+
 The service and whether it is enabled on boot is controlled by
    sudo systemctl stop gpsd
    sudo systemctl stop gspd.socket
@@ -46,7 +55,7 @@ shows data but
    gpsmon  localhost
    gpsmon  127.0.0.1:2947
 
-do not then the problem is probably gpsd startup or hotplug
+do not, then the problem is probably gpsd startup or hotplug
 
 (with X it shoud also be possible to run xgps or cgps and show data from gpsd.)
 

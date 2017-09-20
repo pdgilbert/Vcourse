@@ -158,9 +158,54 @@ Give runAtBoot execute permission and in crontab add
 
 ##############  Clean up for non-development SDs ###############
 
+rm track.txt cron.log  stadiumBT.log BTraceObj.json
+
 remove  keys in .ssh directory if used for git !!!
 apt-get remove git # and some other things??
 
 clean up Vcourse/  but leave files needed for execution.
 
-clean up RC/distributedCourses/*  stadiumBT.log  track.txt BTraceObj.json
+On RC, not on BT:
+clean up RC/distributedCourses/*  
+
+
+##############  replicating SDs for other BT gizmos  ############
+
+This is for identical hardware. Go through process above if the hardware is not 
+identical. It also requires an SD of the same size, there is no auto-expansion.
+
+Coping the good, clean, BT SD created above to an image file and then to other SD cards can be done as follows. This process uses 'dd'. Note that 'dd' can ruin a whole device, not just one file system, and not
+just clobber some important files, so do this CAREFULLY and pay special 
+attention to having the output of=device correct. It also must be used as root.
+
+Be sure there is enough space on the computer drive. A 16 GB card will create a 16 GB file even if the card is not filled. There is no compression.
+
+Insert the BT SD card into a computer (USB possibly works better than SD slot?)
+Check the device letter, for example with 'df' and umount and file systems. Likely there will be two or more file systems, one called boot.
+
+   sudo umount /dev/sdc1(eg)
+   sudo umount /dev/sdc2(eg)
+
+CAREFULLY and paying special attention to having the output of=device correct
+
+    sudo dd  bs=4M  if=/dev/sdc(eg) of=PiZeroW-BT.img 
+    sudo sync
+
+Note there is no partition number after sdc. This will take time, possibly 20+ minutes for a 16GB SD card. It appears frozen even though it is working.
+
+Remove the BT SD card and insert an empty SD card into the computer.
+(It does not need to be empty, but everything on it will be overwritten.)
+Copying the image to an SD card with dd does not require the SD card to be formatted but formatting is a way to set the volume label.
+
+Run df -h to see what devices are mounted, note the SD device (eg /dev/sdc1) 
+and then unmount it.
+ 
+   sudo umount /dev/sdc1(eg)
+   sudo umount /dev/sdc2(eg)
+
+   sudo dd  bs=4M if=PiZeroW-BT.img  of=/dev/sdc(eg)
+   sync  #ensure the write cache is flushed
+
+Change BT_ID in BTconfig. This could be done by ssh (to find IP address try
+ arp -a -i wlan0 , or by connecting monitor/keyboard.
+ But the simplest may be to just stick the SD back in the computer, which now mounts the SD file systems, and find .../home/bt/BTconfig. It will be necessary to edit as root since user IDs are different on the comuter. 

@@ -253,6 +253,25 @@ def calcM():
    writeRaceWindow() # re-write screen with current globals
 
 
+def calcS():
+   # calculate race parameters using center of start line and mark M to 
+   #  get course length (cl), axis (ax) , and RC position on starboard end of line.
+
+   global  ax, RC, cl
+
+   readRaceWindow() # re-read current global variables from screen data
+   
+   cl = S.nm(M)  # course length using S to M.
+
+   ax = gpsPos.heading(S, M)
+
+   perp = (ax - 90 ) % 360 # bearing RC to pin, RC on starboard end of line
+   
+   RC = gpsPos.move(S, perp, ll / (2 * 1852))
+   
+   writeRaceWindow() # re-write screen with current globals
+
+
 def defnRaceWindow(w):
    # fields on RC Window main page
    # NB This functionand the next two (writeRaceWindow and readRaceWindow) MUST be
@@ -480,6 +499,8 @@ if __name__ == '__main__':
    bCalcA = But(race, text='calc using\n RC & axis',    command=calcA)
    
    bCalcM = But(race, text='calc using\n RC & mark',    command=calcM)
+   
+   bCalcS = But(race, text='calc using start\n center & mark',    command=calcS)
    
    bDist    = But(race, text='distribute',    command=(lambda : makeRaceObj()))
 
