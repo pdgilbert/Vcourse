@@ -433,8 +433,13 @@ def updateStatus(w):
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
       lab.pack(side=tkinter.LEFT)
 
+   if  BoatList == None : 
+      bl = 'boat list not available.'
+   else :
+      bl = ''
+   
    row = tkinter.Frame(t)
-   lab = tkinter.Label(row, width=30, text=' Not Updated: ', anchor='w')
+   lab = tkinter.Label(row, width=30, text=' Not Updated: ' + bl, anchor='w')
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
    lab.pack(side=tkinter.LEFT)
 

@@ -10,7 +10,6 @@
 going if GPS returns).
 
 -clean up stadiumRC shutdown
--update Status list add indication of boats not updated.
 
 -is occassional segfault fixed? 
 segfault if GPS is disconnected? 
