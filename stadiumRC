@@ -53,6 +53,16 @@ def writeDefaultRaceParms():
    except :
       print('write failure')
 
+def readBoatList():
+   global  BoatList
+   try : 
+      with open("BoatList") as f:  BoatList =  f.read().splitlines()
+      BoatList = [b.strip() for b in BoatList]
+   except :
+      BoatList = None   
+
+readBoatList()
+
 def readDefaultRaceParms():
    global  fl, dc, ty, cl, ax, ll, sw, RC, S, M, wn, cc, tt
    try : 
@@ -422,6 +432,19 @@ def updateStatus(w):
       lab = tkinter.Label(row, width=30, text=f + ' ' + str(dist.raceObjReceived[f]), anchor='w')
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
       lab.pack(side=tkinter.LEFT)
+
+   row = tkinter.Frame(t)
+   lab = tkinter.Label(row, width=30, text=' Not Updated: ', anchor='w')
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+   lab.pack(side=tkinter.LEFT)
+
+   # BoatList = {'boat 1', 'boat 2' }
+   for f in BoatList :
+      if f not in dist.raceObjReceived :
+         row = tkinter.Frame(t)
+         lab = tkinter.Label(row, width=30, text='*** ' + f , anchor='w')
+         row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+         lab.pack(side=tkinter.LEFT)
  
 
 def extraWindow(w):
@@ -455,6 +478,8 @@ def extraWindow(w):
    bWD  = But(t, text='Save\nRace Defaults',    command=(lambda : writeDefault()))
 
    bRD  = But(t, text='Re-read\n Race Defaults', command=(lambda : readDefault()))
+
+   bBL  = But(t, text='Re-read\n BoatList', command=(lambda : readBoatList()))
 
    bDbg = But(t, text='debugInfo',        command=(lambda : debugWindow(w)))
 
