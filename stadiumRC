@@ -430,7 +430,7 @@ def updateStatus(w):
    for f in dist.raceObjReceived :
       row = tkinter.Frame(t)
       lab = tkinter.Label(row, width=30, text=f + ' ' + str(dist.raceObjReceived[f]), anchor='w')
-      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
       lab.pack(side=tkinter.LEFT)
 
    if  BoatList == None : 
@@ -440,17 +440,17 @@ def updateStatus(w):
    
    row = tkinter.Frame(t)
    lab = tkinter.Label(row, width=30, text=' Not Updated: ' + bl, anchor='w')
-   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=2)
    lab.pack(side=tkinter.LEFT)
 
-   # BoatList = {'boat 1', 'boat 2' }
-   for f in BoatList :
-      if f not in dist.raceObjReceived :
-         row = tkinter.Frame(t)
-         lab = tkinter.Label(row, width=30, text='*** ' + f , anchor='w')
-         row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
-         lab.pack(side=tkinter.LEFT)
- 
+   if (BoatList != None) : 
+      for f in BoatList :
+         if f not in dist.raceObjReceived :
+            row = tkinter.Frame(t)
+            lab = tkinter.Label(row, width=30, text='*** ' + f , anchor='w')
+            row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
+            lab.pack(side=tkinter.LEFT)
+
 
 def extraWindow(w):
 

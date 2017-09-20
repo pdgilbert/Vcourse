@@ -1,3 +1,11 @@
+RC refers to Race Committee. The program stadiumRC runs on a computer (laptop)
+which can also run a wifi hotspot for boats to connect. (There are other options
+for the wifi.) It has a graphical interface.
+
+BT refers to a boat. The program stadiumBT runs on a Raspberry Pi Zero 
+"computer on a chip" which has LEDs for signalling sailors. It needs to be
+configured to connect to the wifi hotspot and contact the RC. The only
+interface used by the sailors is the LEDs.
 
 ########## To Do notes  ##########
 -clean up these notes
@@ -9,10 +17,10 @@
 -make stadiumBT more robust against GPS failure (so it keeps 
 going if GPS returns).
 
--clean up stadiumRC shutdown
-
 -is occassional segfault fixed? 
-segfault if GPS is disconnected? 
+-segfault if GPS is disconnected? 
+
+-automation of boat id on all gizmos would be nice (and RC IP and port).
 
 -unit testing
 
@@ -20,31 +28,54 @@ segfault if GPS is disconnected?
 
 -reorganize raceparms as a class
 
+-consider whether a local DNS would simplify configuration. (The IP address
+  for RC now needs to be configured in each BT, and changes if wifi changes.)
+
 -need course change distribution from pin and from M1, as well as RC
 -consider setting up AP on a router
 -consider ad hoc / mesh network
 
 ########## BT User notes ##########
 
-The BT (boat gizmo) should be completely automated. Power-up and it works.
-See PiZeroWnotes.txt for details on building gizmo.
+For the sailor, the BT (boat gizmo) should be completely automated. Power-up 
+and it works. However, some configuration will be necessary before the sailor
+gets the gizmo:
+ -the battery needs to be charged (every night).
+ -(at the start of the regatta) the /home/bt/BTconfig file needs a setting 
+    to identify each boat 
+    eg, "BT_ID": "boat 1"
+    where "boat 1" could be replaced by a sail number
+
+ -(at the start of the regatta) the BTconfig  must be set to match RCconfig 
+    for RC host IP and port.
+
+ -the file /etc/wpa_supplicant/wpa_supplicant.conf needs the proper wifi ssid
+   and psk (password). This will need to be fixed if the wifi details change.
+
+See PiZeroWnotes.txt for details on building the gizmo and wpa_supplicant file.
 
 ########## RC User notes ##########
 
--RC configuration for GPS and host:port are in file RCconfig. Note that RCconfig
-must match BTconfig for RC host IP and port.
+-RC configuration for GPS and host:port are in file RCconfig (in the stadiumRC
+  startup directory). Note that RCconfig must match BTconfig for RC host IP 
+  and port. The host IP address will be affected by wifi settings.
 
--RC default course settings are in file defaultRace
+-RC default course settings are in file defaultRace (in the stadiumRC 
+  startup directory)
+
+-If a file BoatList exists (in the stadiumRC startup directory) it should have
+  a line for each boat identifier, exactly as indicated in the BTconfig "BT_ID".
+  "Update Status" in the RC panel will then use this list to indacte boats 
+  which have not received course updates.
 
 -distributed raceObj are recorded in distributedCourses/
 
 -ADD SOME NOTES ABOUT SETTING AND DISTRIBUTING THE RACE INFO.
 
 
-10 knots => 5.1 m/s.  Reading gps about 8 times/s => almost a meter between
-reading, more at higher speeds.
-
-So, adjust boarder warning widths accordingly.
+A boat moving at 10 knots => 5.1 m/s.  Reading gps about 8 times/s => almost a
+  meter between readings, more at higher speeds.
+  So, adjust border warning widths accordingly.
 
 
 ########## development Notes ##########
