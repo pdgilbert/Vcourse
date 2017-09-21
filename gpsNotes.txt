@@ -85,13 +85,16 @@ gpsmon -L # lists a table showing which GPS device types gpsmon has
     (You can see what process with    netstat -pant | grep 2947   )
     You could try to stop the process, or just use a non-default port:
 
-      gpsd -S 2948 tcp://10.42.0.223:6000  # use port 2948
+      gpsd -S 2948 tcp://10.42.0.223:6000  # uses 127.0.0.1 port 2948
     or with debug and no deamonize
       gpsd -D 3 -N -S 2948 tcp://10.42.0.223:6000
 
   -test with gpsmon, eg
       gpsmon  127.0.0.1:2947
       gpsmon  127.0.0.1:2948
+
+BUG  gpsd seem to lose connection after awhile and needs restarting !!
+   whereas   gpsmon  10.42.0.223:6000   is ok.
 
   -edit RCconfig to indicate the GPS port if changed (IP is that of the gpsd 
       running on the RC machine (127.0.0.1)

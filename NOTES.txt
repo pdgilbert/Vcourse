@@ -13,6 +13,8 @@ interface used by the sailors is the LEDs.
 -mounting mechanism for cases
 -check cases are waterproof
 
+-starting  stadiomRC seems to distribute a course (gizmos signal new course)
+
 -make stadiumBT more robust against GPS failure (so it keeps 
 going if GPS returns).
 
@@ -67,8 +69,19 @@ See PiZeroWnotes.txt for details on building the gizmo and wpa_supplicant file.
 
 -If a file BoatList exists (in the stadiumRC startup directory) it should have
   a line for each boat identifier, exactly as indicated in the BTconfig "BT_ID".
-  "Update Status" in the RC panel will then use this list to indacte boats 
+  "Update Status" in the RC panel will then use this list to indicate boats 
   which have not received course updates.
+
+-If a file gpsList exists (in the stadiumRC startup directory) it should have
+  lines of 3-tuples for each GPS that might be accessed on the network.
+  "extra > other GPS" in the RC panel will then use this list to try to obtain 
+  gps fixes over the network. The lines in the file have a name, host ID, and
+  port, separated by spaces, for example
+    RC    127.0.0.1    2948
+    pin   10.42.0.250  2947
+    M1    10.42.0.251  2947
+UNTESTED
+
 
 -My USB GPS dongle seems to be relatively "plug and play" for getting 
    RC GPS. If there are problems, considerations are the same as for BT. See
