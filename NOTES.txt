@@ -10,10 +10,14 @@ interface used by the sailors is the LEDs.
 ########## To Do notes  ##########
 -clean up these notes
 
+-running more than one course at a time needs more thought. Might start by adding fleet to raceObj and distributed course file name.
+
 -mounting mechanism for cases
 -check cases are waterproof
 
 -starting  stadiomRC seems to distribute a course (gizmos signal new course)
+
+-stadiumRC does not shutdown gracefully if no BTs connect
 
 -make stadiumBT more robust against GPS failure (so it keeps 
 going if GPS returns).
@@ -75,7 +79,7 @@ See PiZeroWnotes.txt for details on building the gizmo and wpa_supplicant file.
 -If a file gpsList exists (in the stadiumRC startup directory) it should have
   lines of 3-tuples for each GPS that might be accessed on the network.
   "extra > other GPS" in the RC panel will then use this list to try to obtain 
-  gps fixes over the network. The lines in the file have a name, host ID, and
+  gps fixes over the network. The lines in the file have a name, hostID, and
   port, separated by spaces, for example
     RC    127.0.0.1    2948
     pin   10.42.0.250  2947
@@ -99,10 +103,35 @@ UNTESTED
 
 -ADD SOME NOTES ABOUT SETTING AND DISTRIBUTING THE RACE INFO.
 
+-Fleet, description, and target start time are purely descriptive, but parts are used in saved files of distributed courses. Course type might be used sometime.
+
+-The start line length, stadium width, , warning width, and center width must
+all be specified.
+
+-Other fields can all be specified, or some calculated on the basis of others
+in one of three ways:
+
+   If start line center and mark 1 are specied then other fields can be
+    calculated by clicking "calc using start center & mark",
+   
+   If RC and mark 1 are specied then other fields can be
+    calculated by clicking "calc using RC & mark",
+   
+   If RC, axis, and course length are specied then other fields can be
+    calculated by clicking "calc using RC & axis",
+
+-"distribute" distributes the fields as they appear, no additional calculation
+  of the displayed fields is done, so all calculations should be done before
+  clicking "distribute". Boats will be updated with the new course when they
+  contact the RC, and the update will be indicated by flashing red and 
+  green  lights. This can be used at the start of a race or for a course change.
+  
 
 A boat moving at 10 knots => 5.1 m/s.  Reading gps about 8 times/s => almost a
   meter between readings, more at higher speeds.
   So, adjust border warning widths accordingly.
+
+0.00001 degrees latitude is approximately a meter.
 
 
 ########## development Notes ##########

@@ -69,7 +69,7 @@ def readgpsList():
    try : 
       with open("gpsList") as f:
          for i in f.readlines():
-            l =  i.split(" ")
+            l =  i.split()
             gpsList.append( (l[0], l[1], l[2]) )
    except :
       gpsList = None   
@@ -111,30 +111,26 @@ def readDefaultRaceParms():
 readDefaultRaceParms()
 
 
-def gpsRead(host, port):
-   logging.debug('gpsRead  ' + host + ':' + str(port))
+def gpsRead(h, p):
+   logging.debug('gpsRead:' + h + ':' + str(p) + '.')
    try : 
-      gpsCon = gpsd.connect(host=host, port=port)
+      gpsCon = gpsd.connect(host=h, port=int(p))
       pt = gpsPos.getGPS()
-      logging.debug('gpsRead  ' + host + ':' + str(port) + 
-                           ' pt  ' + str(pt.lat) + str(pt.lon))
+      #logging.debug('gpsRead:' + h + ':' + str(p) + '.' + 
+      #                     ' pt  ' + str(pt.lat) + str(pt.lon))
    except :
-      #pt   = gpsPos(90.0, 0.0)  # this is really an error condition
       pt   = None
-      logging.debug('gpsRead  ' + host + ':' + str(port) + ' pt  ' + str(pt))
-   return pt
+      #logging.debug('gpsRead:' + h + ':' + str(p) + '.' + ' pt  ' + str(pt))
+   return(pt)
 
 def getRCgps():
    # update global RC and write to screen
    global  RC
-   try : 
-      gpsCon = gpsd.connect(host=GPS_HOST, port=GPS_PORT)
-      print('established gpsd connection ' + str(GPS_HOST) + ':' +  str(GPS_PORT))
-      RC = gpsPos.getGPS()
-   except :
+   RC = gpsRead(GPS_HOST, GPS_PORT)
+   if RC == None :
       RC   = gpsPos(90.0, 0.0)  # this is really an error condition
-      print('attempted gpsd connection '   + str(GPS_HOST) + ':' +  str(GPS_PORT))
-      print('gpsd connection failed. No RC automatic position available.')
+      logging.info('attempted gpsd connection '   + str(GPS_HOST) + ':' +  str(GPS_PORT))
+      logging.info('gpsd connection failed. No RC automatic position available.')
    writeRaceWindow()
 
 
@@ -488,6 +484,7 @@ def gpsWindow(w):
    # gpsList=(('RC', GPS_HOST, GPS_PORT), ('pin', GPS_HOST, GPS_PORT)) #faking
    for f in gpsList :
       row = tkinter.Frame(t)
+      logging.debug('gpsWindow calling  gpsRead with host/port ' + f[1] + f[2])
       pt = gpsRead(f[1], f[2])
       if pt != None : 
          lab = tkinter.Label(row, width=50, text=f[0] + '   ' + 

@@ -63,6 +63,47 @@ BTW
 gpsmon -L # lists a table showing which GPS device types gpsmon has
        built-in support for, and which generic commands can be applied...
 
+****************  connect RC to phone GPS with Share GPS ###############
+  -connect phone to RC wifi
+  -start GPS and Share GPS
+  -under connections add. work through all the settings and
+       note the port (default 2947) and IP address
+  -press and hold the connetion, then edit, to verify type, port, etc
+       Note the port (default 2947) and IP address
+  -press briefly the connetion to start it listening
+  
+  -press (briefly or hold?) the GPS symbol too start GPS
+
+  HAVE NOT GOT THIS TO WORK WITH PYTHON CODE YET
+
+  -got xgps to connect once but cannot repeat. 
+  
+  -on the RC computer test with gpsmon, eg
+      gpsmon  10.42.0.223:2947                NOT WORKING
+      xgps  10.42.0.183:2947      WORKING
+      gpsmon  10.42.0.183:2947    seems to be getting data but not displaying properly
+
+      # data is flowing in this, but something is wrong format?
+      gpsd -S 2950  -D 3 -N  gpsd://10.42.0.183:2947
+      gpsmon  127.0.0.1:2950
+
+  Start Share GPS and set connection data type:NMEA  method:  TCP/IP NMEA gpsd 
+  server port 2947 (default), select to listen for incoming connections
+  both this
+      gpsmon  10.42.0.183:2947
+  and this
+      gpsd -S 2950  -D 3 -N  tcp://10.42.0.183:2947
+      gpsmon  127.0.0.1:2950
+  work, but not at the same time. The free version of Share GPS only supports
+  one connecting device at a time. It also seems necessary to stop the app so
+  that it looses the old connection.
+  However, I could not get python to read 10.42.0.183:2947 directly. It still
+  needs the local server.
+  Also, there seem to be a lot of Ill-formed packets and the connection is
+  unstable.
+  (Not sure why, with local server starting stadiumRC before gpsmon seems to
+   work better.)
+
 ****************  connect RC to phone GPS with GPS2Net ###############
   -connect phone to RC wifi
   -start GPS and GPS2Net
@@ -86,6 +127,7 @@ gpsmon -L # lists a table showing which GPS device types gpsmon has
     You could try to stop the process, or just use a non-default port:
 
       gpsd -S 2948 tcp://10.42.0.223:6000  # uses 127.0.0.1 port 2948
+      gpsd -S 2950 tcp://10.42.0.183:6000  # uses 127.0.0.1 port 2950
     or with debug and no deamonize
       gpsd -D 3 -N -S 2948 tcp://10.42.0.223:6000
 
@@ -102,7 +144,30 @@ BUG  gpsd seem to lose connection after awhile and needs restarting !!
   -(re)start stadiumRC # Note that the first click on "get RC GPS" might 
      return (0,0) as the connection or GPS seem to take awhile to wake up.
      Try again after a few seconds.
- 
+
+********  multiple GPS devices with GPS2Net ###############
+
+It is possible to have multiple phones/tables on the network. Each would have its
+own IP address, but channeling through gpsd each gets it's own local port, eg:
+
+ with gps2net
+      gpsd -S 2948 tcp://10.42.0.223:6000  # uses 127.0.0.1 port 2948
+      gpsd -S 2950 tcp://10.42.0.183:6000  # uses 127.0.0.1 port 2950
+
+ with Share GPS
+      gpsd -S 2948 tcp://10.42.0.183:2947 # uses 127.0.0.1  port 2948
+      gpsd -S 2950 tcp://10.42.0.223:2947 # uses 127.0.0.1  port 2950
+
+then
+  -test with gpsmon, eg
+      gpsmon  127.0.0.1:2948
+      gpsmon  127.0.0.1:2950
+
+I have been able to use "Other GPS" in stadiumRC to read these. A gpsList
+file for this example might have lines
+  RC      127.0.0.1  2948
+  phone   127.0.0.1  2950
+
 ****************  CLEANUP BELOW ###############
 netstat -l
 tcp        0      0 localhost:gpsd          *:*                     LISTEN  
