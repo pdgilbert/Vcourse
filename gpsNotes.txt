@@ -1,7 +1,61 @@
+https://spellfoundry.com/2016/05/29/configuring-gpio-serial-port-raspbian-jessie-including-pi-3/
+
+https://www.raspberrypi.org/forums/viewtopic.php?t=187386&p=1183130
+
+https://github.com/uraimo/SwiftyGPIO/wiki/GPIO-Pinout
+
+https://raspberrypi.stackexchange.com/questions/9481/gpio-why-wire-button-to-ground-rather-than-3-3v
+
+##################################################
+
+Dynamic differential GPS:
+
+https://rtklibexplorer.wordpress.com/tag/neo-m8n/page/7/
+
+https://rtklibexplorer.wordpress.com/2016/11/25/selecting-a-gps-receiver-m8n-vs-m8t/
+
+http://grauonline.de/wordpress/?page_id=1468
+
+##################################################
+
 On BT, if
      gpsmon  127.0.0.1:2947
 shows data then all is working correctly. Following instructions are for
 the case when there are problems.
+
+##################################################
+CLEANUP FOR CASE OF USB GPS vs SERIAL
+   usb     /dev/ttyACM0
+   serial  /dev/ttyAMA0
+ ls -l /dev
+lrwxrwxrwx 1 root root           7 Sep 21 02:17 serial1 -> ttyAMA0
+    possibly serial0,  possibly-> ttyS0
+
+[ not sure
+ /dev/ttyAMA0 is linked to the getty (console) service, so:
+$ sudo systemctl stop serial-getty@ttyAMA0.service
+$ sudo systemctl disable serial-getty@ttyAMA0.service
+]
+
+[ not sure  serial0  vs serial1 ??
+Remove the console from the cmdline.txt, edit  /boot/cmdline.txt and
+remove the: console=serial0,115200   ???  UNDO ???
+and reboot
+]
+
+   sudo stty -F /dev/ttyAMA0 9600  # start serial port (not necessary ? )
+   sudo gpsd /dev/ttyAMA0 -F /var/run/gpsd.sock  # start deamon Pi 2
+
+[    1.068316] 20201000.serial: ttyAMA0 at MMIO 0x20201000 (irq = 81, base_baud = 0) is a PL011 rev2
+
+
+     gpsmon 
+     gpsmon  /dev/ttyAMA0
+     gpsmon  /dev/serial1 
+
+##################################################
+
+
 
 Typically the boot process should start gpsd (when all works correctly)
   service --status-all # will show + for gpsd if it is running
@@ -66,37 +120,22 @@ gpsmon -L # lists a table showing which GPS device types gpsmon has
 ****************  connect RC to phone GPS with Share GPS ###############
   -connect phone to RC wifi
   -start GPS and Share GPS
-  -under connections add. work through all the settings and
-       note the port (default 2947) and IP address
-  -press and hold the connetion, then edit, to verify type, port, etc
-       Note the port (default 2947) and IP address
+
+  -Start Share GPS and set connection data type:NMEA  method:  TCP/IP NMEA gpsd 
+  server port 2947 (default), select to listen for incoming connections.
+    (Edit can be used to verify settings - press and hold connection)
+ 
   -press briefly the connetion to start it listening
-  
-  -press (briefly or hold?) the GPS symbol too start GPS
 
-  HAVE NOT GOT THIS TO WORK WITH PYTHON CODE YET
-
-  -got xgps to connect once but cannot repeat. 
-  
-  -on the RC computer test with gpsmon, eg
-      gpsmon  10.42.0.223:2947                NOT WORKING
-      xgps  10.42.0.183:2947      WORKING
-      gpsmon  10.42.0.183:2947    seems to be getting data but not displaying properly
-
-      # data is flowing in this, but something is wrong format?
-      gpsd -S 2950  -D 3 -N  gpsd://10.42.0.183:2947
-      gpsmon  127.0.0.1:2950
-
-  Start Share GPS and set connection data type:NMEA  method:  TCP/IP NMEA gpsd 
-  server port 2947 (default), select to listen for incoming connections
-  both this
+  Both this
       gpsmon  10.42.0.183:2947
   and this
       gpsd -S 2950  -D 3 -N  tcp://10.42.0.183:2947
       gpsmon  127.0.0.1:2950
   work, but not at the same time. The free version of Share GPS only supports
   one connecting device at a time. It also seems necessary to stop the app so
-  that it looses the old connection.
+  that it loses the old connection.
+  
   However, I could not get python to read 10.42.0.183:2947 directly. It still
   needs the local server.
   Also, there seem to be a lot of Ill-formed packets and the connection is
@@ -104,7 +143,14 @@ gpsmon -L # lists a table showing which GPS device types gpsmon has
   (Not sure why, with local server starting stadiumRC before gpsmon seems to
    work better.)
 
+  -press (briefly or hold?) the GPS symbol too start GPS
+
+With gspd mode rather than NMEA data is flowing, but something is wrong format?
+
 ****************  connect RC to phone GPS with GPS2Net ###############
+(I have had trouble with  GPS2Net disappearing when the phone screen locks.
+ Share GPS described above does no do that.)
+  
   -connect phone to RC wifi
   -start GPS and GPS2Net
   -note the port (6000) and IP address (under share)
@@ -136,7 +182,7 @@ gpsmon -L # lists a table showing which GPS device types gpsmon has
       gpsmon  127.0.0.1:2948
 
 BUG  gpsd seem to lose connection after awhile and needs restarting !!
-   whereas   gpsmon  10.42.0.223:6000   is ok.
+   whereas   gpsmon  10.42.0.223:6000   is ok? .
 
   -edit RCconfig to indicate the GPS port if changed (IP is that of the gpsd 
       running on the RC machine (127.0.0.1)
@@ -145,7 +191,7 @@ BUG  gpsd seem to lose connection after awhile and needs restarting !!
      return (0,0) as the connection or GPS seem to take awhile to wake up.
      Try again after a few seconds.
 
-********  multiple GPS devices with GPS2Net ###############
+********  multiple GPS devices with GPS2Net or Share GPS###############
 
 It is possible to have multiple phones/tables on the network. Each would have its
 own IP address, but channeling through gpsd each gets it's own local port, eg:

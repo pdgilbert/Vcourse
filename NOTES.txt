@@ -10,6 +10,8 @@ interface used by the sailors is the LEDs.
 ########## To Do notes  ##########
 -clean up these notes
 
+-check BT is robust against starting up with no fix (ie inside)
+
 -running more than one course at a time needs more thought. Might start by adding fleet to raceObj and distributed course file name.
 
 -mounting mechanism for cases
@@ -84,8 +86,8 @@ See PiZeroWnotes.txt for details on building the gizmo and wpa_supplicant file.
     RC    127.0.0.1    2948
     pin   10.42.0.250  2947
     M1    10.42.0.251  2947
-UNTESTED
-
+  (gdps can be used to contact remote devices and serve them from a local 
+   deamon. I have had better luck with that appoach. See gpsNotes.txt.)
 
 -My USB GPS dongle seems to be relatively "plug and play" for getting 
    RC GPS. If there are problems, considerations are the same as for BT. See
