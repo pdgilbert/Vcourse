@@ -1,0 +1,179 @@
+#########################################
+#########################################
+Notes that apply to both  Raspbian and Armbian are in file OSsetup.txt
+
+This file contains notes specific to Armbian and the hardware it runs on. 
+To date tested primarily on Orange Pi Zero (OPiZ)
+with  Armbian_5.34_Orangepizero_Ubuntu_xenial_next_4.13.8.
+#########################################
+
+
+###############   links #################
+
+https://www.armbian.com/
+https://docs.armbian.com/User-Guide_Getting-Started/
+https://dl.armbian.com/orangepizero/archive/
+
+Arbian Orange Pi Zero  wlan problems xr819/xradio/ST CW1200
+https://forum.armbian.com/topic/3243-orange-pi-zero-wireless-module-status-xradio-st-cw1200/?page=2
+https://forum.armbian.com/topic/4245-orange-pi-zero-4110-sun8i-wlan0-is-gone/
+
+OrangePiForum
+http://www.orangepi.org/orangepibbsen/forum.php?mod=forumdisplay&fid=67
+GPIO
+http://www.orangepi.org/orangepibbsen/forum.php?mod=viewthread&tid=148&page=13
+
+pinout etc
+http://linux-sunxi.org/Xunlong_Orange_Pi_Zero
+
+#########################################
+
+There is no monitor support on the board, so it is neccesary to boot and 
+use ssh. ( or consider http://lucsmall.com/2017/01/19/beginners-guide-to-the-orange-pi-zero/ 
+has notes on using serial interface for COM connection.)
+
+p7zip -d Armbian...7z
+
+sha256sum -c sha256sum.sha # checks files as listed in file sha256sum.sha 
+
+Following needs mostly to be as root.
+
+1/ Armbian
+   dd  bs=4M if=Armbian_5.34_Orangepizero_Ubuntu_xenial_next_4.13.8.img of=/dev/sdc
+  ( root / 1234 )
+
+(Also tried Armbian_5.34_Orangepizero_Debian_jessie_next_4.13.8.img but
+ wifi seems even more problematic.)
+
+(Hope it boots and establishes eth0 connection to AP, as there is no monitor
+ support on the board.)
+Need to boot with eth0 plugged in, it does not seem to hotplug. 
+Also, wifi is not on by default. See more notes about wifi below.
+ 
+2/ get IP address from hardwired router DHCP (wireless needs ssid etc to work)
+
+3/ ssh root@192.168.2.160(eg)  /1234  and change to better password.
+   Create user bt.
+   Also change password for user  orangepi
+
+
+##########  wifi ##########
+ 
+  -turn on wifi connection to network using 
+     nmtui-connect SSID
+
+    (Turning on wifi is a bit sensitive on OPiZ. Above worked and is following https://docs.armbian.com/User-Guide_Getting-Started/#how-to-connect-to-wireless
+
+     Other approaches have caused problems. The xr819 chip is reputed to give
+     problems and the xradio driver handles it with difficulty.
+
+Fresh Armbian had
+root@orangepizero:~# nmcli device
+DEVICE  TYPE      STATE         CONNECTION 
+wlan0   wifi      disconnected  --         
+eth0    ethernet  unmanaged     --         
+lo      loopback  unmanaged     --         
+
+Examples of nmcli 
+  nmcli device
+  nmcli device show
+  nmcli connection show
+
+I tried to remove Network Manager on Armbian but that messed up.
+
+Get rid of avahi
+
+############################  still cleaning up
+
+To use armbian-config (have not yet) an Internet connection is needed. This will be needed
+for apt-get update, but in the first instance consider other options
+for configuration. 
+
+
+apt-get install python-dev # orangepi_PC_gpio_pyH3 setup needs headers
+apt-get install gcc
+
+gpio on Orange:
+  git clone https://github.com/duxingkei33/orangepi_PC_gpio_pyH3.git
+  cd orangepi_PC_gpio_pyH3
+  python setup.py install
+
+[   NOT apt-get install pyA20 NOT ]
+
+  lsusb         #  shows  U-Blox AG (Need to be root on Orange) but
+  dmesg | tail  #  does not. I think we need  cdc_acm, pps_ldisc,  ipv6 ?
+  modprobe -v --dry-run cdc_acm
+  modprobe -v --dry-run pps_ldisc
+
+example turning on/off LED
+http://www.orangepi.org/orangepibbsen/forum.php?mod=viewthread&tid=148&page=13
+
+http://www.instructables.com/id/Orange-Pi-One-Python-GPIO-basic/
+https://diyprojects.io/orange-pi-onelite-tutorial-use-gpio-python-pinouts/
+https://github.com/duxingkei33/orangepi_PC_gpio_pyH3
+git clone https://github.com/duxingkei33/orangepi_PC_gpio_pyH3
+
+
+#######################################################################
+
+report system info to Arbian forum:
+ armbianmonitor -u
+ 
+Unable to locate package gpsd-cdbg  Not sure if this is needed.
+
+on jessie I think I had to
+nano -w /boot/armbianEnv.txt # and add
+overlays=usbhost2
+or
+overlays=usbhost1 usbhost2
+
+usbhost2  is the full size USB port, not decribed as OTG, but it seems 
+  to handle plugged in devices in the same way a computer usually does, which
+  would be OTG. Using this for plugging in GSP puck does work and is what has
+  been used below.
+
+usbhost1 (or possibly usbhost0) is the micro USB port decribed as OTG and used for power. So far I have not been able to make this work. It is also complcated by needing to suppy power on this usb port. (Apparantly power can be supplied on a board pin, but that will not power a usb device on the port.) So this approach requires a powered hub with micro usb ports (which I don't have).
+
+lsusb
+Bus 005 Device 002: ID 1546:01a8 U-Blox AG 
+
+cat /dev/ttyACM0 # shows data, it works
+
+
+#########################################################################
+
+Tried to remove Network Manager on Armbian xenial but it messed up:
+
+   nmcli networking off # since it was not managing eth0 anyway
+   systemctl stop network-manager.service
+   systemctl stop NetworkManager-dispatcher.service
+   systemctl stop NetworkManager-wait-online.service
+   systemctl stop NetworkManager.service
+   
+   systemctl disable network-manager.service
+   systemctl disable NetworkManager-dispatcher.service
+   systemctl disable NetworkManager-wait-online.service
+   systemctl disable NetworkManager.service
+
+   #check it actually worked
+   systemctl list-unit-files --state=enabled
+
+   (leave networking.service enabled. It is "one shot" using 
+     /etc/network/interfaces to ifup and ifdown. )
+
+   reboot   #with fingers crossed
+
+   #check it actually worked
+   systemctl list-unit-files --state=enabled
+
+  journalctl -b
+  
+  
+  systemctl list-unit-files --state=enabled
+  systemctl disable  syslog.service
+  systemctl disable rsyslog.service
+  /etc/systemd/system/multi-user.target.wants/rsyslog.service
+  but it doe not seem to be needed (multi-user still starts)
+
+#########################################################################
+

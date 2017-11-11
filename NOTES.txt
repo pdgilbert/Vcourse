@@ -1,3 +1,10 @@
+########## General and user notes are in this file.                  ##########
+########## Common OS setup (development) notes are in OSsetup.txt    ##########
+########## Raspbian and Raspberry Pi setup notes are in Raspbian.txt ##########
+########## Armbian and Orange Pi setup notes are in Armbian.txt      ##########
+########## GPS notes are in gpsNotes.txt                             ##########
+########## Venue specific details are in venue files (not on github) ##########
+
 RC refers to Race Committee. The program stadiumRC runs on a computer (laptop)
 which can also run a wifi hotspot for boats to connect. (There are other options
 for the wifi.) It has a graphical interface.

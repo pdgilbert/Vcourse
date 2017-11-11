@@ -6,6 +6,12 @@ https://github.com/uraimo/SwiftyGPIO/wiki/GPIO-Pinout
 
 https://raspberrypi.stackexchange.com/questions/9481/gpio-why-wire-button-to-ground-rather-than-3-3v
 
+Big Dan the Blogging re GPS Manhttps://bigdanzblog.wordpress.com/2015/01/18/connecting-u-blox-neo-6m-gps-to-raspberry-pi  
+
+Python3 GPSD client
+https://github.com/MartijnBraam/gpsd-py3
+
+
 ##################################################
 
 Dynamic differential GPS:

@@ -1,0 +1,190 @@
+Notes that apply to both  Raspbian and Armbian are in file OSsetup.txt
+
+This file contains notes specific to Raspbian and the hardware it runs on. 
+To date tested primarily on Raspberry Pi Zero W v1.1 (RPiZw)
+with  2017-07-05-raspbian-jessie-lite.
+
+(Also tried Raspbian on Orange Pi Zero. The wifi worked more easily but the USB
+ did not recognize gps. Notes on this are at the bottom of this file.)
+
+Burn the image to microSD card. (usb worked better than SD slot on my laptop)
+
+1/ Burn the image to microSD card. (usb worked better than SD slot on my laptop)
+   dd  bs=4M if=xxxx.img  of=/dev/sdc
+  (  pi/raspberry)
+
+2/ Use raspi-config (or otherwise) for configuration. 
+
+  -set/change pi user passwd
+
+3/ turn on wifi connection to network  (see below)
+
+############################
+
+Old firmware may cause problem for non-root access to GPIO. Following
+https://raspberrypi.stackexchange.com/questions/40105/access-gpio-pins-without-root-no-access-to-dev-mem-try-running-as-root
+
+do
+
+rpi-update # firmware and kernel modules update for GPIO fix
+*** If no errors appeared, your firmware was successfully updated to 20ba6ed25ef3600c8ee5db74fe58b12affb7ea53
+
+gpio on Raspberry Pi Zero W:
+apt-get install python3-rpi.gpio
+
+#################################################################
+
+##########  wifi ##########
+  -turn on wifi connection to network. 
+     to update (edit /etc/wpa_supplicant/wpa_supplicant.conf, see network below)
+
+
+For the Raspberry Pi Raspbian (2017-07-05-raspbian-jessie-lite) uses /etc/network/interfaces to configure ifup, ifdown for managing the network, 
+/etc/wpa_supplicant/wpa_supplicant.conf for setting wifi authentication,
+and dhcpcd for client DHCP requests.
+
+
+To get rid of NetworkManager, first get wifi working with /etc/network/interfaces
+and wpa_supplicant, and connect though wifi (since eth0 will be disconnected in 
+the change. On some newer systems udev renames wlan0 using
+/etc/udev/rules.d/70-persistent-net.rules gives new wlan# for every different mac 
+address I think. This needs to be fixed to reproduce SD cards for different 
+machines.
+
+Following is based on using wlan0 but check if that is what it is on your system.
+The /etc/network/interfaces file should have
+
+source-directory /etc/network/interfaces.d
+
+auto lo
+iface lo inet loopback
+
+auto eth0
+allow-hotplug eth0
+no-auto-down eth0
+iface eth0 inet dhcp
+
+auto wlan0
+allow-hotplug wlan0
+iface wlan0 inet dhcp
+    wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+
+Beware that eth0 in above interacts badly with NetworkManager, so possibly
+comment the two lines until NetworkManager is disabled.
+
+but first need to get wifi working and not managed by nm. 
+That can be diffucult. On Raspbian (Orange) it was already not managed by nm, 
+but on Armbian (Orange) it was I think (or there is another problem)
+
+NOT nmcli radio wifi off
+ nmcli connection show
+nmcli connection delete h2o  ??
+
+  systemctl disable net-auto-wireless.service
+  systemctl status net-auto-wireless.service
+  reboot
+
+
+Now disconnect  NetworkManager control
+ nmcli device
+ nmcli device disconnect eth0  # be sure to have wifi connection working first  
+ nmcli networking off # stops managing networks
+ nmcli device  # eveything should be unmanaged
+
+ nmcli con down h2o
+ nmcli con up h2o
+
+Now uncomment eth0 lines in /etc/network/interfaces and
+ ifup eth0
+
+and check it is working, then reboot, and hope it is still working, then
+
+  apt-get remove network-manager   # (but don't autoremove wpasupplicant)
+  apt-get install wpasupplicant    # with take it out of auto-remove list I think
+
+
+
+If both wlan2 and eth0 connect then it is uncertain which will have the last 
+write of /etc/resolv.conf, so if wifi is not Internet connected and you are trying
+to do an update from the Internet, it may be necessary to edit /etc/resolv.conf
+and specify a correct dns server. (Beware the file gets re-written on boot.)
+
+
+Edit file /etc/wpa_supplicant/wpa_supplicant.conf to
+something like
+
+country=CA
+#country=GB
+#ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+#update_config=1
+
+# higher priority is more preferable
+
+network={
+   ssid="OnWaterNetwork"
+   psk="someSecret"
+   key_mgmt=WPA-PSK
+   priority=10
+#   id_str="possibly RC"
+}
+
+The ssid, pskm and key_mgmt fields should correspond to settings on the AP. 
+I am not sure about fields update_config and ctrl_interface. 
+I commented them out while trying to debug, but I'm not sure if they were 
+the cause of problems.
+
+
+nano -w /etc/network/interfaces
+iface wlan0 inet dhcp | manual | static
+
+manual means nothing is done by this script, it is done elsewhere
+see man interfaces
+
+https://www.debian.org/doc/manuals/debian-reference/ch05.en.html#_the_wireless_lan_interface_with_wpa_wpa2
+
+DOES UDEV RENAME wlan0 to wlan2  grep wlan /var/log/messages
+
+allow-hotplug wlan0
+iface wlan0 inet dhcp
+ wpa-ssid h2o
+ wpa-psk "CORKonWater"
+
+# allow-hotplug wlan0
+# iface wlan0 inet manual
+# wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
+# iface default inet static
+iface wlan0 inet static
+    wpa-ssid h2o
+    wpa-psk CORKonWater
+    wpa-key_mgmt=WPA-PSK
+    wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+    address 10.42.0.15
+    netmask 255.255.255.0
+    network 10.42.0.0
+    gateway 10.42.0.1
+
+see https://www.raspberrypi.org/forums/viewtopic.php?t=122601
+re rsyslogd-2007: action 'action 17' suspended,  in tail -100 /var/log/message
+on Orange
+
+
+
+#################################################################
+                Raspian on Orange Pi Zero.
+ (abandon in favor of Armbian because of difficulty recogninizing USB for gps)
+#################################################################
+
+
+1/ dd  bs=4M if=Raspbian_server_For_zero_H2+_V0_1.img of=/dev/sdc
+sync
+   (   orangepi/orangepi    root/orangepi )
+
+Use raspi-config (or otherwise) for configuration. 
+
+(I think this was version indicaded as Orange Pi Raspian updated : 2015-03-17 at http://www.orangepi.org/downloaded/download.html )
+
+
+For the Oranage Pi version (I think) Orange Pi Raspian updated: 2015-03-17 at http://www.orangepi.org/downloaded/download.html 
+uses network-manager for eth0. wlan2 (renamed from wlan0 by udev) is not set up. /etc/network/interfaces and /etc/wpa_supplicant/wpa_supplicant.conf can be
+used for wifi (only partially working so far). These two approaches conflict or at least interact badly. There is also some tension between NetworkManager and
+wpa_supplicant. This setup also used dhclient for client DHCP requests.

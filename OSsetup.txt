@@ -1,0 +1,301 @@
+#######################################################################
+
+          General linux setup notes
+   common to Raspian (tested on Raspberry PiZeroW )
+	and  Armbian (tested on Orange Pi Zero )
+
+#######################################################################
+
+#######################################################################
+   OS reference  misc notes 
+    
+cat /sys/class/thermal/thermal_zone0/temp
+check  SD cardperformance using armbianmonitor -c
+
+ping6 -I wlan0 fe80::a673:a21e:265c:b223
+
+ssh -6 bt@fe80::a673:a21e:265c:b223%wlan0  # ipv6 on outgoing wlan0 
+
+systemd units and unit files
+https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files
+
+How to switch from NetworkManager to systemd-networkd on Linux
+http://xmodulo.com/switch-from-networkmanager-to-systemd-networkd.html
+
+http://dietpi.com/
+
+#######################################################################
+
+  df -h  # to confirm SD was expanded to full size and not using iso size.
+
+  -set/change root passwd
+
+  -change the computer name (/etc/hostname) to BT-x, where x will be 
+   different for each copy.
+   Boat sail numbers will be put in the BTconfig file but different host names
+   make it easier to change BTconfig (even though it makes replication of the
+   SD sligthly more difficult). 
+
+  -turn on wifi connection to network. See Raspbian.txt or Armbiam.txt 
+    for more specific details.
+
+  -turn on sshd if it is not already on.
+
+  -possibly configure ssh keys but beware the image will be distribute so the 
+     private key should not be on each SD copy, only the id_rsa.pub in 
+     .ssh/authorized_keys. (Possibly create a key pair for this purpose only,
+     then on the machine used to access BT ad a stanza in .ssh/config like
+       Host BT
+         HostName BT-*  [or  10.42.0.* ]
+         IdentityFile ~/.ssh/bt_id_rsa 
+         User bt
+
+reboot
+
+Now you can use ssh to Raspberry Pi and work from a desktop to get 
+thing set up. (On Orange Pi you didn't get this far without ssh.)
+
+At this point be sure you can get the wifi network setup working (see further
+below and Raspbian.txt or Armbian.txt) as you may need to start over if that 
+messes up, and then the following updates/upgrades/additions will need to 
+be done again.
+
+
+You need an Internet connection for the next. If wlan and eth0 are both working,
+and wlan does not go to Internet, it may is better to bring it down so Internet
+connection is only attempted through eth0.  Update the system:
+
+  apt-get update
+
+  apt-get upgrade    # didn't yet !!!
+  apt-get update  ]  
+
+  [reboot]
+
+Add user bt if that was not already done:
+  useradd -m bt 
+  passwd bt xxxxxx  # or something better
+
+apt-get install python3  python3-tk
+apt-get install gpsd  python-gps  gpsd-clients 
+
+[apt-get install gpsd-cdbg  # not sure if this is needed,  for compiling??  ]
+
+
+apt-get install git # if doing development
+
+See Raspbian.txt or Armbian.txt re apt-get install python *.gpio 
+
+[next can be done with
+   apt-get install python3-pip 
+   pip3  install  gpsd-py3 ]
+ but try avoiding this as it installs lots extra I think. 
+ Instead ]
+
+  apt-get install python3-setuptools
+   
+  git clone https://github.com/MartijnBraam/gpsd-py3.git
+  (or Downloading gpsd-py3-0.2.0.tar.gz )
+  cd gpsd-py3
+  python3 setup.py install
+
+  
+  chmod g+rw /dev/gpiomem  ## NOT there on Orange
+
+
+adduser bt gpio  # so bt can turn LEDs on/off [NOT OM ORANGE YET ]
+
+No longer as root, run python3 and check
+
+   import json, socket, threading, logging, time, math, tkinter, gpsd
+
+See additional notes in gpsNotes.txt if there are problems with the next.
+
+plug in gps usb and check
+  lsusb  # should show  ... U-Blox AG . Need to be root on Orange
+  dmesg | tail -30 # should show it mounted (eg USB ACM   ttyACM0 )
+  cat /dev/ttyACM0     #should show data, directly from device not from gpsd
+  gpsmon /dev/ttyACM0  #should show data, directly from device not from gpsd
+
+  gpsmon 127.0.0.1     suppose to acces deamon, but have noy got something right
+  gpsmon 127.0.0.1:2947  (the same, 2947 is default port
+
+If you get  Permission denied then, as root, you need to (assuming ttyACM0 was indicated above)
+   chmod 0666 /dev/ttyACM0  
+so that you do not need to be root to access the gps. Then so the change persists after reboot, 
+create (or edit) a new rule file  /etc/udev/rules.d/99-gps.rules   with the line
+
+KERNEL=="ttyACM0", MODE="0666"
+
+(I don't think 99 in the file name is especially important in this case.)
+
+sign on as bt
+
+The python code uses gpsd so as root
+   systemctl start gpsd
+   systemctl enable gpsd
+   
+ or run manually on NON STANDARD PORT  as root DOES NOT SEEM NEEDED??
+   systemctl stop gpsd
+   systemctl disable gpsd
+
+   gpsd  -S 2948 /dev/ttyACM0  #-S 2947 is default port
+
+Run python3 and check
+
+import gpsd
+gpsCon = gpsd.connect(host="127.0.0.1", port=2947) 
+gpsCon = gpsd.connect(host="127.0.0.1", port=2948) #default 2947
+z = gpsd.get_current() # WORKS ON NON STANDARD PORT  <GpsResponse No mode> means not yet ready
+z
+z.time.format("%a, %d %b %Y %H:%M:%S +0000")  NOT
+
+Generate a configuration file BTconfig that looks something like
+
+{"BT_ID": "boat 1","RC_IP": "10.42.0.1",  "RC_PORT": "9001", "GPS_HOST": "127.0.0.1",  "GPS_PORT": 2948 }
+
+The RC_IP will depend on the network configuration
+
+
+#######################################################
+################  network  (on BT) ####################
+#######################################################
+
+The BTs needs to connect to an access point (AP), at least until I figure out a
+mesh network. Setup an AP  hotspot. 
+
+Raspian uses /etc/network/interfaces and /etc/wpa_supplicant/wpa_supplicant.conf.
+I managed to disable and uninstall NetworkManager. See Raspian.txt for
+additional notes and details on /etc/network/interfaces and 
+/etc/wpa_supplicant/wpa_supplicant.conf.
+
+Arbian uses /etc/network/interfaces for eth0 and NetworkManager for wlan0.
+See Armbian.txt for additional details on nmcli setup.
+
+NetworkManager in a gui environment is nice, but headless there seems little 
+advantage. But Armbian comes with it installed and I have not got anything 
+else working on OrangePiZero. Additional notes about the command line 
+interface nmcli are in Armbian.txt.
+
+In the future systemd-networkd may be the way to go
+https://www.redpill-linpro.com/techblog/2016/08/17/systemd-network.html
+but neither Raspian nor Armbian are using that yet.
+(I think systemd-networkd also handles  DHCP requests.)
+
+It is a bit hard to know what is managing what network interfaces. Try
+  nmcli device
+  ifconfig
+  systemctl list-unit-files --state=enabled
+  systemctl -a  | grep -i net
+  cat /etc/network/interfaces
+  cat /etc/wpa_supplicant/wpa_supplicant.conf
+  cat /etc/resolv.conf
+  wpa_cli -i wlan0 status
+  iw dev wlan0 scan
+  dmesg | tail 02
+  grep wlan /var/log/messages
+  journalctl -b
+  journalctl -p err -b
+  journalctl --list-boots lists the current and previous boot times.
+  systemctl status 
+  systemctl list-unit-files --state=enabled
+    (might show NetworkManager*
+    network-manager.service is the same as -is soft link to- NetworkManager.service
+        ls -l /lib/systemd/system/network-manager.service
+    if "systemd-resolved.service" is enabled then it also is trying to manage.)
+
+  lsmod
+  modinfo
+
+
+Note that date needs to be set on AP for BT to use NTP, and Pis don't seem to 
+have a clock when off.
+
+##############  make it autostart at boot  ###############
+
+In /home/bt make a script runAtBoot  with lines
+
+UPDATE THIS WHEN WORKING PROPERLY
+
+#!/bin/bash
+echo up at `date` >> bootTime
+# should not need to start gpsd, but ...
+head /dev/ttyACM0 # to see if it is working
+gpsd  -n -S 2948 /dev/ttyACM0  #-S 2947 is default port
+sleep 20 # let gps get fix
+export PYTHONPATH=/home/bt/Vcourse/lib
+/home/bt/Vcourse/stadiumBT & 
+echo   runAtBoot finished 
+
+The & above is necessary to daemonize the job. 
+Environment variables must be set as cron does not use .bashrc.
+
+Give runAtBoot execute permission and in crontab add
+@reboot ./runAtBoot >/home/bt/cron.log
+
+
+##############  Clean up for non-development SDs ###############
+
+rm track.txt cron.log  stadiumBT.log BTraceObj.json
+
+remove  keys in .ssh directory if used for git !!!
+apt-get remove git # and some other things??
+
+clean up Vcourse/  but leave files needed for execution.
+
+On RC, not on BT:
+clean up RC/distributedCourses/*  
+
+
+##############  replicating SDs for other BT gizmos  ############
+
+This is for identical hardware. Go through process above if the hardware is not 
+identical. It also requires an SD of the same size, there is no auto-expansion.
+
+Copy the good, clean, BT SD created above to an image file and then to other 
+SD cards can be done as follows. This process uses 'dd'. Note that 'dd' can 
+ruin a whole device, not just one file system, and not
+just clobber some important files, so do this CAREFULLY and pay special 
+attention to having the output of=device correct. It also must be used as root.
+
+Be sure there is enough space on the computer drive. A 16 GB card will 
+create a 16 GB file even if the card is not filled. There is no compression.
+
+Insert the BT SD card into a computer (USB possibly works better than SD slot?)
+Check the device letter, for example with 'df' and umount and file systems. Likely there will be two or more file systems, one called boot.
+
+   sudo umount /dev/sdc1(eg)
+   sudo umount /dev/sdc2(eg)
+
+CAREFULLY and paying special attention to having the output of=device correct
+
+    sudo dd  bs=4M  if=/dev/sdc(eg) of=PiZeroW-BT.img 
+    sudo sync
+
+Note there is no partition number after sdc. This will take time, possibly 20+ minutes for a 16GB SD card. It appears frozen even though it is working.
+
+Remove the BT SD card and insert an empty SD card into the computer.
+(It does not need to be empty, but everything on it will be overwritten.)
+Copying the image to an SD card with dd does not require the SD card to be formatted but formatting is a way to set the volume label.
+
+Run df -h to see what devices are mounted, note the SD device (eg /dev/sdc1) 
+and then unmount it.
+ 
+   sudo umount /dev/sdc1(eg)
+   sudo umount /dev/sdc2(eg)
+
+   sudo dd  bs=4M if=PiZeroW-BT.img  of=/dev/sdc(eg)
+   sync  #ensure the write cache is flushed
+
+The simplest way to make the following changes may be to just remount the SD 
+which now mounts the SD file systems, where .../ needs to be repaced by mount point (don't change laptop /etc/hostname) :
+
+  -change the computer name in .../etc/hostname to BT-x, where x will be 
+    different for each copy.
+
+  -If known, boat sail numbers can be put in BT_ID in .../home/bt/BTconfig. 
+
+It will be necessary to edit as root since user IDs are different on the computer. 
+
+ arp -a -i wlan0 , or by connecting monitor/keyboard.
+
