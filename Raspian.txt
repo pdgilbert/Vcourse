@@ -19,8 +19,19 @@ Burn the image to microSD card. (usb worked better than SD slot on my laptop)
 
 3/ turn on wifi connection to network  (see below)
 
-############################
+4/ Mics Raspbian/Raspberry Pi specific
 
+   Get rid of avahi (TESTING ON BT-1 )
+      systemctl list-unit-files | grep avahi
+        avahi-daemon.service                   enabled 
+        avahi-daemon.socket                    enabled 
+      apt-get remove avahi-daemon
+      systemctl list-unit-files | grep avahi
+        avahi-daemon.service                   masked  
+        avahi-daemon.socket                    masked  
+
+
+5/ gpio
 Old firmware may cause problem for non-root access to GPIO. Following
 https://raspberrypi.stackexchange.com/questions/40105/access-gpio-pins-without-root-no-access-to-dev-mem-try-running-as-root
 
@@ -32,8 +43,9 @@ rpi-update # firmware and kernel modules update for GPIO fix
 gpio on Raspberry Pi Zero W:
 apt-get install python3-rpi.gpio
 
-#################################################################
+6/ See Setup after image is "burned" on SD card in OSsetup.txt
 
+#################################################################
 ##########  wifi ##########
   -turn on wifi connection to network. 
      to update (edit /etc/wpa_supplicant/wpa_supplicant.conf, see network below)
@@ -166,7 +178,6 @@ iface wlan0 inet static
 see https://www.raspberrypi.org/forums/viewtopic.php?t=122601
 re rsyslogd-2007: action 'action 17' suspended,  in tail -100 /var/log/message
 on Orange
-
 
 
 #################################################################

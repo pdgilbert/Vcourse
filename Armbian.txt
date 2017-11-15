@@ -1,11 +1,11 @@
-#########################################
-#########################################
+###############################################################
+###############################################################
 Notes that apply to both  Raspbian and Armbian are in file OSsetup.txt
 
 This file contains notes specific to Armbian and the hardware it runs on. 
 To date tested primarily on Orange Pi Zero (OPiZ)
 with  Armbian_5.34_Orangepizero_Ubuntu_xenial_next_4.13.8.
-#########################################
+###############################################################
 
 
 ###############   links #################
@@ -26,6 +26,12 @@ http://www.orangepi.org/orangepibbsen/forum.php?mod=viewthread&tid=148&page=13
 pinout etc
 http://linux-sunxi.org/Xunlong_Orange_Pi_Zero
 
+troubleshooting
+https://docs.armbian.com/User-Guide_Basic-Troubleshooting/
+
+Improving small H2+/H3 board performance with mainline kernel
+https://forum.armbian.com/topic/5250-improving-small-h2h3-board-performance-with-mainline-kernel/
+
 #########################################
 
 There is no monitor support on the board, so it is neccesary to boot and 
@@ -38,25 +44,52 @@ sha256sum -c sha256sum.sha # checks files as listed in file sha256sum.sha
 
 Following needs mostly to be as root.
 
-1/ Armbian
-   dd  bs=4M if=Armbian_5.34_Orangepizero_Ubuntu_xenial_next_4.13.8.img of=/dev/sdc
+1/  Burn the image to microSD card. 
+     dd  bs=4M if=Armbianxxx.img of=/dev/sdc
+  ( used if=Armbian_5.34_Orangepizero_Ubuntu_xenial_next_4.13.8.img )
   ( root / 1234 )
 
-(Also tried Armbian_5.34_Orangepizero_Debian_jessie_next_4.13.8.img but
- wifi seems even more problematic.)
+  (Also tried Armbian_5.34_Orangepizero_Debian_jessie_next_4.13.8.img but
+   wifi seems even more problematic.)
 
-(Hope it boots and establishes eth0 connection to AP, as there is no monitor
- support on the board.)
-Need to boot with eth0 plugged in, it does not seem to hotplug. 
-Also, wifi is not on by default. See more notes about wifi below.
+  (Hope it boots and establishes eth0 connection to AP, as there is no monitor
+   support on the board.)
+  Need to boot with eth0 plugged in, it does not seem to hotplug. 
+  Also, wifi is not on by default. See more notes about wifi below.
  
 2/ get IP address from hardwired router DHCP (wireless needs ssid etc to work)
 
 3/ ssh root@192.168.2.160(eg)  /1234  and change to better password.
    Create user bt.
-   Also change password for user  orangepi
+   Also remove or change password for user  orangepi
+
+4/ Mics Armbian/Orange Pi specific
+   (armbian-config needs an Internet connection, so not used here.)
+
+   disable auto upgrade
+     systemctl list-unit-files | grep apt
+     systemctl disable apt-daily-upgrade.timer
+     systemctl disable apt-daily.timer
+     systemctl list-unit-files | grep apt
+
+   get rid of avahi
+     apt-get remove avahi-autoipd
+
+   (need Internet here)
+   gpio on Orange:
+       apt-get install python3-dev # orangepi_PC_gpio_pyH3 setup needs headers
+       apt-get install gcc         # may be done already
+       cd /home/bt
+       as bt:
+       git clone https://github.com/duxingkei33/orangepi_PC_gpio_pyH3.git
+       cd orangepi_PC_gpio_pyH3
+       as root:
+       python3 setup.py install  # this is python package pyA20.gpio
 
 
+5/ See Setup after image is "burned" on SD card in OSsetup.txt
+
+#################################################################
 ##########  wifi ##########
  
   -turn on wifi connection to network using 
@@ -74,31 +107,33 @@ wlan0   wifi      disconnected  --
 eth0    ethernet  unmanaged     --         
 lo      loopback  unmanaged     --         
 
+See also https://wiki.debian.org/NetworkManager  which points out that
+eth0 will not be managed if it is even mentioned in /etc/network/interfaces.
+So, commenting out eth0 lines in that file and rebooting gives
+DEVICE  TYPE      STATE         CONNECTION 
+eth0    ethernet  connected  Wired connection 1 
+wlan0   wifi      connected  mySSID               
+lo      loopback  unmanaged  --          
+
 Examples of nmcli 
   nmcli device
   nmcli device show
   nmcli connection show
+  nmcli device wifi list
+  nmcli -p -f general,wifi-properties device show wlan0
+  nmcli general permissions
+  nmcli con down mySSID  # where mySSID is connection NAME returned in above
+  nmcli con  up  mySSID 
+  NOT? nmcli radio wifi off 
+dmesg | tail -20
+
+NetworkManager
+https://help.ubuntu.com/community/NetworkManager#Editing_Network_Settings_in_GConf
 
 I tried to remove Network Manager on Armbian but that messed up.
 
-Get rid of avahi
-
 ############################  still cleaning up
 
-To use armbian-config (have not yet) an Internet connection is needed. This will be needed
-for apt-get update, but in the first instance consider other options
-for configuration. 
-
-
-apt-get install python-dev # orangepi_PC_gpio_pyH3 setup needs headers
-apt-get install gcc
-
-gpio on Orange:
-  git clone https://github.com/duxingkei33/orangepi_PC_gpio_pyH3.git
-  cd orangepi_PC_gpio_pyH3
-  python setup.py install
-
-[   NOT apt-get install pyA20 NOT ]
 
   lsusb         #  shows  U-Blox AG (Need to be root on Orange) but
   dmesg | tail  #  does not. I think we need  cdc_acm, pps_ldisc,  ipv6 ?
@@ -112,6 +147,7 @@ http://www.instructables.com/id/Orange-Pi-One-Python-GPIO-basic/
 https://diyprojects.io/orange-pi-onelite-tutorial-use-gpio-python-pinouts/
 https://github.com/duxingkei33/orangepi_PC_gpio_pyH3
 git clone https://github.com/duxingkei33/orangepi_PC_gpio_pyH3
+
 
 
 #######################################################################
@@ -139,6 +175,8 @@ Bus 005 Device 002: ID 1546:01a8 U-Blox AG
 
 cat /dev/ttyACM0 # shows data, it works
 
+
+#########################################################################
 
 #########################################################################
 

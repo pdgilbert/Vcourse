@@ -8,9 +8,9 @@
 
 #######################################################################
    OS reference  misc notes 
+#######################################################################
     
 cat /sys/class/thermal/thermal_zone0/temp
-check  SD cardperformance using armbianmonitor -c
 
 ping6 -I wlan0 fe80::a673:a21e:265c:b223
 
@@ -18,11 +18,45 @@ ssh -6 bt@fe80::a673:a21e:265c:b223%wlan0  # ipv6 on outgoing wlan0
 
 systemd units and unit files
 https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files
+https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units
+
+
+systemd-analyze blame  # find slowness in boot
+
+systemctl list-unit-files
+systemctl list-unit-files --state=enabled
+
+enable and disable only configure auto-start behaviour for units.
+
+enabled: symlink in /etc/systemd/system to a unit file, usually 
+     in /lib/systemd/system
+
+disabled:  no symlink. A disabled service will be started if a service that
+    depends on it is started.
+
+static: the unit file has no "install" section to enable a unit, so these
+    units cannot be enabled. This often means that the unit performs a one-off
+    action or is a dependency of another unit and should not be run by itself.
+
+masked: the unit file is a symlink to /dev/null. It is "impossible" 
+    to load the service, even if it is required by another enabled service.
+
+systemctl disable service # to disable service
+systemctl enable service  # to  enable service
+
+systemctl list-dependencies [--all] sshd.service # show things sshd needs
 
 How to switch from NetworkManager to systemd-networkd on Linux
 http://xmodulo.com/switch-from-networkmanager-to-systemd-networkd.html
 
 http://dietpi.com/
+
+ lsmod
+ modprobe
+ 
+#######################################################################
+
+    Setup after image is "burned" on SD card
 
 #######################################################################
 
@@ -60,15 +94,15 @@ below and Raspbian.txt or Armbian.txt) as you may need to start over if that
 messes up, and then the following updates/upgrades/additions will need to 
 be done again.
 
-
 You need an Internet connection for the next. If wlan and eth0 are both working,
 and wlan does not go to Internet, it may is better to bring it down so Internet
 connection is only attempted through eth0.  Update the system:
 
-  apt-get update
+  apt-get update    #check autoremove list in case there is something 
+ [ apt autoremove ] #that really should not be removed.
 
-  apt-get upgrade    # didn't yet !!!
-  apt-get update  ]  
+  apt-get upgrade    # didn't yet on Raspbian!
+  apt-get update 
 
   [reboot]
 
@@ -79,51 +113,53 @@ Add user bt if that was not already done:
 apt-get install python3  python3-tk
 apt-get install gpsd  python-gps  gpsd-clients 
 
-[apt-get install gpsd-cdbg  # not sure if this is needed,  for compiling??  ]
+[trying without
+ apt-get install gpsd-cdbg  # not sure if this is needed,  for compiling??  ]
 
 
 apt-get install git # if doing development
 
 See Raspbian.txt or Armbian.txt re apt-get install python *.gpio 
 
-[next can be done with
-   apt-get install python3-pip 
-   pip3  install  gpsd-py3 ]
- but try avoiding this as it installs lots extra I think. 
- Instead ]
-
   apt-get install python3-setuptools
-   
+  
+  cd /home/bt   
   git clone https://github.com/MartijnBraam/gpsd-py3.git
   (or Downloading gpsd-py3-0.2.0.tar.gz )
   cd gpsd-py3
   python3 setup.py install
 
-  
-  chmod g+rw /dev/gpiomem  ## NOT there on Orange
+ [above can be done with
+   apt-get install python3-pip 
+   pip3  install  gpsd-py3 ]
+ but try avoiding this as it installs lots extra I think.]
+ 
+[  chmod g+rw /dev/gpiomem  ## NOT there on Orange !!! ]
 
 
-adduser bt gpio  # so bt can turn LEDs on/off [NOT OM ORANGE YET ]
+[  adduser bt gpio  # so bt can turn LEDs on/off [NOT OM ORANGE YET ]
 
 No longer as root, run python3 and check
 
    import json, socket, threading, logging, time, math, tkinter, gpsd
+   quit()
 
 See additional notes in gpsNotes.txt if there are problems with the next.
 
 plug in gps usb and check
   lsusb  # should show  ... U-Blox AG . Need to be root on Orange
-  dmesg | tail -30 # should show it mounted (eg USB ACM   ttyACM0 )
+  dmesg | tail -30 # should show it mounted (eg ttyACM0: USB ACM device)
   cat /dev/ttyACM0     #should show data, directly from device not from gpsd
   gpsmon /dev/ttyACM0  #should show data, directly from device not from gpsd
 
-  gpsmon 127.0.0.1     suppose to acces deamon, but have noy got something right
+  gpsmon 127.0.0.1     suppose to acces deamon, but have not got something right
   gpsmon 127.0.0.1:2947  (the same, 2947 is default port
 
 If you get  Permission denied then, as root, you need to (assuming ttyACM0 was indicated above)
    chmod 0666 /dev/ttyACM0  
-so that you do not need to be root to access the gps. Then so the change persists after reboot, 
-create (or edit) a new rule file  /etc/udev/rules.d/99-gps.rules   with the line
+so that you do not need to be root to access the gps. Then so the change 
+persists after reboot, create (or edit) a new rule 
+file  /etc/udev/rules.d/99-gps.rules   with the line
 
 KERNEL=="ttyACM0", MODE="0666"
 
@@ -145,10 +181,24 @@ Run python3 and check
 
 import gpsd
 gpsCon = gpsd.connect(host="127.0.0.1", port=2947) 
+or
 gpsCon = gpsd.connect(host="127.0.0.1", port=2948) #default 2947
-z = gpsd.get_current() # WORKS ON NON STANDARD PORT  <GpsResponse No mode> means not yet ready
+z = gpsd.get_current() 
+# <GpsResponse No mode> means not yet ready
+# WORKS ON     STANDARD PORT on Arbian OPiZ 
+# WORKS ON NON STANDARD PORT on Raspian RPiZw
 z
 z.time.format("%a, %d %b %Y %H:%M:%S +0000")  NOT
+quit()
+
+Install gpio packages as in Raspbian.tx or Armbian.txt.
+
+Install Vcourse code from git
+ git clone  https://github.com/pdgilbert/Vcourse.git # or use pub/priv keys
+
+TRY LEDS
+Vcourse/blinkTest
+
 
 Generate a configuration file BTconfig that looks something like
 
@@ -156,6 +206,7 @@ Generate a configuration file BTconfig that looks something like
 
 The RC_IP will depend on the network configuration
 
+reboot
 
 #######################################################
 ################  network  (on BT) ####################
@@ -169,11 +220,11 @@ I managed to disable and uninstall NetworkManager. See Raspian.txt for
 additional notes and details on /etc/network/interfaces and 
 /etc/wpa_supplicant/wpa_supplicant.conf.
 
-Arbian uses /etc/network/interfaces for eth0 and NetworkManager for wlan0.
+Armbian may use /etc/network/interfaces for eth0 and NetworkManager for wlan0.
 See Armbian.txt for additional details on nmcli setup.
 
-NetworkManager in a gui environment is nice, but headless there seems little 
-advantage. But Armbian comes with it installed and I have not got anything 
+NetworkManager in a gui environment is nice, but headless the advantage is 
+less clear. But Armbian comes with it installed and I have not got anything 
 else working on OrangePiZero. Additional notes about the command line 
 interface nmcli are in Armbian.txt.
 
@@ -248,6 +299,7 @@ clean up RC/distributedCourses/*
 
 
 ##############  replicating SDs for other BT gizmos  ############
+                  (see below re testing SDs )
 
 This is for identical hardware. Go through process above if the hardware is not 
 identical. It also requires an SD of the same size, there is no auto-expansion.
@@ -298,4 +350,18 @@ which now mounts the SD file systems, where .../ needs to be repaced by mount po
 It will be necessary to edit as root since user IDs are different on the computer. 
 
  arp -a -i wlan0 , or by connecting monitor/keyboard.
+
+
+##############  testing SDs ###############
+
+SD testing
+http://oss.digirati.com.br/f3/
+ 
+f3probe is the fastest way to identify fake drives and their real sizes. 
+   f3probe /dev/sdc  # not sdc1, but seems it should be formatted anyway
+
+f3fix enables users to use the real capacity of fake drives without losing data. f3brew helps developers to infer how fake drives work.
+
+
+check  SD card performance using armbianmonitor -c
 
