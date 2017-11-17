@@ -16,10 +16,13 @@ except:
      raise  Exception('Error hardware not recognized.')
 
 if "BCM2835"  in hw :
+   print("importing LED_RpiZeroW")
    import LED_RpiZeroW   as gpio                 # Raspbian / Raspberry Pi Zero W
 elif "Allwinner sun8i Family" in hw :
+   print("importing LED_OPi")
    import LED_OPi       as gpio                  # Armbian  / Orange Pi Zero
 elif "GenuineIntel" in hw :
+   print("importing LED_simulate")
    import LED_simulate  as gpio                  # my laptop
 else  :
    logging.critical("Error hardware not recognized.")

@@ -48,6 +48,13 @@ for c in CHANNELS:  GPIO.setcfg(c,   GPIO.OUTPUT)   # set pins as an output
 
 for c in CHANNELS:  GPIO.output(c, GPIO.LOW)        # initially set all off
 
+#GPIO.output(RED, GPIO.HIGH)
+#GPIO.output(RED, GPIO.LOW)
+#GPIO.output(GREEN, GPIO.HIGH)
+#GPIO.output(GREEN, GPIO.LOW)
+#GPIO.output(BLUE, GPIO.HIGH)
+#GPIO.output(BLUE, GPIO.LOW)
+
 # It would be possible to have a flashing object per colour, but that means a
 # loop thread for each colour, and each colour has to be turned off individually.
 # An object for all leds seems simpler.

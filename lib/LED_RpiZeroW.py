@@ -67,9 +67,9 @@ class LEDs(object):
         if (int == type(channels)) : self.channels    = (channels,)
         else : self.channels = channels
         for c in self.channels : 
-	   l = GPIO.PWM(c, self.freq) #  (channel, frequency)
-	   l.ChangeFrequency(self.freq)   
-	   l.ChangeDutyCycle(self.dc)  
+           l = GPIO.PWM(c, self.freq) #  (channel, frequency)
+           l.ChangeFrequency(self.freq)   
+           l.ChangeDutyCycle(self.dc)  
     def on(self, channels):
         if (int == type(channels)) : self.channels    = (channels,)
         else : self.channels = channels
