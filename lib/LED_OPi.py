@@ -39,6 +39,9 @@ GREEN  = port.PA19  # pin 16
 BLUE   = port.PA18  # pin 18  
 
 
+#GPIO.init()
+#for c in (RED, GREEN, BLUE):  GPIO.setcfg(c, GPIO.OUTPUT) #set pins as output
+#for c in (RED, GREEN, BLUE):  GPIO.output(c, GPIO.LOW)    #init all off
 #GPIO.output(RED, GPIO.HIGH)
 #GPIO.output(RED, GPIO.LOW)
 #GPIO.output(GREEN, GPIO.HIGH)
