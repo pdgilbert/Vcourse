@@ -62,9 +62,9 @@ class LEDs(threading.Thread):
           raise Exception('dc should be in percentage points (0.0 <= dc <= 100.0)')
         if not isinstance(channels, tuple) : 
           raise Exception('channels should specify all channels')
-	self.channels = channels
-	# Thread loop uses only ont and offt, but freq and dc are kept in order
-	#   to recalculate if the other is changed.
+        self.channels = channels
+        # Thread loop uses only ont and offt, but freq and dc are kept in order
+        #   to recalculate if the other is changed.
         self.freq  = freq
         self.dc    = dc # duty cycle = percent of time on
         self.stoprequest = threading.Event()
