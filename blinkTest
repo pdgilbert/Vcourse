@@ -5,19 +5,25 @@
 # need  export PYTHONPATH=/path/to/Vcourse/lib
 
 import time
-import logging
-import LED_piZeroW   as LEDs 
+import LEDs 
 
 LEDs.off('lights out')
 
-LEDs.systemProblem('blue')  # blue
+LEDs.systemProblem('blue')
 time.sleep(1)
 LEDs.off('lights out')
 
-LEDs.warn('blink red')           # blink red
+LEDs.warn('blink red')         
 time.sleep(1)
 LEDs.off('lights out')
 
-LEDs.center('blink green')         # blink green
+LEDs.center('blink green')        
 time.sleep(1)
 LEDs.off('lights out')
+
+# LEDs.update('blink red and green for 20 sec')         
+# should go out itself after 20 sec
+
+# LEDs.cleanup('clean up for shutdown')
+
+# simulation does a lot of off at the end?

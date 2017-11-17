@@ -1,5 +1,8 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
-#  Orange Pi  LEDs
+#  Arbian / Orange Pi  LEDs
+
+#CAN WE DO THIS WITHOUT ROOT
+#http://linux-sunxi.org/GPIO
 
 # pinout
 #http://codelectron.com/blink-leds-using-orange-pi-zero-gpio-and-python/
@@ -11,7 +14,7 @@
 #PWM
 #http://www.orangepi.org/orangepibbsen/forum.php?mod=viewthread&tid=1153&highlight=PWM
 
-#  Orange equivalent??
+#  pyA20.gpio / Orange equivalent??
 #To discover the Raspberry Pi board revision:
 #GPIO.RPI_INFO['P1_REVISION']
 #To discover the version of RPi.GPIO:
@@ -34,12 +37,6 @@ except RuntimeError:
 RED    = port.PA7   # pin 12
 GREEN  = port.PA19  # pin 16
 BLUE   = port.PA18  # pin 18  
-CHANNELS = (RED, GREEN, BLUE)
-
-SLOW     = 0.5
-MEDIUM   = 1.0 # can miss this with quick look
-FAST     = 2.0
-VERYFAST = 4.0
  
 #  Orange equivalent??
 #GPIO.setwarnings(True) # for warnings in the case something else may be using pins?
@@ -89,12 +86,6 @@ class LEDs(threading.Thread):
         else : self.channels = channels
         self.FLASH = False
         for c in self.channels : GPIO.output(c, GPIO.HIGH)
-    def off(self): 
-        self.FLASH = False
-        for c in self.ALLchannels : GPIO.output(c, GPIO.LOW)
-    def join(self): 
-        self.off()
-        self.stoprequest.set()
     def ALLchannel(self): return self.ALLchannels
     def channel(self)   : return self.channels
     def frequency(self) : return self.freq
@@ -107,71 +98,16 @@ class LEDs(threading.Thread):
         self.dc  = dc
         self.ont  = self.freq * self.dc / 100
         self.offt = self.freq - self.ont
+    def off(self): 
+        self.FLASH = False
+        for c in self.ALLchannels : GPIO.output(c, GPIO.LOW)
+    def join(self): 
+        # join should not be called from outside because not all implementations
+	# of the class need threads. Use cleanup() instead.
+        self.off()
+        self.stoprequest.set()
+    def cleanup(self): 
+        #  Orange equivalent of ?
+        # GPIO.cleanup()  # GPIO.cleanup(RED)   GPIO.cleanup( CHANNELS )
+        self.join()
 
-#leds = LEDs(CHANNELS, SLOW, 20) #  (all channels, frequency, dc)
-leds = LEDs(CHANNELS, SLOW) #  (all channel, frequency) duty cycle default
-leds.start()
-#leds.on(RED)
-#leds.off()
-#leds.flash(RED)
-#leds.flash(CHANNELS)
-#leds.ChangeFrequency(2)    # where freq is the new frequency in Hz
-#leds.ChangeDutyCycle(0.5)  # where 0.0 <= dc <= 100.0 is duty cycle (percent time on)
-#leds.ChangeDutyCycle(20)
-#leds.off()
-#leds.join()  # shut down thread
-
-#threading.activeCount()
-#threading.currentThread()
-#threading.enumerate()
-
-def  off(x ='')    : 
-   print('no light '    + str(x))
-   leds.off()
-   #shutoff can be a bit slow and happen after next on signal, so
-   time.sleep(0.5)
-
-def  bound(x ='')  : 
-   print('zone  red '   + str(x))
-   leds.off()  
-   leds.on(RED)
-
-def  warn(x ='')   : 
-   print('flash red '   + str(x))
-   leds.off()  
-   leds.ChangeDutyCycle(20)     
-   leds.ChangeFrequency(FAST)  
-   leds.flash(RED)
-
-def  center(x ='') : 
-   print('flash green ' + str(x))
-   leds.off()  
-   leds.ChangeDutyCycle(20)            
-   leds.ChangeFrequency(FAST)  
-   leds.flash(GREEN)
-
-def  update(x ='') : 
-   print('flash all lights ' + str(x))
-   leds.off()  
-   leds.ChangeDutyCycle(20)            
-   leds.ChangeFrequency(FAST)  
-   leds.flash((RED, GREEN))
-   time.sleep(20)
-   leds.off()  
-
-def  cleanup(x ='') :
-   logging.info('cleanup GPIO for shutdown ' + str(x))
-   #  Orange equivalent??
-   # GPIO.cleanup()  # GPIO.cleanup(RED)   GPIO.cleanup( CHANNELS )
-   leds.off()
-   leds.join()  # shut down thread
-
-
-def  systemProblem(x ='')  : 
-   print('system problem blue'   + str(x))
-   logging.warning('system problem blue'   + str(x))
-   leds.off()  
-   leds.on(BLUE)
-
-CAN WE DO THIS WITHOUT ROOT
-CONSOLIDATE WITH R Pi VERSION
