@@ -15,8 +15,8 @@ except:
      logging.critical("Error hardware not recognized.")
      raise  Exception('Error hardware not recognized.')
 
-if "BCM2835" "Allwinner sun8i Family" in hw :
-   import LED_RpiZeroW   as gpio                   # Raspbian / Raspberry Pi Zero W
+if "BCM2835"  in hw :
+   import LED_RpiZeroW   as gpio                 # Raspbian / Raspberry Pi Zero W
 elif "Allwinner sun8i Family" in hw :
    import LED_OPi       as gpio                  # Armbian  / Orange Pi Zero
 elif "GenuineIntel" in hw :

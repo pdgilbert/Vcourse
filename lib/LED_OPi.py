@@ -37,7 +37,8 @@ except RuntimeError:
 RED    = port.PA7   # pin 12
 GREEN  = port.PA19  # pin 16
 BLUE   = port.PA18  # pin 18  
- 
+CHANNELS = (RED, GREEN, BLUE)
+
 #  Orange equivalent??
 #GPIO.setwarnings(True) # for warnings in the case something else may be using pins?
 
