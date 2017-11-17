@@ -37,13 +37,13 @@ except RuntimeError:
 RED    = port.PA7   # pin 12
 GREEN  = port.PA19  # pin 16
 BLUE   = port.PA18  # pin 18  
-CHANNELS = (RED, GREEN, BLUE)
 
 #  Orange equivalent??
 #GPIO.setwarnings(True) # for warnings in the case something else may be using pins?
 
 GPIO.init()
 
+move to init or start
 for c in CHANNELS:  GPIO.setcfg(c,   GPIO.OUTPUT)   # set pins as an output
 
 for c in CHANNELS:  GPIO.output(c, GPIO.LOW)        # initially set all off
@@ -59,15 +59,19 @@ for c in CHANNELS:  GPIO.output(c, GPIO.LOW)        # initially set all off
 # loop thread for each colour, and each colour has to be turned off individually.
 # An object for all leds seems simpler.
 
+# off() works on all initialized channels
+# on() and flash() work only on a single specified channel
+
 class LEDs(threading.Thread):
-    def __init__(self, channels, freq, dc=20):
+    def __init__(self, channels, freq, dc):
         threading.Thread.__init__(self)
         if not (0.0 < freq) :
           raise Exception('freq should be in Hz (0.0 < freq)')
         if not (0.0 <= dc <= 100.0) :
           raise Exception('dc should be in percentage points (0.0 <= dc <= 100.0)')
-        if (int == type(channels)) : self.ALLchannels    = (channels,)
-        else : self.ALLchannels = channels
+        if not isinstance(channels, tuple) : 
+          raise Exception('channels should specify all channels')
+	self.channels = channels
         self.freq  = freq
         self.dc    = dc # duty cycle = percent of time on
         # ont, offt = seconds on and off, these add to freq which is in Hz
@@ -94,8 +98,7 @@ class LEDs(threading.Thread):
         else : self.channels = channels
         self.FLASH = False
         for c in self.channels : GPIO.output(c, GPIO.HIGH)
-    def ALLchannel(self): return self.ALLchannels
-    def channel(self)   : return self.channels
+    def initializedChannels(self)   : return self.channels
     def frequency(self) : return self.freq
     def DutyCycle(self) : return self.dc
     def ChangeFrequency(self, freq):

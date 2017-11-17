@@ -19,80 +19,82 @@ except RuntimeError:
 
 #logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
-RED    = 12
-GREEN  = 16
-BLUE   = 18  # not currently used
-CHANNELS = (RED, GREEN, BLUE)
-
-
-GPIO.setmode(GPIO.BOARD) # use board pin numbers not broadcom GPIO.setmode(GPIO.BCM)
-#NB. BCM 18 = pin 12
-#    BCM 24 = pin 18
 # https://pinout.xyz/pinout/io_pi_zero#
- 
-GPIO.setwarnings(True) # for warnings in the case something else may be using pins?
 
-GPIO.setup(CHANNELS, GPIO.OUT)   # set CHANNELS pins as an output
-
-GPIO.output(CHANNELS, GPIO.LOW)  # initially set all off
-
+# using  board pin numbers not broadcom numbers  GPIO.BCM vs GPIO.BOARD
+RED    =  12                                    #    18        pin 12
+GREEN  =  16                                    #    23        pin 16
+BLUE   =  18                                    #    24        pin 18  
 
 #Raspberry pi has pulse width modulation (PWM) on all pins so a thread
 #  is not needed for flashing leds.
 
-#red = GPIO.PWM(RED, SLOW) #  (channel, frequency)
-#red.ChangeFrequency(2)    # where freq is the new frequency in Hz
-#red.ChangeDutyCycle(0.5)  # where 0.0 <= dc <= 100.0 is duty cycle (percent time on)
+
+#red = GPIO.PWM(RED, 0.5) #  (channel, frequency)
+#red.start(0)            # arg is duty cycle. 99=mostly on
+#red.ChangeFrequency(2)  
+#red.ChangeDutyCycle(0.5)
 #red.ChangeDutyCycle(20)
+#red.stop()
+#red.start(99)           
+#red.stop()
 
-#red.start(99)            # arg is duty cycle. 99=mostly on
-#red.ChangeDutyCycle(99)
-#red.ChangeFrequency(0.1)  
-
+# off() works on all initialized channels
+# on() and flash() work only on a single specified channel
 
 class LEDs():
-    def __init__(self, channels, freq, dc=20):
+    def __init__(self, channels, freq, dc):
         if not (0.0 < freq) :
           raise Exception('freq should be in Hz (0.0 < freq)')
         if not (0.0 <= dc <= 100.0) :
           raise Exception('dc should be in percentage points (0.0 <= dc <= 100.0)')
-        if (int == type(channels)) : self.ALLchannels    = (channels,)
-        else : self.ALLchannels = channels
+        if not isinstance(channels, tuple) : 
+          raise Exception('channels should specify all channels')
+        self.channels = channels
         self.freq  = freq
         self.dc    = dc # duty cycle = percent of time on
-        # ont, offt = seconds on and off, these add to freq which is in Hz
-        self.ont  = self.freq * self.dc / 100
-        self.offt = self.freq - self.ont
     def start(self):
-        #do nothing, but so it can be called for compatability
-        time.sleep(0.1)
-    def flash(self, channels):
-        if (int == type(channels)) : self.channels    = (channels,)
-        else : self.channels = channels
-        for c in self.channels : 
-           l = GPIO.PWM(c, self.freq) #  (channel, frequency)
-           l.ChangeFrequency(self.freq)   
-           l.ChangeDutyCycle(self.dc)  
-    def on(self, channels):
-        if (int == type(channels)) : self.channels    = (channels,)
-        else : self.channels = channels
-        for c in self.channels : GPIO.output(c, GPIO.HIGH)
-    def ALLchannel(self): return self.ALLchannels
-    def channel(self)   : return self.channels
-    def frequency(self) : return self.freq
-    def DutyCycle(self) : return self.dc
-    def ChangeFrequency(self, freq):
-        self.freq  = freq
-        self.ont  = self.freq * self.dc / 100
-        self.offt = self.freq - self.ont
-    def ChangeDutyCycle(self, dc):
-        self.dc  = dc
-        self.ont  = self.freq * self.dc / 100
-        self.offt = self.freq - self.ont
+        #also need this call for compatability (other objects start thread)
+        GPIO.setmode(GPIO.BOARD)  
+        GPIO.setwarnings(True) # warnings if something else may be using pins
+        GPIO.setup((RED, GREEN, BLUE), GPIO.OUT)   # set as outputs
+        GPIO.output((RED, GREEN, BLUE), GPIO.LOW)  # initially set all off
+        self.PWmanagers = {RED : GPIO.PWM(RED,   self.dc), 
+                         GREEN : GPIO.PWM(GREEN, self.dc), 
+                          BLUE : GPIO.PWM(BLUE,  self.dc)}
+        for c in self.channels : self.PWmanagers[c].start(0) #dc=0 implies off
+        for c in self.channels :self. PWmanagers[c].ChangeFrequency(2) 
+    def flash(self, ch, freq=None, dc=None):
+        if not ch in self.channels :
+          raise Exception('ch must be in initialized channels')
+        if freq is None: self.PWmanagers[ch].ChangeFrequency(self.freq)
+        else :           self.PWmanagers[ch].ChangeFrequency(freq)
+        if  dc  is None: self.PWmanagers[ch].start(self.dc)
+        else :           self.PWmanagers[ch].start(dc)
+    def on(self, ch):
+        if not ch in self.channels :
+          raise Exception('ch must be in initialized channels')
+        self.PWmanagers[ch].start(99)
+    def info(self) :
+        print('initialized channels ' + str( self.channels))
+        print('frequency  ' + str( self.freq))
+        print('duty cycle ' + str( self.dc))
     def off(self): 
-        GPIO.output(CHANNELS, GPIO.LOW)
-        #shutoff can be a bit slow and happen after next on signal, so
+        for c in self.channels : self.PWmanagers[c].ChangeDutyCycle(0) 
+        #shutoff can be a bit slow and happen after next turn on signal, 
+        # so sleep, but this would not work for a thread
         time.sleep(0.5)
     def cleanup(self): 
-        GPIO.cleanup()  #  GPIO.cleanup( CHANNELS )
+        self.off()
+        GPIO.cleanup()  
+
+#leds = LEDs((RED, GREEN, BLUE), 2, 20) #  (channels, frequency, dc)
+#leds.start()
+#leds.on(RED)
+#leds.off()
+#leds.flash(RED)
+#leds.flash(RED, 2, 0.1)
+#leds.flash(RED, 2, 20)
+#leds.off()
+#leds.cleanup()
 

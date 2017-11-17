@@ -2,6 +2,13 @@
 
 #   generic part of LED control
 
+# leds are off, on solid, or flashing. Flashing control (frequency and 
+# duty cycle) are set the same for all leds. With PWM it would be possible
+# to flash diferently, but that seems to hard to visually distinguish. 
+# The thread versions, which are used when PWM is not available, would
+# require a separate thread for each led to allow separate control.
+# That is not implemented.
+
 import subprocess
 import time
 import logging
@@ -34,21 +41,18 @@ MEDIUM   = 1.0 # can miss this with quick look
 FAST     = 2.0
 VERYFAST = 4.0
 
+# pins are set in hardware specific modules
 RED    =  gpio.RED
 GREEN  =  gpio.GREEN
 BLUE   =  gpio.BLUE 
-CHANNELS = gpio.CHANNELS
 
 
-#leds = gpio.LEDs(CHANNELS, SLOW, 20) #  (all channels, frequency, dc)
-
-leds = gpio.LEDs(CHANNELS, SLOW) #  (all channel, frequency) duty cycle default
-leds.start()
+leds = gpio.LEDs((RED, GREEN, BLUE), SLOW, 20) #  (channels, frequency, dc)
+leds.start()  #initalize
 
 #leds.on(RED)
 #leds.off()
 #leds.flash(RED)
-#leds.flash(CHANNELS)
 #leds.ChangeFrequency(2)    # where freq is the new frequency in Hz
 #leds.ChangeDutyCycle(0.5)  # where 0.0 <= dc <= 100.0 is duty cycle (percent time on)
 #leds.ChangeDutyCycle(20)
@@ -62,8 +66,6 @@ leds.start()
 def  off(x ='')    : 
    print('no light '    + str(x))
    leds.off()
-   #shutoff can be a bit slow and happen after next on signal, so
-   time.sleep(0.5)
 
 def  bound(x ='')  : 
    print('zone  red '   + str(x))
@@ -73,29 +75,23 @@ def  bound(x ='')  :
 def  warn(x ='')   : 
    print('flash red '   + str(x))
    leds.off()  
-   leds.ChangeDutyCycle(20)     
-   leds.ChangeFrequency(FAST)  
-   leds.flash(RED)
+   leds.flash(RED, FAST, 20)
 
 def  center(x ='') : 
    print('flash green ' + str(x))
    leds.off()  
-   leds.ChangeDutyCycle(20)            
-   leds.ChangeFrequency(FAST)  
-   leds.flash(GREEN)
+   leds.flash(GREEN, FAST, 20)
 
 def  update(x ='') : 
    print('flash all lights ' + str(x))
    leds.off()  
-   leds.ChangeDutyCycle(20)            
-   leds.ChangeFrequency(FAST)  
-   leds.flash((RED, GREEN))
+   leds.flash(RED, FAST, 20)
+   leds.flash(GREEN, FAST, 20)
    time.sleep(20)
    leds.off()  
 
 def  cleanup(x ='') :
    logging.info('cleanup GPIO for shutdown ' + str(x))
-   leds.off()
    leds.cleanup()  # cleanup GPIO and shut down threads
 
 
