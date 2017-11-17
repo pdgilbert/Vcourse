@@ -65,6 +65,7 @@ class LEDs():
         self.offt = self.freq - self.ont
     def start(self):
         #do nothing, but so it can be called for compatability
+        time.sleep(0.1)
     def flash(self, channels):
         if (int == type(channels)) : self.channels    = (channels,)
         else : self.channels = channels
