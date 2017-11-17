@@ -50,7 +50,7 @@ GPIO.output(CHANNELS, GPIO.LOW)  # initially set all off
 #red.ChangeFrequency(0.1)  
 
 
-class LEDs(object):
+class LEDs():
     def __init__(self, channels, freq, dc=20):
         if not (0.0 < freq) :
           raise Exception('freq should be in Hz (0.0 < freq)')
@@ -63,6 +63,8 @@ class LEDs(object):
         # ont, offt = seconds on and off, these add to freq which is in Hz
         self.ont  = self.freq * self.dc / 100
         self.offt = self.freq - self.ont
+    def start(self):
+        #do nothing, but so it can be called for compatability
     def flash(self, channels):
         if (int == type(channels)) : self.channels    = (channels,)
         else : self.channels = channels
