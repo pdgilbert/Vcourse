@@ -24,7 +24,7 @@ import time
 import logging
 import threading
 
-logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
 try:
     from pyA20.gpio import gpio as GPIO
