@@ -137,7 +137,7 @@ def zoneSignal(update, shutdown):
         
         if courseLoaded :
             # run main signal setting loop here
-            logging.debug('in zone?')
+            logging.debug('checking zone status.')
             try:
                 p = gpsPos.getGPS() 
                 aa = a(p) # this is a in y = a + b * x

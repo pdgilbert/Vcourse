@@ -48,15 +48,15 @@ class gpsPos(object):
     def longitude(self): return self.lon
 
     def __init__(self, lat, lon, time=None):
-        if (lat != None) :
+        if lat is not None :
            if not (-90 <= lat <= 90):
               raise ValueError("must have  -90 <=  latitude <= 90")
         
-        if (lon != None) :
+        if lon is not None :
            if not (-180 <= lon <= 180):
               raise ValueError("must have  -180 <= longitude <= 180")
 
-        if (time == None) : time = '' 
+        if time is None : time = '' 
         
         self.lat  = lat
         self.lon  = lon
