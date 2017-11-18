@@ -34,14 +34,13 @@ class LEDs(threading.Thread):
         self.freq  = freq
         self.dc    = dc # duty cycle = percent of time on
         self.stoprequest = threading.Event()
-    def start(self):
-        logging.debug('LEDs start().')
+    def run(self):
+        logging.debug('in LEDs run().')
+        logging.debug(threading.enumerate())
         # ont, offt = seconds on and off, these add to freq which is in Hz
         self.ont  = self.freq * self.dc / 100
         self.offt = self.freq - self.ont
         self.FLASH = {RED : False, GREEN : False, BLUE : False}
-    def run(self):
-        logging.debug('LEDs run().')
         while not self.stoprequest.isSet():
             if self.FLASH[RED]   : print(' flash RED.')
             if self.FLASH[GREEN] : print(' flash GREEN.')
@@ -50,6 +49,9 @@ class LEDs(threading.Thread):
             time.sleep(self.offt)
             # on and off not affected by loop, only flashing
             time.sleep(2)
+        logging.debug('in LEDs run(), off() for shutting down.')
+        self.off()
+        logging.debug('in LEDs run(), shutting down.')
     def flash(self, ch, freq=None, dc=None):
         if not ch in self.channels :
           raise Exception('ch must be in initialized channels')
@@ -78,9 +80,23 @@ class LEDs(threading.Thread):
     def join(self):  
         # join should not be called from outside because not all implementations
         # of the class need threads. Use cleanup() instead.
-        self.off()
         self.stoprequest.set()
     def cleanup(self): 
+        logging.debug('in LEDs cleanup().')
+        logging.debug(threading.enumerate())
         print('cleanup for shutdown ')
         self.join()
 
+#leds = LEDs((RED, GREEN, BLUE), 2, 20) #  (channels, frequency, dc)
+#leds.start()
+#leds.on(RED)
+#leds.on(BLUE)
+#leds.on(GREEN)
+#leds.off()
+#leds.flash(RED)
+#leds.flash(GREEN)
+#leds.flash(BLUE)
+#leds.flash(RED, 2, 0.1)
+#leds.flash(RED, 2, 20)
+#leds.off()
+#leds.cleanup()

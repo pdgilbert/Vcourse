@@ -74,9 +74,9 @@ class LEDs(threading.Thread):
         self.freq  = freq
         self.dc    = dc # duty cycle = percent of time on
         self.stoprequest = threading.Event()
-    def start(self):
-        logging.debug('LEDs start().')
-        threading.enumerate()
+    def run(self):
+        logging.debug('LEDs run().')
+        logging.debug(threading.enumerate())
         #GPIO.setwarnings(True) # Orange equivalent??
         GPIO.init()
         for c in self.channels:  GPIO.setcfg(c, GPIO.OUTPUT) #set pins as output
@@ -85,9 +85,6 @@ class LEDs(threading.Thread):
         self.ont  = self.freq * self.dc / 100
         self.offt = self.freq - self.ont
         self.FLASH = {RED : False, GREEN : False, BLUE : False}
-    def run(self):
-        logging.debug('LEDs run().')
-        threading.enumerate()
         while not self.stoprequest.isSet():
             if self.FLASH[RED]   : GPIO.output(RED,   GPIO.HIGH)
             if self.FLASH[GREEN] : GPIO.output(GREEN, GPIO.HIGH)
@@ -97,9 +94,12 @@ class LEDs(threading.Thread):
             if self.FLASH[GREEN] : GPIO.output(GREEN, GPIO.LOW)
             if self.FLASH[BLUE]  : GPIO.output(BLUE,  GPIO.LOW)
             time.sleep(self.offt)
-            # on and off not affected by loop, only flashing
-            # but the loop is going always. 
-            # It could be slowed down with sleep if no leds are flashing
+        # on and off not affected by loop, only flashing
+        # but the loop is going always. 
+        # Loop could be slowed down with sleep if no leds are flashing
+        logging.debug('in LEDs run(), off() for shutting down.')
+        self.off()
+        logging.debug('in LEDs run(), shutting down.')
     def flash(self, ch, freq=None, dc=None):
         if not ch in self.channels :
           raise Exception('ch must be in initialized channels')
@@ -128,17 +128,16 @@ class LEDs(threading.Thread):
     def join(self): 
         # join should not be called from outside because not all implementations
 	# of the class need threads. Use cleanup() instead.
-        self.off()
         self.stoprequest.set()
     def cleanup(self): 
-        self.off()
         #  Orange equivalent of ?
         # GPIO.cleanup()  # GPIO.cleanup(RED)   GPIO.cleanup( CHANNELS )
+        logging.debug('in LEDs cleanup().')
+        logging.debug(threading.enumerate())
         self.join()
 
 #leds = LEDs((RED, GREEN, BLUE), 2, 20) #  (channels, frequency, dc)
 #leds.start()
-#leds.run()
 #leds.on(RED)
 #leds.on(BLUE)
 #leds.on(GREEN)
