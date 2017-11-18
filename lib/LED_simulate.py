@@ -10,6 +10,8 @@ RED    =  101
 GREEN  =  102
 BLUE   =  103 
 
+logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+
 # Raspberry Pi has PWM hardware. This simulation code follows 
 # Orange Pi more closely, and spawns process mainly to handle flashing.
 
@@ -19,6 +21,7 @@ BLUE   =  103
 class LEDs(threading.Thread):
     def __init__(self, channels, freq, dc):
         threading.Thread.__init__(self)
+        logging.debug('LEDs init.')
         if not (0.0 < freq) :
           raise Exception('freq should be in Hz (0.0 < freq)')
         if not (0.0 <= dc <= 100.0) :
@@ -32,11 +35,13 @@ class LEDs(threading.Thread):
         self.dc    = dc # duty cycle = percent of time on
         self.stoprequest = threading.Event()
     def start(self):
+        logging.debug('LEDs start().')
         # ont, offt = seconds on and off, these add to freq which is in Hz
         self.ont  = self.freq * self.dc / 100
         self.offt = self.freq - self.ont
         self.FLASH = {RED : False, GREEN : False, BLUE : False}
     def run(self):
+        logging.debug('LEDs run().')
         while not self.stoprequest.isSet():
             if self.FLASH[RED]   : print(' flash RED.')
             if self.FLASH[GREEN] : print(' flash GREEN.')

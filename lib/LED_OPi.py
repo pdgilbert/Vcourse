@@ -24,6 +24,8 @@ import time
 import logging
 import threading
 
+logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+
 try:
     from pyA20.gpio import gpio as GPIO
     from pyA20.gpio import port
@@ -59,6 +61,7 @@ BLUE   = port.PA18  # pin 18
 class LEDs(threading.Thread):
     def __init__(self, channels, freq, dc):
         threading.Thread.__init__(self)
+        logging.debug('LEDs init.')
         if not (0.0 < freq) :
           raise Exception('freq should be in Hz (0.0 < freq)')
         if not (0.0 <= dc <= 100.0) :
@@ -72,6 +75,8 @@ class LEDs(threading.Thread):
         self.dc    = dc # duty cycle = percent of time on
         self.stoprequest = threading.Event()
     def start(self):
+        logging.debug('LEDs start().')
+        threading.enumerate()
         #GPIO.setwarnings(True) # Orange equivalent??
         GPIO.init()
         for c in self.channels:  GPIO.setcfg(c, GPIO.OUTPUT) #set pins as output
@@ -81,6 +86,8 @@ class LEDs(threading.Thread):
         self.offt = self.freq - self.ont
         self.FLASH = {RED : False, GREEN : False, BLUE : False}
     def run(self):
+        logging.debug('LEDs run().')
+        threading.enumerate()
         while not self.stoprequest.isSet():
             if self.FLASH[RED]   : GPIO.output(RED,   GPIO.HIGH)
             if self.FLASH[GREEN] : GPIO.output(GREEN, GPIO.HIGH)
@@ -92,7 +99,7 @@ class LEDs(threading.Thread):
             time.sleep(self.offt)
             # on and off not affected by loop, only flashing
             # but the loop is going always. 
-	    # It could be slowed down with sleep if no leds are flashing
+            # It could be slowed down with sleep if no leds are flashing
     def flash(self, ch, freq=None, dc=None):
         if not ch in self.channels :
           raise Exception('ch must be in initialized channels')
@@ -129,3 +136,17 @@ class LEDs(threading.Thread):
         # GPIO.cleanup()  # GPIO.cleanup(RED)   GPIO.cleanup( CHANNELS )
         self.join()
 
+#leds = LEDs((RED, GREEN, BLUE), 2, 20) #  (channels, frequency, dc)
+#leds.start()
+#leds.run()
+#leds.on(RED)
+#leds.on(BLUE)
+#leds.on(GREEN)
+#leds.off()
+#leds.flash(RED)
+#leds.flash(GREEN)
+#leds.flash(BLUE)
+#leds.flash(RED, 2, 0.1)
+#leds.flash(RED, 2, 20)
+#leds.off()
+#leds.cleanup()
