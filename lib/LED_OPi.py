@@ -74,6 +74,10 @@ class LEDs(threading.Thread):
         self.freq  = freq
         self.dc    = dc # duty cycle = percent of time on
         self.stoprequest = threading.Event()
+        # ont, offt = seconds on and off, these add to freq which is in Hz
+        self.ont  = self.freq * self.dc / 100
+        self.offt = self.freq - self.ont
+        self.FLASH = {RED : False, GREEN : False, BLUE : False}
     def run(self):
         logging.debug('LEDs run().')
         logging.debug(threading.enumerate())
@@ -82,9 +86,6 @@ class LEDs(threading.Thread):
         for c in self.channels:  GPIO.setcfg(c, GPIO.OUTPUT) #set pins as output
         for c in self.channels:  GPIO.output(c, GPIO.LOW)    #init all off
         # ont, offt = seconds on and off, these add to freq which is in Hz
-        self.ont  = self.freq * self.dc / 100
-        self.offt = self.freq - self.ont
-        self.FLASH = {RED : False, GREEN : False, BLUE : False}
         while not self.stoprequest.isSet():
             if self.FLASH[RED]   : GPIO.output(RED,   GPIO.HIGH)
             if self.FLASH[GREEN] : GPIO.output(GREEN, GPIO.HIGH)
