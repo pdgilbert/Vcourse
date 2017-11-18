@@ -21,6 +21,7 @@ logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s'
 class LEDs(threading.Thread):
     def __init__(self, channels, freq, dc):
         threading.Thread.__init__(self)
+        self.name='simulate LEDs controller'
         logging.debug('LEDs init.')
         if not (0.0 < freq) :
           raise Exception('freq should be in Hz (0.0 < freq)')
@@ -39,7 +40,7 @@ class LEDs(threading.Thread):
         self.offt = (1/self.freq) - self.ont
         self.FLASH = {RED : False, GREEN : False, BLUE : False}
     def run(self):
-        logging.debug('in LEDs run().')
+        logging.info('LEDs run() started.')
         logging.debug(threading.enumerate())
         while not self.stoprequest.isSet():
             if self.FLASH[RED]   :
@@ -52,9 +53,8 @@ class LEDs(threading.Thread):
             time.sleep(self.offt)
             # on and off not affected by loop, only flashing
             time.sleep(2)
-        logging.debug('in LEDs run(), off() for shutting down.')
         self.off()
-        logging.debug('in LEDs run(), shutting down.')
+        logging.info('LEDs run() exiting.')
     def flash(self, ch, freq=None, dc=None):
         if not ch in self.channels :
           raise Exception('ch must be in initialized channels')
@@ -85,9 +85,7 @@ class LEDs(threading.Thread):
         # of the class need threads. Use cleanup() instead.
         self.stoprequest.set()
     def cleanup(self): 
-        logging.debug('in LEDs cleanup().')
-        logging.debug(threading.enumerate())
-        print('cleanup for shutdown ')
+        logging.info('LEDs cleanup() for shutdown.')
         self.join()
 
 #leds = LEDs((RED, GREEN, BLUE), 2, 20) #  (channels, frequency, dc)

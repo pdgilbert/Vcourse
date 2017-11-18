@@ -72,7 +72,7 @@ def zoneSignal(update, shutdown):
        #p.time comes from the gps. If fractional seconds are available I think
        #  they will be printed, but for now all seem to be .000.
        #  This may be something that can be set on the gps ?
-       t.write(str(p.lat) + ' ' + str(p.lon) + ' @ ' + p.time +' status ' + now + '\n' )
+       t.write(str(p.lat) + ' ' + str(p.lon) + ' @ ' + p.time +' LED status ' + now + '\n' )
        return now
 
     st = 'off'  

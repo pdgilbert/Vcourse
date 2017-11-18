@@ -61,6 +61,7 @@ BLUE   = port.PA18  # pin 18
 class LEDs(threading.Thread):
     def __init__(self, channels, freq, dc):
         threading.Thread.__init__(self)
+        self.name='OPi LEDs controller'
         logging.debug('LEDs init.')
         if not (0.0 < freq) :
           raise Exception('freq should be in Hz (0.0 < freq)')
@@ -79,7 +80,7 @@ class LEDs(threading.Thread):
         self.offt = (1/self.freq) - self.ont
         self.FLASH = {RED : False, GREEN : False, BLUE : False}
     def run(self):
-        logging.debug('LEDs run().')
+        logging.info('LEDs run() started.')
         logging.debug(threading.enumerate())
         #GPIO.setwarnings(True) # Orange equivalent??
         GPIO.init()
@@ -98,9 +99,8 @@ class LEDs(threading.Thread):
         # on and off not affected by loop, only flashing
         # but the loop is going always. 
         # Loop could be slowed down with sleep if no leds are flashing
-        logging.debug('in LEDs run(), off() for shutting down.')
         self.off()
-        logging.debug('in LEDs run(), shutting down.')
+        logging.info('LEDs run() exiting.')
     def flash(self, ch, freq=None, dc=None):
         if ch not in self.channels :
           raise Exception('ch must be in initialized channels')
@@ -134,8 +134,7 @@ class LEDs(threading.Thread):
     def cleanup(self): 
         #  Orange equivalent of ?
         # GPIO.cleanup()  # GPIO.cleanup(RED)   GPIO.cleanup( CHANNELS )
-        logging.debug('in LEDs cleanup().')
-        logging.debug(threading.enumerate())
+        logging.debug('LEDs cleanup() for shutdown.')
         self.join()
 
 #leds = LEDs((RED, GREEN, BLUE), 2, 20) #  (channels, frequency, dc)
