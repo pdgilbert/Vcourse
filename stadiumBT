@@ -15,13 +15,8 @@ import os
 #os.uname()[4] == 'armv6l' is True on Pi Zero W,  but will not distinguish other boards. Maybe better ideas
 # at https://github.com/adafruit/Adafruit_Python_GPIO/blob/master/Adafruit_GPIO/Platform.py
 
-if os.uname()[4] == 'armv6l' :
-   import LED_piZeroW   as LEDs 
-else :
-   import LED_simulate  as LEDs 
-
+import LEDs 
 from gpsPos import gpsPos
-
 from distribution import distributionCheck
 
 
