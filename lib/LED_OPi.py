@@ -124,9 +124,6 @@ class LEDs(threading.Thread):
         print('duty cycle ' + str( self.dc))
     def off(self): 
         logging.debug('in off(). self.channels ' + str(self.channels))
-        logging.debug('in off(). RED '   + str(RED))
-        logging.debug('in off(). GREEN ' + str(GREEN))
-        logging.debug('in off(). BLUE '  + str(BLUE))
         for c in self.channels :
            self.FLASH[c] = False
            GPIO.output(c, GPIO.LOW)

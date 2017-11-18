@@ -9,16 +9,20 @@ import LEDs
 
 LEDs.off('lights out')
 
-LEDs.systemProblem('blue')
-time.sleep(3)
+LEDs.systemProblem('solid blue')
+time.sleep(5)
 LEDs.off('lights out')
 
 LEDs.warn('blink red')         
-time.sleep(3)
+time.sleep(5)
+LEDs.off('lights out')
+
+LEDs.bound('solid red')         
+time.sleep(5)
 LEDs.off('lights out')
 
 LEDs.center('blink green')        
-time.sleep(3)
+time.sleep(5)
 LEDs.off('lights out')
 
 LEDs.update('blink red and green for 20 sec')         
