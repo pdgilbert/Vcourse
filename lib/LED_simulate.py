@@ -35,16 +35,19 @@ class LEDs(threading.Thread):
         self.dc    = dc # duty cycle = percent of time on
         self.stoprequest = threading.Event()
         # ont, offt = seconds on and off, these add to freq which is in Hz
-        self.ont  = self.freq * self.dc / 100
-        self.offt = self.freq - self.ont
+        self.ont  = (1/self.freq) * (self.dc / 100)
+        self.offt = (1/self.freq) - self.ont
         self.FLASH = {RED : False, GREEN : False, BLUE : False}
     def run(self):
         logging.debug('in LEDs run().')
         logging.debug(threading.enumerate())
         while not self.stoprequest.isSet():
-            if self.FLASH[RED]   : print(' flash RED.')
-            if self.FLASH[GREEN] : print(' flash GREEN.')
-            if self.FLASH[BLUE]  : print(' flash BLUE.')
+            if self.FLASH[RED]   :
+               print(' flash RED at ' + str(self.freq) + ' Hz, ' + str(self.dc) + ' dc')
+            if self.FLASH[GREEN] : 
+               print(' flash GREEN at ' + str(self.freq) + ' Hz, ' + str(self.dc) + ' dc')
+            if self.FLASH[BLUE]  : 
+               print(' flash BLUE at ' + str(self.freq) + ' Hz, ' + str(self.dc) + ' dc')
             time.sleep(self.ont)   # ?? non -blocking
             time.sleep(self.offt)
             # on and off not affected by loop, only flashing
@@ -57,12 +60,12 @@ class LEDs(threading.Thread):
           raise Exception('ch must be in initialized channels')
         if freq is not None:
            self.freq = freq
-           self.ont  = self.freq * self.dc / 100
-           self.offt = self.freq - self.ont
+           self.ont  = (1/self.freq) * (self.dc / 100)
+           self.offt = (1/self.freq) - self.ont
         if  dc  is not None:
            self.dc   = dc
-           self.ont  = self.freq * self.dc / 100
-           self.offt = self.freq - self.ont
+           self.ont  = (1/self.freq) * (self.dc / 100)
+           self.offt = (1/self.freq) - self.ont
         self.FLASH[ch] = True
     def on(self, ch):
         if not ch in self.channels :

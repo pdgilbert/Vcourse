@@ -74,9 +74,9 @@ class LEDs(threading.Thread):
         self.freq  = freq
         self.dc    = dc # duty cycle = percent of time on
         self.stoprequest = threading.Event()
-        # ont, offt = seconds on and off, these add to freq which is in Hz
-        self.ont  = self.freq * self.dc / 100
-        self.offt = self.freq - self.ont
+        # ont, offt = seconds on and off, these add to 1/freq which is in Hz
+        self.ont  = (1/self.freq) * (self.dc / 100)
+        self.offt = (1/self.freq) - self.ont
         self.FLASH = {RED : False, GREEN : False, BLUE : False}
     def run(self):
         logging.debug('LEDs run().')
@@ -102,19 +102,19 @@ class LEDs(threading.Thread):
         self.off()
         logging.debug('in LEDs run(), shutting down.')
     def flash(self, ch, freq=None, dc=None):
-        if not ch in self.channels :
+        if ch not in self.channels :
           raise Exception('ch must be in initialized channels')
         if freq is not None:
            self.freq = freq
-           self.ont  = self.freq * self.dc / 100
-           self.offt = self.freq - self.ont
+           self.ont  = (1/self.freq) * (self.dc / 100)
+           self.offt = (1/self.freq) - self.ont
         if  dc  is not None:
            self.dc   = dc
-           self.ont  = self.freq * self.dc / 100
-           self.offt = self.freq - self.ont
+           self.ont  = (1/self.freq) * (self.dc / 100)
+           self.offt = (1/self.freq) - self.ont
         self.FLASH[ch] = True
     def on(self, ch):
-        if not ch in self.channels :
+        if ch not in self.channels :
           raise Exception('ch must be in initialized channels')
         self.FLASH[ch] = False
         GPIO.output(ch, GPIO.HIGH)

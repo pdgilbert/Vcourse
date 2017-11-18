@@ -65,14 +65,18 @@ class LEDs():
         for c in self.channels : self.PWmanagers[c].start(0) #dc=0 implies off
         for c in self.channels :self. PWmanagers[c].ChangeFrequency(2) 
     def flash(self, ch, freq=None, dc=None):
-        if not ch in self.channels :
+        if ch not in self.channels :
           raise Exception('ch must be in initialized channels')
         if freq is None: self.PWmanagers[ch].ChangeFrequency(self.freq)
-        else :           self.PWmanagers[ch].ChangeFrequency(freq)
+        else :           
+           self.PWmanagers[ch].ChangeFrequency(freq)
+           self.freq = freq
         if  dc  is None: self.PWmanagers[ch].start(self.dc)
-        else :           self.PWmanagers[ch].start(dc)
+        else :       
+           self.dc   = dc
+           self.PWmanagers[ch].start(dc)
     def on(self, ch):
-        if not ch in self.channels :
+        if ch not in self.channels :
           raise Exception('ch must be in initialized channels')
         self.PWmanagers[ch].start(99)
     def info(self) :

@@ -35,8 +35,8 @@ else  :
    logging.critical("Error hardware not recognized.")
    raise  Exception('Error hardware not recognized.')
 
-
-SLOW     = 0.5
+# flash speed in Hz
+SLOW     = 0.5  
 MEDIUM   = 1.0 # can miss this with quick look
 FAST     = 2.0
 VERYFAST = 4.0
@@ -46,8 +46,10 @@ RED    =  gpio.RED
 GREEN  =  gpio.GREEN
 BLUE   =  gpio.BLUE 
 
+# flash speed and duty cycle are first set here but can be
+# reset in arguments to flash().
 
-leds = gpio.LEDs((RED, GREEN, BLUE), SLOW, 20) #  (channels, frequency, dc)
+leds = gpio.LEDs((RED, GREEN, BLUE), FAST, 20) #  (channels, frequency, dc)
 leds.start()  #initalize
 
 #leds.on(RED)
@@ -75,18 +77,18 @@ def  bound(x ='')  :
 def  warn(x ='')   : 
    print('flash red '   + str(x))
    leds.off()  
-   leds.flash(RED, FAST, 20)
+   leds.flash(RED)   #, FAST, 20)
 
 def  center(x ='') : 
    print('flash green ' + str(x))
    leds.off()  
-   leds.flash(GREEN, FAST, 20)
+   leds.flash(GREEN)   #, FAST, 20)
 
 def  update(x ='') : 
    print('flash all lights ' + str(x))
    leds.off()  
-   leds.flash(RED, FAST, 20)
-   leds.flash(GREEN, FAST, 20)
+   leds.flash(RED)   #, FAST, 20)
+   leds.flash(GREEN)   #, FAST, 20)
    time.sleep(20)
    leds.off()  
 
