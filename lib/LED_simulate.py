@@ -34,13 +34,13 @@ class LEDs(threading.Thread):
         self.freq  = freq
         self.dc    = dc # duty cycle = percent of time on
         self.stoprequest = threading.Event()
-    def run(self):
-        logging.debug('in LEDs run().')
-        logging.debug(threading.enumerate())
         # ont, offt = seconds on and off, these add to freq which is in Hz
         self.ont  = self.freq * self.dc / 100
         self.offt = self.freq - self.ont
         self.FLASH = {RED : False, GREEN : False, BLUE : False}
+    def run(self):
+        logging.debug('in LEDs run().')
+        logging.debug(threading.enumerate())
         while not self.stoprequest.isSet():
             if self.FLASH[RED]   : print(' flash RED.')
             if self.FLASH[GREEN] : print(' flash GREEN.')
