@@ -34,6 +34,11 @@
 
 import gpsd
 import math
+import gpsd
+    
+def getGPS():
+  p = gpsd.get_current()
+  return(gpsPos(p.lat, p.lon, p.time))
 
 class gpsPos():
     def __init__(self, lat, lon, time=None):
@@ -67,12 +72,6 @@ class gpsPos():
         E = (x.lon - self.lon) * lonScale
         distance = math.sqrt(math.pow(N,2) + math.pow(E,2))
         return distance
-    
-    @classmethod
-    def getGPS(cls):
-      import gpsd
-      p = gpsd.get_current()
-      return(gpsPos(p.lat, p.lon, p.time))
     
     @classmethod
     def move(cls, pt, axis, distance):

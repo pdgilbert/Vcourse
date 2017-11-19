@@ -16,6 +16,7 @@ import math
 import sys
 
 from gpsPos import gpsPos
+from gpsPos import getGPS
 
 import distribution
 
@@ -115,7 +116,7 @@ def gpsRead(h, p):
    logging.debug('gpsRead:' + h + ':' + str(p) + '.')
    try : 
       gpsCon = gpsd.connect(host=h, port=int(p))
-      pt = gpsPos.getGPS()
+      pt = getGPS()
       #logging.debug('gpsRead:' + h + ':' + str(p) + '.' + 
       #                     ' pt  ' + str(pt.lat) + str(pt.lon))
    except :
