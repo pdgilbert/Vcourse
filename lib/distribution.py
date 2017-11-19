@@ -77,17 +77,23 @@ def distributer(dist):
    tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
    tcpsock.bind((dist.RC_IP, dist.RC_PORT))
+   # without timeout the while loop waits indefinitely when no BT connect,
+   # so never checks for shutdown.
+   tcpsock.settimeout(5)
+   logging.debug("Incoming socket timeout " + str(tcpsock.gettimeout()))
 
    while True:
-       # often not getting shutdown signal. Seems to work better when a BT has connected. FIX
        if dist.shutdown.wait(0.01): # blocking for interval !! 
-          print('shutting down distributionHandler thread.')
+          logging.info('shutting down distributionHandler thread.')
           return() 
-       tcpsock.listen(5)  # STALLS HERE LISTENING WITH NO CONNECTIONS, SO NEVER LOOPS  TO shutdown.
-       #logging.debug("Waiting for incoming connections on "  + dist.RC_IP + ":" + str(dist.RC_PORT) + " ...")
-       (conn, (ip,port)) = tcpsock.accept()
-       #logging.debug('Got connection from ' + ip + ':' + str(port))
-       BThandlerThread(ip,port,conn, dist).start()
+       try:
+          tcpsock.listen(5)  
+          #logging.debug("Waiting for incoming connections on "  + dist.RC_IP + ":" + str(dist.RC_PORT) + " ...")
+          (conn, (ip,port)) = tcpsock.accept()
+          #logging.debug('Got connection from ' + ip + ':' + str(port))
+          BThandlerThread(ip, port, conn, dist).start()
+       except Exception: 
+          pass
 
    raise Exception('distributionHandler should not be here.')
 

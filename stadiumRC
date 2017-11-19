@@ -584,23 +584,27 @@ if __name__ == '__main__':
 
    bE      = But(race, text='extra',         command=(lambda : extraWindow(race)))
 
-   def shutdownHandler(signum, frame):
-       logging.info('main thread shutdownHandler setting shutdown signal.')
+   def abortHandler(signum, frame):
+       logging.debug('main thread abortHandler setting shutdown signal.')
        shutdown.set()  # to exit threads
-       time.sleep(5)
-       logging.info('main thread exit.' +time.strftime('%Y-%m-%d %H:%M:%S %Z')+ '\n')
-       sys.exit()
+       time.sleep(5)   # wait as long as socket timeout in distributionHandler
+       logging.info('main thread exit via abortHandler. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z')+ '\n')
+       logging.debug('threads running: ')
+       logging.debug(threading.enumerate())
+       sys.exit("stadiumRC process killed.")
 
    # ^C works if process is not deamonized with &
-   signal.signal(signal.SIGINT,  shutdownHandler) # ^C, kill -2
-   signal.signal(signal.SIGTERM, shutdownHandler) # kill -15 (default)
+   signal.signal(signal.SIGINT,  abortHandler) # ^C, kill -2
+   signal.signal(signal.SIGTERM, abortHandler) # kill -15 (default)
 
    race.mainloop()
    
    # still not shutting dowm gracefully
 
-   logging.info('main thread setting shutdown signal.')
+   logging.debug('main thread setting shutdown signal.')
    shutdown.set()  # to exit threads
-   time.sleep(5)
-   logging.info('main thread exit.' +time.strftime('%Y-%m-%d %H:%M:%S %Z')+ '\n')
+   time.sleep(5)    # wait as long as socket timeout in distributionHandler
+   logging.info('main thread exit via end. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z')+ '\n')
+   logging.debug('threads running: ')
+   logging.debug(threading.enumerate())
    sys.exit()

@@ -35,18 +35,7 @@
 import gpsd
 import math
 
-class gpsPos(object):
-    """a 2-tuple of gps latitude and longitude in decimal degrees
-
-    Attributes:
-        lat: A float  -90 <=  lat <= 90
-        lon: A float  -180 <= lon <= 180
-    """
-    
-    def latitude(self) : return self.lat
-    
-    def longitude(self): return self.lon
-
+class gpsPos():
     def __init__(self, lat, lon, time=None):
         if lat is not None :
            if not (-90 <= lat <= 90):
@@ -55,18 +44,22 @@ class gpsPos(object):
         if lon is not None :
            if not (-180 <= lon <= 180):
               raise ValueError("must have  -180 <= longitude <= 180")
-
+        
         if time is None : time = '' 
         
-        self.lat  = lat
-        self.lon  = lon
-        self.time = time
-
+        self.lat  = lat  # A float  -90 <=  lat <= 90
+        self.lon  = lon  # A float  -180 <= lon <= 180
+        self.time = time 
+    
+    def latitude(self) : return self.lat
+    
+    def longitude(self): return self.lon
+    
     def nm(self, x):
         #nm N and E  between two gpsPos, self and x
         if not isinstance(x, gpsPos):
            raise ValueError("x must be a gpsPos object")
-
+        
         latScale = 60.0  #  nm per degree lat
         lonScale = 60.0 * math.cos(math.radians(self.lat))  #  nm per degree long at current latitude
         
@@ -80,25 +73,25 @@ class gpsPos(object):
       import gpsd
       p = gpsd.get_current()
       return(gpsPos(p.lat, p.lon, p.time))
-
+    
     @classmethod
     def move(cls, pt, axis, distance):
         # return gps coordinates of position which is
         #  distance (nm) from pt at bearing axis
-   
+        
         # theta angle relative to E and counter clockwise (counter compass)
         #   gives correct signs for lat and long shift
         theta = (90 - axis) % 360
-
+        
         latScale = 60.0  # nm per degree lat
         # nm per degree long at pt latitude
         lonScale = 60.0 * math.cos(math.radians(pt.lat)) 
-
+        
         lon = (distance * math.cos(math.radians(theta)) / lonScale) + pt.lon
         lat = (distance * math.sin(math.radians(theta)) / latScale) + pt.lat
-
+        
         return cls(lat, lon)
-
+    
     @classmethod
     def heading(cls, pt, target):
         # return heading (degrees T) from gps position pt to gps position target
@@ -110,3 +103,4 @@ class gpsPos(object):
            raise ValueError("pt and target are the same points. No heading.")
         h = (90 - math.degrees(math.atan2(Dy , Dx))) % 360
         return h
+
