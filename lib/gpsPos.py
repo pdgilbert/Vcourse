@@ -34,10 +34,10 @@
 
 import gpsd
 import math
-import gpsd
+from gpsd import get_current
     
 def getGPS():
-  p = gpsd.get_current()
+  p = get_current()
   return(gpsPos(p.lat, p.lon, p.time))
 
 class gpsPos():
