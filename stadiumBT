@@ -17,6 +17,13 @@ from gpsPos import gpsPos
 from gpsPos import getGPS
 from distribution import distributionCheck
 
+#in decreasing order CRITICAL, ERROR, WARNING. INFO, DEBUG
+# level logs everything higher. NOTSET looks to parent levels
+
+# filemode='w' will start a new log file each run. Otherwise appending is done.
+logging.basicConfig(filename='stadiumBT.log', level=logging.DEBUG, 
+   format='(%(threadName)-9s) %(message)s',)
+
 
 # Read config variable RC_IP, RC_PORT, BT_ID  from file BTconfig
 # in the working directory. 
@@ -40,13 +47,6 @@ GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 # start gpsd (-n don't wait for device,  #-S 2947 is default port  FIX?
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
 
-
-#in decreasing order CRITICAL, ERROR, WARNING. INFO, DEBUG
-# level logs everything higher. NOTSET looks to parent levels
-
-# filemode='w' will start a new log file each run. Otherwise appending is done.
-logging.basicConfig(filename='stadiumBT.log', level=logging.INFO, 
-   format='(%(threadName)-9s) %(message)s',)
 
 def zoneSignal(update, shutdown):
 
@@ -125,13 +125,16 @@ def zoneSignal(update, shutdown):
            st = status(p, st, 'update')
 
            logging.info('  new cid: %s',  cid )
-           logging.debug('new course axis:  %f',  axis)
-           logging.debug('new course S %f,%f: ', S[0], S[1])
+           if cid == 'not set' :
+              courseLoaded = False
+	   else :
+	      logging.debug('new course axis:  %f',  axis)
+              logging.debug('new course S %f,%f: ', S[0], S[1])
 
-           courseLoaded = True
-           t.write('new course loaded: ' + cid + '\n' )
-           update.clear()
-           logging.debug('update is clear:')
+              courseLoaded = True
+              t.write('new course loaded: ' + cid + '\n' )
+              update.clear()
+              logging.debug('update is clear:')
         
         if courseLoaded :
             # run main signal setting loop here
