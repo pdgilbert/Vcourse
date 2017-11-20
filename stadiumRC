@@ -572,6 +572,7 @@ if __name__ == '__main__':
    threading.Thread(name='distributer', 
                    target=distribution.distributer,
    		   args=(dist,)).start()     
+   logging.debug(threading.enumerate())
 
    race = tkinter.Tk()
    race.wm_title("Stadium Race")
