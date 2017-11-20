@@ -127,8 +127,8 @@ def zoneSignal(update, shutdown):
            logging.info('  new cid: %s',  cid )
            if cid == 'not set' :
               courseLoaded = False
-	   else :
-	      logging.debug('new course axis:  %f',  axis)
+           else :
+              logging.debug('new course axis:  %f',  axis)
               logging.debug('new course S %f,%f: ', S[0], S[1])
 
               courseLoaded = True
