@@ -11,6 +11,7 @@ import logging
 import json
 import time
 import tkinter
+from tkinter import filedialog
 import gpsd
 import math
 import sys
@@ -45,14 +46,23 @@ GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 # left and right looking up the course, from race committee (RC) to windward mark (M)
 # these global variables should have values as displayed on RaceWindow screen
 
-def writeDefaultRaceParms():
-   try : 
-      defaultRace = { 'fl':fl, 'dc':dc, 'ty':ty, 'cl':cl, 'ax':ax, 'll':ll, 'sw':sw, 
-                      'RC.lat':RC.lat, 'RC.lon':RC.lon, 'S.lat':S.lat, 'S.lon':S.lon, 'M.lat':M.lat, 'M.lon':M.lon,
-                      'wn':wn, 'cc':cc, 'tt':tt }
-      with open("defaultRace","w") as f:   json.dump(defaultRace, f)
-   except :
-      print('write failure')
+# set initial default race parameters
+#  Could save last on exit and reload ?
+
+fl   = 'no fleet'   # fleet
+dc   = 'race 1'     # description
+ty   = 'stadium'    # course type
+cl   = 1.0          # course length (nm)
+ax   = 240          # course bearing (degrees)
+ll   = 100          # start line length (m)
+sw   = 200          # stadium width (m)
+RC   = gpsPos(44.210171667,-76.51047667) # RC position (default Pen. shoal)
+S    = gpsPos(0,0)  # start line center position
+M    = gpsPos(0,0)  # windward mark position 
+wn   = 20           # distance (m) from boundary at which warning is indicated
+cc   = 20           # width (m) around center axis where center is  indicated 
+tt   = 0            # target start time
+
 
 def readBoatList():
    global  BoatList
@@ -77,10 +87,39 @@ def readgpsList():
 
 readgpsList()
 
-def readDefaultRaceParms():
-   global  fl, dc, ty, cl, ax, ll, sw, RC, S, M, wn, cc, tt
+
+def writeRaceFile(w, filename = None):
+   # no calc
+   readRaceWindow() #sync globals from screen
+   if filename is None : 
+      t = tkinter.Toplevel(w)
+      filename =  filedialog.asksaveasfile(mode="w",  defaultextension=".raceParms",
+          initialdir = "", title = "enter file name to save",
+          filetypes = (("race parameters","*.raceParms"),("all files","*.*")))
+   if filename is None: # i.e. cancel clicked in dialog
+      return
+   filename.close()
+   filename = str(filename.name)
+
    try : 
-      with open("defaultRace") as f:  defaultRace = json.load(f)   
+      Race = { 'fl':fl, 'dc':dc, 'ty':ty, 'cl':cl, 'ax':ax, 'll':ll, 'sw':sw, 
+                      'RC.lat':RC.lat, 'RC.lon':RC.lon, 'S.lat':S.lat, 'S.lon':S.lon, 'M.lat':M.lat, 'M.lon':M.lon,
+                      'wn':wn, 'cc':cc, 'tt':tt }
+      with open(filename, "w") as f:  json.dump(Race, f)
+   except :
+      raise Exception('error writing race parameters to file ' + str(filename))
+
+def readRaceFile(w, filename = None):
+   global  fl, dc, ty, cl, ax, ll, sw, RC, S, M, wn, cc, tt
+   if filename is None : 
+      t = tkinter.Toplevel(w)
+      filename =  filedialog.askopenfilename(initialdir = "",
+        title = "choose file",
+        filetypes = (("race parameters","*.raceParms"),("all files","*.*")))
+
+   with open(filename) as f:  defaultRace = json.load(f)   
+
+   try : 
       fl   = defaultRace['fl']
       dc   = defaultRace['dc']
       ty   = defaultRace['ty']
@@ -95,22 +134,9 @@ def readDefaultRaceParms():
       cc   = defaultRace['cc']
       tt   = defaultRace['tt']
    except :
-      fl   = 'FX'         # fleet
-      dc   = 'race 1'     # description
-      ty   = 'stadium'    # course type
-      cl   = 1.0          # course length (nm)
-      ax   = 240          # course bearing (degrees)
-      ll   = 100          # start line length (m)
-      sw   = 200          # stadium width (m)
-      RC   = gpsPos(44.210171667,-76.51047667) # RC position (default Pen. shoal)
-      S    = gpsPos(0,0)  # start line center position
-      M    = gpsPos(0,0)  # windward mark position 
-      wn   = 20           # distance (m) from boundary at which warning is indicated
-      cc   = 20           # width (m) around center axis where center is  indicated 
-      tt   = 0            # target start time
+      raise Exception('error defining race parameters from file ' + filename)
 
-readDefaultRaceParms()
-
+   writeRaceWindow() #sync screen from globals
 
 def gpsRead(h, p):
    logging.debug('gpsRead:' + h + ':' + str(p) + '.')
@@ -444,7 +470,6 @@ def plotWindow(w):
    w.create_line(x0, y0, x0 - xm, y0 + ym , fill="#476042", width=3)
   
 def updateStatus(w):
-   import json
    
    t = tkinter.Toplevel(w)
    t.wm_title("Update Status")
@@ -475,9 +500,7 @@ def updateStatus(w):
             lab.pack(side=tkinter.LEFT)
 
 
-def gpsWindow(w):
-   import json
-   
+def gpsWindow(w):   
    t = tkinter.Toplevel(w)
    t.wm_title("Other GPS Status    lat    lon")
 
@@ -497,23 +520,12 @@ def gpsWindow(w):
 
 def extraWindow(w):
 
-   def readDefault():
-     # no calc
-     readDefaultRaceParms()
-     writeRaceWindow() #sync screen from globals
-
-   def writeDefault():
-     # no calc
-     readRaceWindow() #sync globals from screen
-     writeDefaultRaceParms()
-
    def saveRace():
      # no calc, confirm globals are as on screen and DO SOMETHING
      readRaceWindow() #sync globals from screen
      print('DO SOMETHING')
 
    def debugWindow(w):
-     import json
      print('globals')
      for f in (cl, ax, ll, sw, RC, S, M, wn, cc, tt): print(f)
      print()
@@ -523,9 +535,9 @@ def extraWindow(w):
    t = tkinter.Toplevel(w)
    t.wm_title("Extra Options")
 
-   bWD  = But(t, text='Save\nRace Defaults',    command=(lambda : writeDefault()))
+   bWD  = But(t, text='Save\nRace Parms',    command=(lambda : writeRaceFile(w)))
 
-   bRD  = But(t, text='Re-read\n Race Defaults', command=(lambda : readDefault()))
+   bRD  = But(t, text='Read\nSaved Race', command=(lambda : readRaceFile(w)))
 
    bBL  = But(t, text='Re-read\n BoatList', command=(lambda : readBoatList()))
 
