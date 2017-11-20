@@ -19,7 +19,7 @@ interface used by the sailors is the LEDs.
 
 -check BT is robust against starting up with no fix (ie inside)
 
--running more than one course at a time needs more thought. Might start by adding fleet to raceObj and distributed course file name.
+-running more than one course at a time needs more thought. Might start by adding fleet to zoneObj and distributed course file name.
 
 -mounting mechanism for cases
 -check cases are waterproof
@@ -108,7 +108,7 @@ See PiZeroWnotes.txt for details on building the gizmo and wpa_supplicant file.
   actual start line center, rather than that calculated using assumed RC
   position at the starboard end of the line.
 
--distributed raceObj are recorded in distributedCourses/
+-distributed zoneObj are recorded in distributedCourses/
 
 -ADD SOME NOTES ABOUT SETTING AND DISTRIBUTING THE RACE INFO.
 

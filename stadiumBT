@@ -77,8 +77,8 @@ def zoneSignal(update, shutdown):
 
     # this try allows recovery after restart, using an already saved file. 
     try :
-       with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
-       globals().update(raceObj)
+       with open("BTzoneObj.json","r") as f:  zoneObj = json.load(f)
+       globals().update(zoneObj)
        courseLoaded = True
        logging.info("Existing BT course loaded.")
     except:
@@ -118,10 +118,10 @@ def zoneSignal(update, shutdown):
            return() 
         if update.wait(0.01):   # blocking for wait time!
            # read new file here
-           logging.info('updating to new raceObj')
-           with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
+           logging.info('updating to new zoneObj')
+           with open("BTzoneObj.json","r") as f:  zoneObj = json.load(f)
 
-           globals().update(raceObj)
+           globals().update(zoneObj)
            st = status(p, st, 'update')
 
            logging.info('  new cid: %s',  cid )

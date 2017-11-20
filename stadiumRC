@@ -162,8 +162,8 @@ def getRCgps():
 
 
 
-def makeRaceObj():
-   # This  syncronizes globals dist, generates raceObj, calls distribute
+def makezoneObj():
+   # This  syncronizes globals dist, generates zoneObj, calls distribute
    # info to pass to stadiumBT (boat gadget) for calculations.
    # Info for stadiumBT is all in gps positions as that is the best for the
    # boats' calculation of what indicators should go on.
@@ -186,7 +186,7 @@ def makeRaceObj():
    else                      : dom = False
 
    #  NOT !!
-   # Next are globals not on screen but used for raceObj calculation, and plot.
+   # Next are globals not on screen but used for zoneObj calculation, and plot.
    # These are positions at intersection of the start line extension and one of
    # the lines parallel to axis used for switching indicators (LEDs) on boats.
 
@@ -475,9 +475,9 @@ def updateStatus(w):
    t.wm_title("Update Status")
 
    #  using global dist
-   for f in dist.raceObjReceived :
+   for f in dist.zoneObjReceived :
       row = tkinter.Frame(t)
-      lab = tkinter.Label(row, width=30, text=f + ' ' + str(dist.raceObjReceived[f]), anchor='w')
+      lab = tkinter.Label(row, width=30, text=f + ' ' + str(dist.zoneObjReceived[f]), anchor='w')
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
       lab.pack(side=tkinter.LEFT)
 
@@ -493,7 +493,7 @@ def updateStatus(w):
 
    if (BoatList != None) : 
       for f in BoatList :
-         if f not in dist.raceObjReceived :
+         if f not in dist.zoneObjReceived :
             row = tkinter.Frame(t)
             lab = tkinter.Label(row, width=30, text='*** ' + f , anchor='w')
             row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
@@ -529,7 +529,7 @@ def extraWindow(w):
      print('globals')
      for f in (cl, ax, ll, sw, RC, S, M, wn, cc, tt): print(f)
      print()
-     print('raceObj')
+     print('zoneObj')
      dist.prt()
 
    t = tkinter.Toplevel(w)
@@ -563,8 +563,8 @@ if __name__ == '__main__':
    shutdown = threading.Event()
 
    dist = distribution.distribution(shutdown, RC_IP, RC_PORT, 
-                     raceObj= { 'cid' : 'not set' }, 
-		     raceObjReceived = {})
+                     zoneObj= { 'cid' : 'not set' }, 
+		     zoneObjReceived = {})
    
    #  (x,) makes single arg x a tuple
    #  Can distributer be made into a method of dist object?
@@ -591,7 +591,7 @@ if __name__ == '__main__':
    
    bCalcS = But(race, text='calc using start\n center & mark',    command=calcS)
    
-   bDist    = But(race, text='distribute',    command=(lambda : makeRaceObj()))
+   bDist    = But(race, text='distribute',    command=(lambda : makezoneObj()))
 
    bU     = But(race, text='update\nStatus', command=(lambda : updateStatus(race)))
 

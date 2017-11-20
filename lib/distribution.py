@@ -2,7 +2,7 @@
 
 # BT sends RC the cid (cousreID and distritution time) BT has.
 # RC replies with  'ok' indicating there is no update,
-#     or 'none' indicating no course set yet, or with updated raceObj.
+#     or 'none' indicating no course set yet, or with updated zoneObj.
 # BT confirms receipt of update with bt# or hostname?  
 
 import socket
@@ -35,8 +35,8 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
     	    s.connect((RC_IP, RC_PORT))
     	    
     	    try :
-    	       with open("BTraceObj.json","r") as f:  raceObj = json.load(f)
-    	       cid = raceObj['cid']
+    	       with open("BTzoneObj.json","r") as f:  zoneObj = json.load(f)
+    	       cid = zoneObj['cid']
     	    except :
     	       cid = 'none'
     	    
@@ -47,11 +47,11 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
     	    #logging.debug('r ' + str(r))
 
     	    if not (r in ('ok', 'none')) :
-                logging.info('got new raceObj. Writing to file BTraceObj.json')
+                logging.info('got new zoneObj. Writing to file BTzoneObj.json')
                 # Next could be a message to zoneSignal thread, but having a
                 # file means the gadget can recover after reboot without
                 # a connection to RC, so write string r to a file
-                with open("BTraceObj.json","w") as f: f.write(r) 
+                with open("BTzoneObj.json","w") as f: f.write(r) 
                 update.set()
 
                 l = smp.snd(s, BT_ID)
@@ -99,7 +99,7 @@ def distributer(dist):
 
 class BThandlerThread(threading.Thread):
    # handle a connection from a BT. Check if BT is current and update if not.
-   # NB BThandlerThread needs a dist object, not just raceObj, 
+   # NB BThandlerThread needs a dist object, not just zoneObj, 
    # because it uses dist.received() te record back to "global" dist.
 
    def __init__(self,ip,port,sock, dist):
@@ -114,17 +114,17 @@ class BThandlerThread(threading.Thread):
        import json
         
        #course id that RC has
-       if (self.dist.raceObj == None ) : 
+       if (self.dist.zoneObj == None ) : 
           RCcid = 'none'
        else :
-          RCcid = self.dist.raceObj['cid']
+          RCcid = self.dist.zoneObj['cid']
        
        BTcid = smp.rcv(self.sock)  #course id that BT has
        
        #logging.debug(" BTcid " + str(BTcid))
        #logging.debug(" RCcid " + str(RCcid))
 
-       if (self.dist.raceObj == None ) : 
+       if (self.dist.zoneObj == None ) : 
              smp.snd(self.sock, 'none')
              #logging.debug('sent none.')
 
@@ -133,9 +133,9 @@ class BThandlerThread(threading.Thread):
              #logging.debug('sent ok.')
              
        else :
-             #logging.debug('sending new raceObj to BT')
-             smp.snd(self.sock, json.dumps(self.dist.raceObj, indent=4))
-             #logging.debug('new raceObj sent:')
+             #logging.debug('sending new zoneObj to BT')
+             smp.snd(self.sock, json.dumps(self.dist.zoneObj, indent=4))
+             #logging.debug('new zoneObj sent:')
              bt = smp.rcv(self.sock) 
              #logging.debug('ADD BT_ID TO LIST. ' + bt)
              self.dist.received( bt, time.strftime('%Y-%m-%d %H:%M:%S %Z'))
@@ -146,42 +146,42 @@ class BThandlerThread(threading.Thread):
 
 class distribution():
 
-   def __init__(self, shutdown, RC_IP, RC_PORT, raceObj, raceObjReceived):
+   def __init__(self, shutdown, RC_IP, RC_PORT, zoneObj, zoneObjReceived):
       self.shutdown = shutdown
       self.RC_IP = RC_IP
       self.RC_PORT = RC_PORT
-      self.raceObj = raceObj
-      self.raceObjReceived = raceObjReceived
+      self.zoneObj = zoneObj
+      self.zoneObjReceived = zoneObjReceived
    
    def prt(self):
-      print(json.dumps(self.raceObj, indent=4))
+      print(json.dumps(self.zoneObj, indent=4))
       print('Received by:')
-      print(self.raceObjReceived)
+      print(self.zoneObjReceived)
 
-   def newRace(self, newraceObj):
-      # should be called by distribute but for now called by makeRaceObj
+   def newRace(self, newzoneObj):
+      # should be called by distribute but for now called by makezoneObj
       #  which uses global parameters.
-      self.raceObj.clear()
-      self.raceObj.update(newraceObj)
+      self.zoneObj.clear()
+      self.zoneObj.update(newzoneObj)
 
    def received(self, bt, tm):
-      self.raceObjReceived.update({str(bt) : tm})
+      self.zoneObjReceived.update({str(bt) : tm})
    
-   def distribute(self):  #, newraceObj):
-      # This works by creating a new version of RaceObj, the BThandlerThread
+   def distribute(self):  #, newzoneObj):
+      # This works by creating a new version of zoneObj, the BThandlerThread
       # compares the cid of this with that sent by BT when they connect.
       # There is no "signal" to distributionHandler or BTs. It depends on them checking in.
             
-      #print(json.dumps(self.raceObj, indent=4))
+      #print(json.dumps(self.zoneObj, indent=4))
    
       # clear dict of boats that have update
-      self.raceObjReceived.clear()
+      self.zoneObjReceived.clear()
    
-      # write raceObj [NOT and also global object info] to a file, for the record, but distribute is done with raceObj
-      with open('distributedCourses/raceObj-' + self.raceObj['cid'] + '.json',"w") as f:
+      # write zoneObj [NOT and also global object info] to a file, for the record, but distribute is done with zoneObj
+      with open('distributedCourses/zoneObj-' + self.zoneObj['cid'] + '.json',"w") as f:
          f.write("\n")
-         f.write("raceObj:\n")
-         json.dump(self.raceObj, f, indent=4)
+         f.write("zoneObj:\n")
+         json.dump(self.zoneObj, f, indent=4)
          #Race = { 'fl':fl, 'dc':dc, 'ty':ty, 'cl':cl, 'ax':ax, 'll':ll, 'sw':sw, 
          #       'RC.lat':RC.lat, 'RC.lon':RC.lon, 'S.lat':S.lat, 'S.lon':S.lon, 'M.lat':M.lat, 'M.lon':M.lon,
          #       'wn':wn, 'cc':cc, 'tt':tt }
