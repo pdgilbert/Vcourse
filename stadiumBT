@@ -2,7 +2,7 @@
 
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 
-# need  export PYTHONPATH=/path/to/Vcourse/lib
+# need     export PYTHONPATH=/path/to/Vcourse/lib
 import threading
 import signal
 import sys

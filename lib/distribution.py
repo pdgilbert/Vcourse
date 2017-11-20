@@ -3,7 +3,7 @@
 # BT sends RC the cid (cousreID and distritution time) BT has.
 # RC replies with  'ok' indicating there is no update,
 #     or 'none' indicating no course set yet, or with updated zoneObj.
-# BT confirms receipt of update with bt# or hostname?  
+# BT confirms receipt of update with BT_ID  
 
 import socket
 import logging
@@ -44,7 +44,7 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
     	    #logging.debug("BT cid " + str(cid))
     	    
     	    r = smp.rcv(s) 
-    	    #logging.debug('r ' + str(r))
+    	    logging.debug('r ' + str(r))
 
     	    if not (r in ('ok', 'none')) :
                 logging.info('got new zoneObj. Writing to file BTzoneObj.json')
@@ -72,7 +72,7 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
 
 def distributer(dist):
    # wait for connections from BTs and pass each to a BThandlerThread.
-   print('distributer starting. Using RC_IP ' + str(dist.RC_IP) + ':' +str(dist.RC_PORT))
+   logging.info('distributer starting. Using RC_IP ' + str(dist.RC_IP) + ':' +str(dist.RC_PORT))
    
    tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -114,7 +114,7 @@ class BThandlerThread(threading.Thread):
        import json
         
        #course id that RC has
-       if (self.dist.zoneObj == None ) : 
+       if self.dist.zoneObj is None : 
           RCcid = 'none'
        else :
           RCcid = self.dist.zoneObj['cid']
@@ -124,7 +124,7 @@ class BThandlerThread(threading.Thread):
        #logging.debug(" BTcid " + str(BTcid))
        #logging.debug(" RCcid " + str(RCcid))
 
-       if (self.dist.zoneObj == None ) : 
+       if self.dist.zoneObj is None : 
              smp.snd(self.sock, 'none')
              #logging.debug('sent none.')
 
