@@ -169,8 +169,6 @@ def makezoneObj():
    # boats' calculation of what indicators should go on.
    # The same info is used by plot but is convert to nm in plot.
       
-   global dist
-
    # base on current screen values so ensure correct values in globals
    readRaceWindow() 
 
@@ -260,8 +258,7 @@ def makezoneObj():
 	          raise ValueError("something is messed up in (315 <= ax <= 360) | (0 <= ax <= 45).")
       else :  raise ValueError("something is messed up in dom=False.")
 
-   dist.newRace(r)
-   dist.distribute()
+   return r
 
 def calcA():
    # calculate race parameters using axis,
@@ -469,13 +466,12 @@ def plotWindow(w):
    # other half of start line
    w.create_line(x0, y0, x0 - xm, y0 + ym , fill="#476042", width=3)
   
-def updateStatus(w):
+def updateStatus(w, revd):
    
    t = tkinter.Toplevel(w)
    t.wm_title("Update Status")
 
-   #  using global dist
-   for f in dist.zoneObjReceived :
+   for f in revd :
       row = tkinter.Frame(t)
       lab = tkinter.Label(row, width=30, text=f + ' ' + str(dist.zoneObjReceived[f]), anchor='w')
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
@@ -493,7 +489,7 @@ def updateStatus(w):
 
    if (BoatList != None) : 
       for f in BoatList :
-         if f not in dist.zoneObjReceived :
+         if f not in  revd :
             row = tkinter.Frame(t)
             lab = tkinter.Label(row, width=30, text='*** ' + f , anchor='w')
             row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
@@ -520,38 +516,31 @@ def gpsWindow(w):
 
 def extraWindow(w):
 
-   def saveRace():
-     # no calc, confirm globals are as on screen and DO SOMETHING
-     readRaceWindow() #sync globals from screen
-     print('DO SOMETHING')
-
    def debugWindow(w):
      print('globals')
      for f in (cl, ax, ll, sw, RC, S, M, wn, cc, tt): print(f)
      print()
      print('zoneObj')
-     dist.prt()
+     dr.prt()
+     print('threads')
+     print(str(threading.enumerate()))
 
    t = tkinter.Toplevel(w)
    t.wm_title("Extra Options")
 
    bWD  = But(t, text='Save\nRace Parms',    command=(lambda : writeRaceFile(w)))
 
-   bRD  = But(t, text='Read\nSaved Race', command=(lambda : readRaceFile(w)))
+   bRD  = But(t, text='Load Saved\nRace Parms', command=(lambda : readRaceFile(w)))
 
    bBL  = But(t, text='Re-read\n BoatList', command=(lambda : readBoatList()))
 
    bGL  = But(t, text='Re-read\n gpsList', command=(lambda : readgpsList()))
 
-   bDbg = But(t, text='debugInfo',        command=(lambda : debugWindow(w)))
+   bDbg = But(t, text='debugInfo',         command=(lambda : debugWindow(w)))
 
-   bP   = But(t, text='plot',             command=(lambda : plotWindow(w)))
+   bP   = But(t, text='plot',              command=(lambda : plotWindow(w)))
 
-   bG   = But(t, text='other\n GPS',      command=(lambda : gpsWindow(w)))
-
-   #bS   = But(t, text='save race\ndistribution',        command=(lambda : saveRace()))
-
-   #bQ  = But(t, text='Quit!!',           command=(race.quit)) #command=(race.destroy))
+   bG   = But(t, text='other\n GPS',       command=(lambda : gpsWindow(w)))
 
 def But(w, text='x', command='') :
    b = tkinter.Button(w, text=text,  command=command)
@@ -562,16 +551,21 @@ def But(w, text='x', command='') :
 if __name__ == '__main__':
    shutdown = threading.Event()
 
-   dist = distribution.distribution(shutdown, RC_IP, RC_PORT, 
-                     zoneObj= { 'cid' : 'not set' }, 
-		     zoneObjReceived = {})
-   
+   #dist = distribution.distribution(RC_IP, RC_PORT, 
+   #                  zoneObj= { 'cid' : 'not set' }, 
+   #		     zoneObjReceived = {})
+   # 
    #  (x,) makes single arg x a tuple
    #  Can distributer be made into a method of dist object?
    #  (On first attempt I had trouble getting threading to start.)
-   threading.Thread(name='distributer', 
-                   target=distribution.distributer,
-   		   args=(dist,)).start()     
+   # threading.Thread(name='distributer', 
+   #                 target=distribution.distributer,
+   # 		   args=(dist,)).start()     
+
+   dr = distribution.distributer(RC_IP, RC_PORT, shutdown)
+   
+   dr.start() 
+   
    logging.debug(threading.enumerate())
 
    race = tkinter.Tk()
@@ -584,19 +578,23 @@ if __name__ == '__main__':
 
    #calc() # using global ents and other global variables
   
-   bGPS   = But(race, text='get RC GPS',     command=(lambda : getRCgps()))
+   bGPS   = But(race,  text='get RC GPS',     command=(lambda : getRCgps()))
    
-   bCalcA = But(race, text='calc using\n RC & axis',    command=calcA)
+   bCalcA = But(race,  text='calc using\n RC & axis',    command=calcA)
    
-   bCalcM = But(race, text='calc using\n RC & mark',    command=calcM)
+   bCalcM = But(race,  text='calc using\n RC & mark',    command=calcM)
    
-   bCalcS = But(race, text='calc using start\n center & mark',    command=calcS)
+   bCalcS = But(race,  text='calc using start\n center & mark',
+                    command=calcS)
    
-   bDist    = But(race, text='distribute',    command=(lambda : makezoneObj()))
+   bDist  = But(race,  text='distribute', 
+                    command=(lambda :  dr.distribute(makezoneObj())))
 
-   bU     = But(race, text='update\nStatus', command=(lambda : updateStatus(race)))
+   bU     = But(race,  text='update\nStatus',
+                    command=(lambda : updateStatus(race, dr.distributionRecvd())))
 
-   bE      = But(race, text='extra',         command=(lambda : extraWindow(race)))
+   bE     = But(race, text='extra',   
+                    command=(lambda : extraWindow(race)))
 
    def abortHandler(signum, frame):
        logging.debug('main thread abortHandler setting shutdown signal.')
