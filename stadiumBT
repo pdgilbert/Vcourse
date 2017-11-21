@@ -191,6 +191,8 @@ if __name__ == '__main__':
        shutdown.set()  # to exit threads
        time.sleep(5)
        logging.info('main thread exit.' +time.strftime('%Y-%m-%d %H:%M:%S %Z')+ '\n')
+       logging.debug('threads still running:')
+       logging.debug(threading.enumerate())
        sys.exit()
 
    # ^C works if process is not deamonized with &

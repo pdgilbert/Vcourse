@@ -21,11 +21,7 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
     logging.info('distributionCheck starting')
     logging.info('   ' + BT_ID + ' watching for RC at ' + RC_IP + ':' + str(RC_PORT))
 
-    while True:
-        if shutdown.wait(0.1):    # effectively sleep too
-           logging.info('shutting down distributionCheck thread.')
-           return() 
-        
+    while not shutdown.wait(0.1):    # effectively sleep too
         # check RC for update. 
         # Wrapped in try for case when connection fails (wifi out of range).
         logging.debug('BT check with RC for update.')
@@ -39,7 +35,9 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
                cid = zoneObj['cid']
             except :
                cid = 'none'
-            
+
+            if cid is None :  cid = 'none'
+           
             l = smp.snd(s, cid)
             #logging.debug("BT cid " + str(cid))
             
@@ -65,7 +63,7 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
 
         time.sleep(interval)
 
-    raise Exception('distributionCheck should not be here.')
+    logging.info('exiting down distributionCheck thread.')
 
 
 ####### following used by RC #######
