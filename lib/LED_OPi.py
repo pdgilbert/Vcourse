@@ -127,15 +127,14 @@ class LEDs(threading.Thread):
         for c in self.channels :
            self.FLASH[c] = False
            GPIO.output(c, GPIO.LOW)
-    def join(self): 
-        # join should not be called from outside because not all implementations
-	# of the class need threads. Use cleanup() instead.
-        self.stoprequest.set()
+    # join() should not be called from outside because not all implementations
+    # of the class need threads. Use cleanup() instead.
     def cleanup(self): 
         #  Orange equivalent of ?
         # GPIO.cleanup()  # GPIO.cleanup(RED)   GPIO.cleanup( CHANNELS )
         logging.debug('LEDs cleanup() for shutdown.')
-        self.join()
+        self.stoprequest.set()
+        #self.join() ??
 
 #leds = LEDs((RED, GREEN, BLUE), 2, 20) #  (channels, frequency, dc)
 #leds.start()

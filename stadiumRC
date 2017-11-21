@@ -552,7 +552,7 @@ if __name__ == '__main__':
    shutdown = threading.Event()
 
    #dist = distribution.distribution(RC_IP, RC_PORT, 
-   #                  zoneObj= { 'cid' : 'not set' }, 
+   #                  zoneObj= { 'cid' : 'none' }, 
    #		     zoneObjReceived = {})
    # 
    #  (x,) makes single arg x a tuple
