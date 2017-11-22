@@ -13,7 +13,7 @@ import threading
 
 import smp
 
-#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
 ####### this class is used only by BT #######
 
@@ -44,6 +44,7 @@ class distributionCheck(threading.Thread):
          cid = 'none'
 
       if cid is None :  cid = 'none'
+     logging.debug('distributionCheck initialized. cid = ' + cid)
 
    def run(self):
       logging.info('distributionCheck starting')
@@ -61,7 +62,7 @@ class distributionCheck(threading.Thread):
               l = smp.snd(s, cid)
               logging.debug("BT cid " + str(cid))
               
-              r = smp.rcv(self.s) 
+              r = smp.rcv(s) 
               logging.debug('r ' + str(r))
 
               if not (r in ('ok', 'none')) :
