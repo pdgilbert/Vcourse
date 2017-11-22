@@ -43,7 +43,7 @@ class distributionCheck(threading.Thread):
       except :
          cid = 'none'
 
-      if cid is None :  cid = 'none'
+      #if cid is None :  cid = 'none' #this should never happen
       logging.debug('distributionCheck initialized. cid = ' + cid)
 
    def run(self):
@@ -70,6 +70,7 @@ class distributionCheck(threading.Thread):
                   # Next could be a message to zoneSignal thread, but having a
                   # file means the gadget can recover after reboot without
                   # a connection to RC, so write string r to a file
+                  if r.cid is None : r.cid = 'none' #just to be sure
                   with open("activeBTzoneObj.json","w") as f: f.write(r) 
                   self.update.set()
 

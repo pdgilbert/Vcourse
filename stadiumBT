@@ -88,7 +88,6 @@ def zoneSignal(update, shutdown):
     try :
        with open("activeBTzoneObj.json","r") as f:  zoneObj = json.load(f)
        globals().update(zoneObj)
-       if cid is None : cid = 'none' 
        logging.info("Existing BT course loaded.")
     except:
        cid = 'none'
@@ -116,7 +115,7 @@ def zoneSignal(update, shutdown):
        logging.warning("stadiumBT cannot get GPS position. Is gpsd working?")
        logging.warning("Waiting 20 seconds. Check that GPS is connected if there are more errors!!!\n")
        # this kills thread  raise Exception('stadiumBT will not work without GPS.')
-       # dont sys.exit(), it may just not be ready
+       # do not sys.exit(), gps may just not be ready
        time.sleep(20)
 
     while True:
