@@ -21,9 +21,10 @@ from distribution import distributionCheck
 # level logs everything higher. NOTSET looks to parent levels
 
 # filemode='w' will start a new log file each run. Otherwise appending is done.
-logging.basicConfig(filename='stadiumBT.log', level=logging.DEBUG, 
-   format='(%(threadName)-9s) %(message)s',)
+#logging.basicConfig(filename='stadiumBT.log', 
+           level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
+logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
 # Read config variable RC_IP, RC_PORT, BT_ID  from file BTconfig
 # in the working directory. 
