@@ -31,7 +31,6 @@ class distributionCheck(threading.Thread):
       self.update = update
       self.shutdown = shutdown
 
-      self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       self.sleepInterval = 5
 
       #THIS WOULD BE CLEANER IF JSON ALWAYS HAD 'none' rather than None
@@ -56,10 +55,11 @@ class distributionCheck(threading.Thread):
           logging.debug('BT check with RC for update.')
 
           try :
-              self.s.connect((self.RC_IP, self.RC_PORT))
+              s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+              s.connect((self.RC_IP, self.RC_PORT))
               
-              l = smp.snd(self.s, cid)
-              #logging.debug("BT cid " + str(self.cid))
+              l = smp.snd(s, cid)
+              logging.debug("BT cid " + str(cid))
               
               r = smp.rcv(self.s) 
               logging.debug('r ' + str(r))
@@ -72,7 +72,7 @@ class distributionCheck(threading.Thread):
                   with open("activeBTzoneObj.json","w") as f: f.write(r) 
                   self.update.set()
 
-                  l = smp.snd(self.s, self.BT_ID)
+                  l = smp.snd(s, self.BT_ID)
                   logging.debug("sent  receipt BT " + str(self.BT_ID))
 
               s.close()
