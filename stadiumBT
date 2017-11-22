@@ -22,7 +22,7 @@ from distribution import distributionCheck
 
 # filemode='w' will start a new log file each run. Otherwise appending is done.
 #logging.basicConfig(filename='stadiumBT.log', 
-           level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+#           level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
