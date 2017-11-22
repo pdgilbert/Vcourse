@@ -605,8 +605,6 @@ if __name__ == '__main__':
    signal.signal(signal.SIGTERM, abortHandler) # kill -15 (default)
 
    race.mainloop()
-   
-   # still not shutting dowm gracefully
 
    logging.debug('main thread setting shutdown signal.')
    shutdown.set()  # to exit threads

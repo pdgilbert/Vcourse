@@ -15,60 +15,80 @@ import smp
 
 #logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
-def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
-    # this function is used by BT
+####### this class is used only by BT #######
 
-    logging.info('distributionCheck starting')
-    logging.info('   ' + BT_ID + ' watching for RC at ' + RC_IP + ':' + str(RC_PORT))
+class distributionCheck(threading.Thread):
+   # this thread class is used by BT
+  
+   def __init__(self, RC_IP, RC_PORT, BT_ID, update, shutdown):
+      threading.Thread.__init__(self)
+      #RC_IP, RC_PORT could be read here from config rather than passed
 
-    try :
-       with open("activeBTzoneObj.json","r") as f:  zoneObj = json.load(f)
-       cid = zoneObj['cid']
-    except :
-       cid = 'none'
+      self.RC_IP   = RC_IP
+      self.RC_PORT = RC_PORT
+      self.BT_ID   = BT_ID
+      self.update = update
+      self.shutdown = shutdown
 
-    if cid is None :  cid = 'none'
+      self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      self.sleepInterval = 5
 
-    while not shutdown.wait(0.1):    # effectively sleep too
-        # check RC for update. 
-        # Wrapped in try for case when connection fails (wifi out of range).
-        logging.debug('BT check with RC for update.')
+      #THIS WOULD BE CLEANER IF JSON ALWAYS HAD 'none' rather than None
+      # This loads an active zoneObj if it exists, so gadget is a bit
+      # robust to an accidental reboot. (distributionCheck only needs the cid)
+      global cid
+      try :
+         with open("activeBTzoneObj.json","r") as f:  zoneObj = json.load(f)
+         cid = zoneObj['cid']
+      except :
+         cid = 'none'
 
-        try :
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((RC_IP, RC_PORT))
-            
-            l = smp.snd(s, cid)
-            #logging.debug("BT cid " + str(cid))
-            
-            r = smp.rcv(s) 
-            logging.debug('r ' + str(r))
+      if cid is None :  cid = 'none'
 
-            if not (r in ('ok', 'none')) :
-                logging.info('got new zoneObj. Writing to file activeBTzoneObj.json')
-                # Next could be a message to zoneSignal thread, but having a
-                # file means the gadget can recover after reboot without
-                # a connection to RC, so write string r to a file
-                with open("activeBTzoneObj.json","w") as f: f.write(r) 
-                update.set()
+   def run(self):
+      logging.info('distributionCheck starting')
+      logging.info('   ' + self.BT_ID + ' watching for RC at ' + self.RC_IP + ':' + str(self.RC_PORT))
 
-                l = smp.snd(s, BT_ID)
-                logging.debug("sent  receipt BT " + str(BT_ID))
+      while not self.shutdown.set():   
+          # check RC for update. 
+          # Wrapped in try for case when connection fails (wifi out of range).
+          logging.debug('BT check with RC for update.')
 
-            s.close()
+          try :
+              self.s.connect((self.RC_IP, self.RC_PORT))
+              
+              l = smp.snd(self.s, cid)
+              #logging.debug("BT cid " + str(self.cid))
+              
+              r = smp.rcv(self.s) 
+              logging.debug('r ' + str(r))
 
-        except :
-           #logging.debug('no connection.')
-           time.sleep(1)
+              if not (r in ('ok', 'none')) :
+                  logging.info('got new zoneObj. Writing to file activeBTzoneObj.json')
+                  # Next could be a message to zoneSignal thread, but having a
+                  # file means the gadget can recover after reboot without
+                  # a connection to RC, so write string r to a file
+                  with open("activeBTzoneObj.json","w") as f: f.write(r) 
+                  self.update.set()
 
-        time.sleep(interval)
+                  l = smp.snd(self.s, self.BT_ID)
+                  logging.debug("sent  receipt BT " + str(self.BT_ID))
 
-    logging.info('exiting distributionCheck thread.')
+              s.close()
+
+          except :
+             #logging.debug('no connection.')
+             pass
+
+          time.sleep(self.sleepInterval)
+
+      logging.info('exiting distributionCheck thread.')
 
 
-####### following used by RC #######
+####### following classes and variables are used only by RC #######
+
 # Having distRecvd global to the module is so that BThandler 
-# threads can append to it, and distributer thread canm clear it,
+# threads can append to it, and distributer thread can clear it,
 # and status button can access it.
 
 distRecvd = {}

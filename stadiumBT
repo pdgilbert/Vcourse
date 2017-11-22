@@ -43,6 +43,12 @@ RC_PORT = int(config['RC_PORT'])
 GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
 GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
+# cid needs to be global as it is used and changed by both zoneSignal and 
+# distributionCheck threads. The usual update would be in zoneSignal, after
+# and update has been signalled by distributionCheck. But distributionCheck
+# will set it when first intiallizing 
+
+cid = 'none'
 
 # start gpsd (-n don't wait for device,  #-S 2947 is default port  FIX?
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
@@ -50,6 +56,8 @@ GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
 def zoneSignal(update, shutdown):
 
+    global cid
+    
     logging.info('zoneSignal starting')
 
     def status(p, st, now, x=''):
@@ -174,17 +182,13 @@ if __name__ == '__main__':
    shutdown = threading.Event()
 
    logging.info('main thread starting distributionCheck thread.')
-   threading.Thread(name='distributionCheck', 
-   		   target=distributionCheck, 
-   		   args=(update, shutdown,  10, RC_IP, RC_PORT, BT_ID)).start()
+   distributionCheck(RC_IP, RC_PORT, BT_ID, update, shutdown).start()
 
    logging.info('main thread starting zoneSignal thread.')
    threading.Thread(name='zoneSignal', 
    		   target=zoneSignal, 
    		   args=(update, shutdown)).start()
    
-   # consider myThread.daemon = True so threads shut down
-
    def shutdownHandler(signum, frame):
        logging.info('main thread setting shutdown signal.')
        shutdown.set()  # to exit threads
