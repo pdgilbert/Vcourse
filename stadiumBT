@@ -126,7 +126,8 @@ def zoneSignal(update, shutdown):
            st = status(p, st, 'update')
 
            logging.info('  new cid: %s',  cid )
-           else :
+
+           if cid is not 'none' :
               logging.debug('new course axis:  %f',  axis)
               logging.debug('new course S %f,%f: ', S[0], S[1])
 
