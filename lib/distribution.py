@@ -23,6 +23,7 @@ class distributionCheck(threading.Thread):
    def __init__(self, RC_IP, RC_PORT, BT_ID, update, shutdown):
       threading.Thread.__init__(self)
       #RC_IP, RC_PORT could be read here from config rather than passed
+      self.name='distributionCheck'
 
       self.RC_IP   = RC_IP
       self.RC_PORT = RC_PORT
@@ -49,7 +50,7 @@ class distributionCheck(threading.Thread):
       logging.info('distributionCheck starting')
       logging.info('   ' + self.BT_ID + ' watching for RC at ' + self.RC_IP + ':' + str(self.RC_PORT))
 
-      while not self.shutdown.set():   
+      while not self.shutdown.isSet():   
           # check RC for update. 
           # Wrapped in try for case when connection fails (wifi out of range).
           logging.debug('BT check with RC for update.')
