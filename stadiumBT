@@ -146,7 +146,7 @@ def zoneSignal(update, shutdown):
         
         if cid is not 'none' :
             # run main signal setting loop here
-            logging.debug('checking zone status.')
+            #logging.debug('checking zone status.')
             try:
                 p = getGPS() 
                 aa = a(p) # this is a in y = a + b * x

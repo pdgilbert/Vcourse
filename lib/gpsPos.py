@@ -35,7 +35,11 @@
 import gpsd
 import math
 from gpsd import get_current
-    
+import logging
+# If this is set to DEBUG then get_current messages Polling gps each time.
+logging.basicConfig(level=logging.INFO, format='(%(threadName)-9s) %(message)s',)
+
+
 def getGPS():
   p = get_current()
   return(gpsPos(p.lat, p.lon, p.time))
