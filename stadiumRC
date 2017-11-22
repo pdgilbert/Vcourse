@@ -470,10 +470,12 @@ def updateStatus(w, revd):
    
    t = tkinter.Toplevel(w)
    t.wm_title("Update Status")
+   logging.debug('revd:')
+   logging.debug(str(revd))
 
    for f in revd :
       row = tkinter.Frame(t)
-      lab = tkinter.Label(row, width=30, text=f + ' ' + str(dist.zoneObjReceived[f]), anchor='w')
+      lab = tkinter.Label(row, width=30, text=f + ' ' + str(revd[f]), anchor='w')
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
       lab.pack(side=tkinter.LEFT)
 
@@ -524,6 +526,10 @@ def extraWindow(w):
      dr.prt()
      print('threads')
      print(str(threading.enumerate()))
+     print('dr.distributionRecvd()')
+     print(dr.distributionRecvd())
+     print('distribution.distRecvd')
+     print(distribution.distRecvd)
 
    t = tkinter.Toplevel(w)
    t.wm_title("Extra Options")
@@ -547,24 +553,9 @@ def But(w, text='x', command='') :
    b.pack(side=tkinter.LEFT, padx=5, pady=5)
    return(b)
 
-def addRecvd(bt, tm):
-   # this global funtion is used by BThandler thread to write back info
-   # into distributer thread record of BTs that have the update.
-   dr.addRecvd( bt, tm)
 
 if __name__ == '__main__':
    shutdown = threading.Event()
-
-   #dist = distribution.distribution(RC_IP, RC_PORT, 
-   #                  zoneObj= { 'cid' : 'none' }, 
-   #		     zoneObjReceived = {})
-   # 
-   #  (x,) makes single arg x a tuple
-   #  Can distributer be made into a method of dist object?
-   #  (On first attempt I had trouble getting threading to start.)
-   # threading.Thread(name='distributer', 
-   #                 target=distribution.distributer,
-   # 		   args=(dist,)).start()     
 
    dr = distribution.distributer(RC_IP, RC_PORT, shutdown)
    

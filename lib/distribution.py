@@ -21,6 +21,14 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
     logging.info('distributionCheck starting')
     logging.info('   ' + BT_ID + ' watching for RC at ' + RC_IP + ':' + str(RC_PORT))
 
+    try :
+       with open("activeBTzoneObj.json","r") as f:  zoneObj = json.load(f)
+       cid = zoneObj['cid']
+    except :
+       cid = 'none'
+
+    if cid is None :  cid = 'none'
+
     while not shutdown.wait(0.1):    # effectively sleep too
         # check RC for update. 
         # Wrapped in try for case when connection fails (wifi out of range).
@@ -30,14 +38,6 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((RC_IP, RC_PORT))
             
-            try :
-               with open("BTzoneObj.json","r") as f:  zoneObj = json.load(f)
-               cid = zoneObj['cid']
-            except :
-               cid = 'none'
-
-            if cid is None :  cid = 'none'
-           
             l = smp.snd(s, cid)
             #logging.debug("BT cid " + str(cid))
             
@@ -45,11 +45,11 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
             logging.debug('r ' + str(r))
 
             if not (r in ('ok', 'none')) :
-                logging.info('got new zoneObj. Writing to file BTzoneObj.json')
+                logging.info('got new zoneObj. Writing to file activeBTzoneObj.json')
                 # Next could be a message to zoneSignal thread, but having a
                 # file means the gadget can recover after reboot without
                 # a connection to RC, so write string r to a file
-                with open("BTzoneObj.json","w") as f: f.write(r) 
+                with open("activeBTzoneObj.json","w") as f: f.write(r) 
                 update.set()
 
                 l = smp.snd(s, BT_ID)
@@ -63,10 +63,15 @@ def distributionCheck(update, shutdown, interval, RC_IP, RC_PORT, BT_ID):
 
         time.sleep(interval)
 
-    logging.info('exiting down distributionCheck thread.')
+    logging.info('exiting distributionCheck thread.')
 
 
 ####### following used by RC #######
+# Having distRecvd global to the module is so that BThandler 
+# threads can append to it, and distributer thread canm clear it,
+# and status button can access it.
+
+distRecvd = {}
 
 class distributer(threading.Thread):
    # Wait for connections from BTs and pass each to a BThandlerThread.
@@ -89,10 +94,9 @@ class distributer(threading.Thread):
       self.tcpsock.settimeout(5)
       #logging.debug("Incoming socket timeout " + str(self.tcpsock.gettimeout()))
       self.zoneObj = { 'cid' : None }
-      self.distRecvd = {}
       
    def run(self):
-      logging.debug("distributer started.")
+      #logging.debug("distributer started.")
       while not  self.shutdown.wait(0.01): # blocking for interval
          try:
             #logging.debug("distributer listening for incoming connections ...")
@@ -104,31 +108,31 @@ class distributer(threading.Thread):
             pass
 
       logging.info('exiting ' + self.name + ' thread.')
-  
-   def distributionRecvd(self):
-      return self.distRecvd
    
    def prt(self):
       print(json.dumps(self.zoneObj, indent=4))
       print('Received by:')
-      print(self.distRecvd)
-   
-   def addRecvd(self, bt, tm):  # may need queue or something else for this
-      self.distRecvd.update({str(bt) : tm})
-   
+      global distRecvd
+      print(distRecvd)
+  
+   def distributionRecvd(self):
+      global distRecvd
+      return distRecvd
+      
    def distribute(self, zoneObj):
       #  IT might BE BETTER IF THE ARG WAS raceObj and makezoneObj was done
-      #    here or in a stadium nodule. But probably want raceObj class 
+      #    here or in a stadium mdule. But probably want raceObj class 
       #    with methods in stadiumRC first, and stop using globals.
       # This works by creating a new version of zoneObj, the BThandlerThread
       # compares the cid of this with that sent by BTs when they connect.
       # There is no other "signal" to BThandlerThread or to BTs. 
       # It depends on BTs checking in.
-      logging.debug('in distributer.distribute(), zoneObj:')
-      logging.debug(str(zoneObj))
+      #logging.debug('in distributer.distribute(), zoneObj:')
+      #logging.debug(str(zoneObj))
 
       self.zoneObj = zoneObj   
-      self.distRecvd = {}    # clear dict of boats that have update
+      global distRecvd
+      distRecvd = {}    # clear dict of boats that have update
             
       #print(json.dumps(self.zoneObj, indent=4))
    
@@ -181,13 +185,14 @@ class BThandlerThread(threading.Thread):
              smp.snd(self.sock, json.dumps(self.zoneObj, indent=4))
              #logging.debug('new zoneObj sent:')
              bt = smp.rcv(self.sock) 
-             logging.debug('ADD BT_ID TO LIST. ' + bt)
-             # this uses the global function to get back to distributer
-             # possibly could use semiphore or queue
-             addRecvd( bt, time.strftime('%Y-%m-%d %H:%M:%S %Z'))
- 
+             # This uses module global variable since distributer() needs
+             # to write (clear) it and it needs to persist after this thread.
+             # Possibly need to lock or use semaphore to avoid conflicts?
+             global distRecvd
+             distRecvd.update({bt : time.strftime('%Y-%m-%d %H:%M:%S %Z')})
+
        self.sock.close()
-       logging.debug('closed socket and exiting thread ' + self.name)
+       #logging.debug('closed socket and exiting thread ' + self.name)
 
    
    
