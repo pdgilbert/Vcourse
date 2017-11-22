@@ -122,7 +122,7 @@ def zoneSignal(update, shutdown):
            with open("BTzoneObj.json","r") as f:  zoneObj = json.load(f)
 
            globals().update(zoneObj)
-           if cid is None : cid = 'none' :
+           if cid is None : cid = 'none'
            st = status(p, st, 'update')
 
            logging.info('  new cid: %s',  cid )
