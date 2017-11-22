@@ -547,6 +547,10 @@ def But(w, text='x', command='') :
    b.pack(side=tkinter.LEFT, padx=5, pady=5)
    return(b)
 
+def addRecvd(bt, tm):
+   # this global funtion is used by BThandler thread to write back info
+   # into distributer thread record of BTs that have the update.
+   dr.addRecvd( bt, tm)
 
 if __name__ == '__main__':
    shutdown = threading.Event()

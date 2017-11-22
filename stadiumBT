@@ -79,10 +79,10 @@ def zoneSignal(update, shutdown):
     try :
        with open("BTzoneObj.json","r") as f:  zoneObj = json.load(f)
        globals().update(zoneObj)
-       courseLoaded = True
+       if cid is None : cid = 'none' 
        logging.info("Existing BT course loaded.")
     except:
-       courseLoaded = False
+       cid = 'none'
 
     def a(p):
       if dom : a = p.lat - b * p.lon 
@@ -122,21 +122,19 @@ def zoneSignal(update, shutdown):
            with open("BTzoneObj.json","r") as f:  zoneObj = json.load(f)
 
            globals().update(zoneObj)
+           if cid is None : cid = 'none' :
            st = status(p, st, 'update')
 
            logging.info('  new cid: %s',  cid )
-           if cid == 'not set' :
-              courseLoaded = False
            else :
               logging.debug('new course axis:  %f',  axis)
               logging.debug('new course S %f,%f: ', S[0], S[1])
 
-              courseLoaded = True
               t.write('new course loaded: ' + cid + '\n' )
               update.clear()
               logging.debug('update is clear:')
         
-        if courseLoaded :
+        if cid is not 'none' :
             # run main signal setting loop here
             logging.debug('checking zone status.')
             try:

@@ -147,14 +147,13 @@ class BThandlerThread(threading.Thread):
    def __init__(self, ip, port, sock, zoneObj):
        threading.Thread.__init__(self)
        self.name='BThandler'
-       #logging.debug('in BThandlerThread init')
        self.ip = ip
        self.port = port
        self.sock = sock
        self.zoneObj = zoneObj
    def run(self):        
-       logging.debug('in BThandlerThread.run()')
-       logging.debug(str(self.zoneObj))
+       #logging.debug('in BThandlerThread.run()')
+       #logging.debug(str(self.zoneObj))
 
        #course id that RC has
        if self.zoneObj is None : 
@@ -166,8 +165,8 @@ class BThandlerThread(threading.Thread):
        
        BTcid = smp.rcv(self.sock)  #course id that BT has
        
-       logging.debug(" BTcid " + str(BTcid))
-       logging.debug(" RCcid " + str(RCcid))
+       #logging.debug(" BTcid " + str(BTcid))
+       #logging.debug(" RCcid " + str(RCcid))
 
        if self.zoneObj is None : 
              smp.snd(self.sock, 'none')
@@ -183,7 +182,9 @@ class BThandlerThread(threading.Thread):
              #logging.debug('new zoneObj sent:')
              bt = smp.rcv(self.sock) 
              logging.debug('ADD BT_ID TO LIST. ' + bt)
-             #dr.addRecvd( bt, time.strftime('%Y-%m-%d %H:%M:%S %Z'))
+             # this uses the global function to get back to distributer
+             # possibly could use semiphore or queue
+             addRecvd( bt, time.strftime('%Y-%m-%d %H:%M:%S %Z'))
  
        self.sock.close()
        logging.debug('closed socket and exiting thread ' + self.name)
