@@ -44,7 +44,7 @@ class distributionCheck(threading.Thread):
          cid = 'none'
 
       if cid is None :  cid = 'none'
-     logging.debug('distributionCheck initialized. cid = ' + cid)
+      logging.debug('distributionCheck initialized. cid = ' + cid)
 
    def run(self):
       logging.info('distributionCheck starting')
