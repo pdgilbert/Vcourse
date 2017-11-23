@@ -77,7 +77,8 @@ class distributionCheck(threading.Thread):
                   self.update.set()
                   
                   try :
-                     with open("activeBTzoneObj.json","r") as f: (json.load(f))['cid']
+                     with open("activeBTzoneObj.json","r") as f: 
+                         cid = (json.load(f))['cid']
                   except :
                      raise RuntimeError("failure setting cid from activeBTzoneObj.json")
                   
