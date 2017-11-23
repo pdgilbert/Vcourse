@@ -11,8 +11,8 @@ def snd(s, msg) :
     #It gets prepended with the 4 digit length (for rcv) and convert to byte, eg b"ok"
     msg  = (str(len(msg)).zfill(4) + msg).encode()
     tot = len(msg)
-    #logging.debug
-    print('sending ' + msg.decode() + ' length ' + str(tot))
+    #logging.debug('sending ' + msg.decode() + ' length ' + str(tot))
+
     t = 0
     while t < tot:
        #logging.debug('msg ' + msg[t:].decode())
@@ -25,10 +25,12 @@ def snd(s, msg) :
 
 def rcv(s):
     chunks  = []
-    tot = s.recv(4).decode()
-    logging.debug('l rcv tot ' + str(tot))
-    print('p rcv tot ' + str(tot))
-    tot = int(tot)
+    try:
+       tot = int(s.recv(4).decode())
+    except:
+       raise RuntimeError("message length '" + tot +"' does not convert to int.")
+    #logging.debug('rcv tot ' + str(tot))
+
     t = 0
     while t < tot :
        chunk = s.recv(min(tot, BUFFER_SIZE))
