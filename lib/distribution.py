@@ -77,7 +77,7 @@ class distributionCheck(threading.Thread):
                   self.update.set()
 
                   l = smp.snd(s, self.BT_ID)
-                  print("sent  receipt BT " + str(self.BT_ID))
+                  print("sent  receipt BT " + self.BT_ID)
 
               s.close()
 
@@ -118,16 +118,25 @@ class distributer(threading.Thread):
       # so never checks for shutdown.
       self.tcpsock.settimeout(5)
       #logging.debug("Incoming socket timeout " + str(self.tcpsock.gettimeout()))
-      self.zoneObj = { 'cid' : None }
+
+      # This loads an active zoneObj if it exists, to be a bit
+      # robust when restarted
+      global cid  # see note in stadiumBT re zoneSignal and cid
+      try :
+         with open("activeBTzoneObj.json","r") as f:  self.zoneObj = json.load(f)
+         cid = self.zoneObj['cid']
+      except :
+         self.zoneObj = { 'cid' : 'none' }
+         cid = 'none'
       
    def run(self):
       #logging.debug("distributer started.")
-      while not  self.shutdown.wait(0.01): # blocking for interval
+      while not  self.shutdown.set()
          try:
             #logging.debug("distributer listening for incoming connections ...")
             self.tcpsock.listen(5)  
             (sock, (ip,port)) = self.tcpsock.accept()
-            #these only take a second, so not need to pass shutdown signal.
+            #next only takes a second, so no need to pass shutdown signal.
             BThandlerThread(ip, port, sock, self.zoneObj).start()
          except Exception: 
             pass
@@ -146,8 +155,9 @@ class distributer(threading.Thread):
       
    def distribute(self, zoneObj):
       #  IT might BE BETTER IF THE ARG WAS raceObj and makezoneObj was done
-      #    here or in a stadium mdule. But probably want raceObj class 
+      #    here or in a stadium module. But probably want raceObj class 
       #    with methods in stadiumRC first, and stop using globals.
+
       # This works by creating a new version of zoneObj, the BThandlerThread
       # compares the cid of this with that sent by BTs when they connect.
       # There is no other "signal" to BThandlerThread or to BTs. 
@@ -158,14 +168,18 @@ class distributer(threading.Thread):
       self.zoneObj = zoneObj   
       global distRecvd
       distRecvd = {}    # clear dict of boats that have update
-            
-      #print(json.dumps(self.zoneObj, indent=4))
-   
-      # write zoneObj to a file, for the record, but distribute is done with zoneObj
-      with open('distributedCourses/zoneObj-' + self.zoneObj['cid'] + '.json',"w") as f:
-         f.write("\n")
-         f.write("zoneObj:\n")
-         json.dump(self.zoneObj, f, indent=4)
+
+      #  distribute is done with zoneObj but ...
+               
+      # but write zoneObj to activeBTzoneObj.json file for load on restart
+      with open("activeBTzoneObj.json","w")
+         as f:  json.dump(self.zoneObj, f, indent=4)
+
+      # also write zoneObj to a file, for the record.
+      with open('distributedzoneObj/' + self.zoneObj['cid'] + '.json',"w")
+         as f:  json.dump(self.zoneObj, f, indent=4)
+
+      # consider also writing race obj here, for debug and/or reload
 
 
 class BThandlerThread(threading.Thread):

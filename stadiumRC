@@ -212,8 +212,8 @@ def makezoneObj():
    #  are nice for debugging.
    
    courseDesc = 'arbitrary'
-   distributionTime = time.strftime('%Y-%m-%d %H:%M:%S %Z')
-   cid = dc + ' ' +  distributionTime
+   distributionTime = time.strftime('%Y-%m-%d_%H:%M:%S_%Z')
+   cid = fl + '-' + dc + '-' +  distributionTime
    
    r = {
       'cid'       : cid,
