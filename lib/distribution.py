@@ -36,7 +36,7 @@ class distributionCheck(threading.Thread):
       #THIS WOULD BE CLEANER IF JSON ALWAYS HAD 'none' rather than None
       # This loads an active zoneObj if it exists, so gadget is a bit
       # robust to an accidental reboot. (distributionCheck only needs the cid)
-      global cid
+      global cid  # see note in stadiumBT re zoneSignal and cid
       try :
          with open("activeBTzoneObj.json","r") as f:  zoneObj = json.load(f)
          cid = zoneObj['cid']
@@ -47,6 +47,7 @@ class distributionCheck(threading.Thread):
       logging.debug('distributionCheck initialized. cid = ' + cid)
 
    def run(self):
+      global cid  # see note in stadiumBT re zoneSignal and cid
       logging.info('distributionCheck starting')
       logging.info('   ' + self.BT_ID + ' watching for RC at ' + self.RC_IP + ':' + str(self.RC_PORT))
 
@@ -67,15 +68,16 @@ class distributionCheck(threading.Thread):
 
               if not (r in ('ok', 'none')) :
                   logging.info('got new zoneObj. Writing to file activeBTzoneObj.json')
+                  # note r is just a serialized string (stream) not an object.
+                  print('r ' + str(r))
                   # Next could be a message to zoneSignal thread, but having a
                   # file means the gadget can recover after reboot without
                   # a connection to RC, so write string r to a file
-                  if r.cid is None : r.cid = 'none' #just to be sure
                   with open("activeBTzoneObj.json","w") as f: f.write(r) 
                   self.update.set()
 
                   l = smp.snd(s, self.BT_ID)
-                  logging.debug("sent  receipt BT " + str(self.BT_ID))
+                  print("sent  receipt BT " + str(self.BT_ID))
 
               s.close()
 
