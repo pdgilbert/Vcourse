@@ -64,18 +64,23 @@ class distributionCheck(threading.Thread):
               logging.debug("BT cid " + str(cid))
               
               r = smp.rcv(s) 
-              logging.debug('r ' + str(r))
+              #logging.debug('r ' + str(r))
 
               if not (r in ('ok', 'none')) :
                   logging.info('got new zoneObj. Writing to file activeBTzoneObj.json')
                   # note r is just a serialized string (stream) not an object.
-                  print('r ' + str(r))
+                  #logging.debug('r ' + str(r))
                   # Next could be a message to zoneSignal thread, but having a
                   # file means the gadget can recover after reboot without
                   # a connection to RC, so write string r to a file
                   with open("activeBTzoneObj.json","w") as f: f.write(r) 
                   self.update.set()
-
+                  
+                  try :
+                     with open("activeBTzoneObj.json","r") as f: (json.load(f))['cid']
+                  except :
+                     raise RuntimeError("failure setting cid from activeBTzoneObj.json")
+                  
                   l = smp.snd(s, self.BT_ID)
                   print("sent  receipt BT " + self.BT_ID)
 
@@ -209,8 +214,8 @@ class BThandlerThread(threading.Thread):
        
        BTcid = smp.rcv(self.sock)  #course id that BT has
        
-       #logging.debug(" BTcid " + str(BTcid))
-       #logging.debug(" RCcid " + str(RCcid))
+       print(" BTcid " + str(BTcid))
+       print(" RCcid " + str(RCcid))
 
        if self.zoneObj is None : 
              smp.snd(self.sock, 'none')
@@ -221,7 +226,7 @@ class BThandlerThread(threading.Thread):
 
        elif (BTcid == RCcid) :
              smp.snd(self.sock, 'ok')
-             #logging.debug('sent ok.')
+             print('sent ok.')
              
        else :
              #logging.debug('sending new zoneObj to BT')
