@@ -172,12 +172,12 @@ class distributer(threading.Thread):
       #  distribute is done with zoneObj but ...
                
       # but write zoneObj to activeBTzoneObj.json file for load on restart
-      with open("activeBTzoneObj.json","w")
-         as f:  json.dump(self.zoneObj, f, indent=4)
+      with open("activeBTzoneObj.json","w") as f:  
+         json.dump(self.zoneObj, f, indent=4)
 
       # also write zoneObj to a file, for the record.
-      with open('distributedzoneObj/' + self.zoneObj['cid'] + '.json',"w")
-         as f:  json.dump(self.zoneObj, f, indent=4)
+      with open('distributedzoneObj/' + self.zoneObj['cid'] + '.json',"w")  as f:
+         json.dump(self.zoneObj, f, indent=4)
 
       # consider also writing race obj here, for debug and/or reload
 
