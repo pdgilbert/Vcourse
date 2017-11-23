@@ -5,12 +5,15 @@ import socket
 BUFFER_SIZE = 1024  # not more than 4 digits
 
 def snd(s, msg) :
+    if msg is None : 
+          raise RuntimeError("attempt to send empty message")
     # msg should be string. 
     #It gets prepended with the 4 digit length (for rcv) and convert to byte, eg b"ok"
     msg  = (str(len(msg)).zfill(4) + msg).encode()
     tot = len(msg)
-    #logging.debug('sending ' + msg.decode() + ' length ' + str(tot))
-    t	= 0
+    #logging.debug
+    print('sending ' + msg.decode() + ' length ' + str(tot))
+    t = 0
     while t < tot:
        #logging.debug('msg ' + msg[t:].decode())
        sent = s.send(msg[t:])
@@ -22,8 +25,10 @@ def snd(s, msg) :
 
 def rcv(s):
     chunks  = []
-    tot = int(s.recv(4).decode())
-    #logging.debug('rcv tot ' + str(tot))
+    tot = s.recv(4).decode()
+    logging.debug('l rcv tot ' + str(tot))
+    print('p rcv tot ' + str(tot))
+    tot = int(tot)
     t = 0
     while t < tot :
        chunk = s.recv(min(tot, BUFFER_SIZE))

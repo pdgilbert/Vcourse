@@ -203,7 +203,7 @@ class BThandlerThread(threading.Thread):
                 RCcid = 'none'
        else :   RCcid = self.zoneObj['cid']
 
-       #  eventually remove this
+       #  eventually remove this check for empty cid
        if RCcid is None: 
           raise Exception('BThandlerThread intercepted old RCcid is None')
        
