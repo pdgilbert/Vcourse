@@ -131,7 +131,7 @@ class distributer(threading.Thread):
       
    def run(self):
       #logging.debug("distributer started.")
-      while not  self.shutdown.is_set()
+      while not  self.shutdown.is_set() :
          try:
             #logging.debug("distributer listening for incoming connections ...")
             self.tcpsock.listen(5)  
