@@ -6,7 +6,9 @@ BUFFER_SIZE = 1024  # not more than 4 digits
 
 def snd(s, msg) :
     if msg is None : 
-          raise RuntimeError("attempt to send empty message")
+          raise RuntimeError("attempt to send empty (None) message.")
+    if msg is "" : 
+          raise RuntimeError("attempt to send empty message string.")
     # msg should be string. 
     #It gets prepended with the 4 digit length (for rcv) and convert to byte, eg b"ok"
     msg  = (str(len(msg)).zfill(4) + msg).encode()
@@ -25,8 +27,9 @@ def snd(s, msg) :
 
 def rcv(s):
     chunks  = []
+    tot = s.recv(4).decode()
     try:
-       tot = int(s.recv(4).decode())
+       tot = int(tot)
     except:
        raise RuntimeError("message length '" + tot +"' does not convert to int.")
     #logging.debug('rcv tot ' + str(tot))
