@@ -199,12 +199,13 @@ class BThandlerThread(threading.Thread):
        #logging.debug(str(self.zoneObj))
 
        #course id that RC has
-       if self.zoneObj is None : 
-             RCcid = 'none'
-       elif self.zoneObj['cid'] is None : 
-             RCcid = 'none'
-       else :
-             RCcid = self.zoneObj['cid']
+       if self.zoneObj is None :
+                RCcid = 'none'
+       else :   RCcid = self.zoneObj['cid']
+
+       #  eventually remove this
+       if RCcid is None: 
+          raise Exception('BThandlerThread intercepted old RCcid is None')
        
        BTcid = smp.rcv(self.sock)  #course id that BT has
        
@@ -214,6 +215,9 @@ class BThandlerThread(threading.Thread):
        if self.zoneObj is None : 
              smp.snd(self.sock, 'none')
              #logging.debug('sent none.')
+
+       elif RCcid is 'none' :
+             smp.snd(self.sock, 'none') # note this is not {"cid": "none"}
 
        elif (BTcid == RCcid) :
              smp.snd(self.sock, 'ok')
