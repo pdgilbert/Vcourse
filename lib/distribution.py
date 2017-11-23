@@ -51,7 +51,7 @@ class distributionCheck(threading.Thread):
       logging.info('distributionCheck starting')
       logging.info('   ' + self.BT_ID + ' watching for RC at ' + self.RC_IP + ':' + str(self.RC_PORT))
 
-      while not self.shutdown.isSet():   
+      while not self.shutdown.is_set():   
           # check RC for update. 
           # Wrapped in try for case when connection fails (wifi out of range).
           logging.debug('BT check with RC for update.')
@@ -131,7 +131,7 @@ class distributer(threading.Thread):
       
    def run(self):
       #logging.debug("distributer started.")
-      while not  self.shutdown.set()
+      while not  self.shutdown.is_set()
          try:
             #logging.debug("distributer listening for incoming connections ...")
             self.tcpsock.listen(5)  
