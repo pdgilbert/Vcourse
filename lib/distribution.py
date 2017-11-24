@@ -5,6 +5,10 @@
 #     or 'none' indicating no course set yet, or with updated zoneObj.
 # BT confirms receipt of update with BT_ID  
 
+# zoneObj and cid should both be valid or both be None. cid should not be "none"
+# nor should zoneObj  have a cid of "none" or None.
+# But transmition requires string "none".
+
 import socket
 import logging
 import json
@@ -41,9 +45,8 @@ class distributionCheck(threading.Thread):
          with open("activeBTzoneObj.json","r") as f:  zoneObj = json.load(f)
          cid = zoneObj['cid']
       except :
-         cid = 'none'
+         cid = None
 
-      #if cid is None :  cid = 'none' #this should never happen
       logging.debug('distributionCheck initialized. cid = ' + cid)
 
    def run(self):
@@ -133,8 +136,8 @@ class distributer(threading.Thread):
          cid = self.zoneObj['cid']
          logging.info("distributer loaded existing active zoneObj.")
       except :
-         self.zoneObj = { 'cid' : 'none' }
-         cid = 'none'
+         self.zoneObj = None
+         cid =  None
       
    def run(self):
       #logging.debug("distributer started.")
@@ -172,27 +175,28 @@ class distributer(threading.Thread):
       #logging.debug('in distributer.distribute(), zoneObj:')
       #logging.debug(str(zoneObj))
 
-      self.zoneObj = zoneObj   
-      global distRecvd
-      distRecvd = {}    # clear dict of boats that have update
+      if zoneObj is not None:
+          self.zoneObj = zoneObj   
+          global distRecvd
+          distRecvd = {}    # clear dict of boats that have update
 
-      #  distribute is done with zoneObj but ...
-               
-      # but write zoneObj to activeBTzoneObj.json file for load on restart
-      with open("activeBTzoneObj.json","w") as f:  
-         json.dump(self.zoneObj, f, indent=4)
+          #  distribute is done with zoneObj but ...
+                   
+          # but write zoneObj to activeBTzoneObj.json file for load on restart
+          with open("activeBTzoneObj.json","w") as f:  
+             json.dump(self.zoneObj, f, indent=4)
 
-      # also write zoneObj to a file, for the record.
-      with open('distributedzoneObj/' + self.zoneObj['cid'] + '.json',"w")  as f:
-         json.dump(self.zoneObj, f, indent=4)
+          # also write zoneObj to a file, for the record.
+          with open('distributedzoneObj/' + self.zoneObj['cid'] + '.json',"w")  as f:
+             json.dump(self.zoneObj, f, indent=4)
 
-      # consider also writing race obj here, for debug and/or reload
-
+          # consider also writing race obj here, for debug and/or reload
+      
+      else:
+         raise RuntimeError("zoneObj is None. Refusing to distribute.")
 
 class BThandlerThread(threading.Thread):
    # handle a connection from a BT. Check if BT is current and update if not.
-   # NB BThandlerThread needs a dist object, not just zoneObj, 
-   # because it uses dist.addRecvd() te record back to distributer.
 
    def __init__(self, ip, port, sock, zoneObj):
        threading.Thread.__init__(self)
@@ -207,13 +211,14 @@ class BThandlerThread(threading.Thread):
 
        #course id that RC has
        if self.zoneObj is None :
-                RCcid = 'none'
+                RCcid = None
        else :   RCcid = self.zoneObj['cid']
 
        #  eventually remove this check for empty cid
        if RCcid is None: 
           raise Exception('BThandlerThread intercepted old RCcid is None')
        
+       #None is not transmitted, so this could be "none", but that should work below
        BTcid = smp.rcv(self.sock)  #course id that BT has
        
        #logging.debug(" BTcid " + str(BTcid))
@@ -222,8 +227,11 @@ class BThandlerThread(threading.Thread):
        if self.zoneObj is None : 
              smp.snd(self.sock, 'none')
              #logging.debug('sent none.')
-
-       elif RCcid is 'none' :
+             if RCcid is not None :
+                raise Exception('something is wrong. zoneObj is None and RCcid is not.')
+  
+       # this should be redundant, if zoneObj is None then cid should be too.
+       elif RCcid is None :
              smp.snd(self.sock, 'none') # note this is not {"cid": "none"}
 
        elif (BTcid == RCcid) :
