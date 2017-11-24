@@ -54,14 +54,14 @@ class distributionCheck(threading.Thread):
       while not self.shutdown.is_set():   
           # check RC for update. 
           # Wrapped in try for case when connection fails (wifi out of range).
-          logging.debug('BT check with RC for update.')
+          #logging.debug('BT check with RC for update.')
 
           try :
               s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
               s.connect((self.RC_IP, self.RC_PORT))
               
               l = smp.snd(s, cid)
-              logging.debug("BT cid " + str(cid))
+              #logging.debug("BT cid " + str(cid))
               
               r = smp.rcv(s) 
               #logging.debug('r ' + str(r))
@@ -83,7 +83,7 @@ class distributionCheck(threading.Thread):
                      raise RuntimeError("failure setting cid from activeBTzoneObj.json")
                   
                   l = smp.snd(s, self.BT_ID)
-                  print("sent  receipt BT " + self.BT_ID)
+                  #logging.debug("sent  receipt BT " + self.BT_ID)
 
               s.close()
 
@@ -215,8 +215,8 @@ class BThandlerThread(threading.Thread):
        
        BTcid = smp.rcv(self.sock)  #course id that BT has
        
-       print(" BTcid " + str(BTcid))
-       print(" RCcid " + str(RCcid))
+       #logging.debug(" BTcid " + str(BTcid))
+       #logging.debug(" RCcid " + str(RCcid))
 
        if self.zoneObj is None : 
              smp.snd(self.sock, 'none')
@@ -227,7 +227,7 @@ class BThandlerThread(threading.Thread):
 
        elif (BTcid == RCcid) :
              smp.snd(self.sock, 'ok')
-             print('sent ok.')
+             #logging.debug('sent ok.')
              
        else :
              #logging.debug('sending new zoneObj to BT')
