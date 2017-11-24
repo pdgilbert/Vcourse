@@ -131,6 +131,7 @@ class distributer(threading.Thread):
       try :
          with open("activeBTzoneObj.json","r") as f:  self.zoneObj = json.load(f)
          cid = self.zoneObj['cid']
+         logging.info("distributer loaded existing active zoneObj.")
       except :
          self.zoneObj = { 'cid' : 'none' }
          cid = 'none'
