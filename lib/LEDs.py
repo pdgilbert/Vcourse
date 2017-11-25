@@ -103,3 +103,26 @@ def  systemProblem(x ='')  :
    leds.off()  
    leds.on(BLUE)
 
+
+# Old status is needed because PWM flickers too fast if constantly 
+# reset, so set only on change
+
+status = 'off'
+# 'off' 'bound' 'warn' 'center' 'update' 'systemProblem' 
+
+# beware, I think "from LEDs import setLEDs" will fail because 
+#  this needs global status.
+
+def  setLEDs(now, x ='')  : 
+   global status
+   if status is not now :
+      if   now is 'off'           : off(x)
+      elif now is 'bound'         : bound(x)
+      elif now is 'warn'          : warn(x)
+      elif now is 'center'        : center(x)
+      elif now is 'update'        : update(x)
+      elif now is 'systemProblem' : systemProblem(x)
+      else :
+         raise ValueError("LED now status (" + str(now) + ") incorrect.")
+
+      status = now

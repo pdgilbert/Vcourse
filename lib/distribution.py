@@ -35,7 +35,7 @@ class distributionCheck(threading.Thread):
       self.update = update
       self.shutdown = shutdown
 
-      self.sleepInterval = 5
+      self.sleepInterval = 10
 
       #THIS WOULD BE CLEANER IF JSON ALWAYS HAD 'none' rather than None
       # This loads an active zoneObj if it exists, so gadget is a bit
@@ -47,7 +47,7 @@ class distributionCheck(threading.Thread):
       except :
          cid = None
 
-      logging.debug('distributionCheck initialized. cid = ' + cid)
+      logging.debug('distributionCheck initialized. cid = ' + str(cid))
 
    def run(self):
       global cid  # see note in stadiumBT re zoneSignal and cid
@@ -63,13 +63,15 @@ class distributionCheck(threading.Thread):
               s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
               s.connect((self.RC_IP, self.RC_PORT))
               
-              l = smp.snd(s, cid)
+              if cid is None : l = smp.snd(s, 'none')
+              else :           l = smp.snd(s, cid)
+
               #logging.debug("BT cid " + str(cid))
               
               r = smp.rcv(s) 
               #logging.debug('r ' + str(r))
 
-              if not (r in ('ok', 'none')) :
+              if r not in ('ok', 'none') :
                   logging.info('got new zoneObj. Writing to file activeBTzoneObj.json')
                   # note r is just a serialized string (stream) not an object.
                   #logging.debug('r ' + str(r))

@@ -49,139 +49,165 @@ GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 # and update has been signalled by distributionCheck. But distributionCheck
 # will set it when first intiallizing 
 
-cid = 'none'
+cid = None
 
 # start gpsd (-n don't wait for device,  #-S 2947 is default port  FIX?
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
 
 
-def zoneSignal(update, shutdown):
+class zoneSignal(threading.Thread):
+   # this thread class is used by BT
+  
+   def __init__(self, update, shutdown):
+      threading.Thread.__init__(self)
 
-    global cid
-    
-    logging.info('zoneSignal starting')
+      global cid
+      self.name='zoneSignal'
+      self.update = update
+      self.shutdown = shutdown
 
-    def status(p, st, now, x=''):
-       # return new status and change LEDs if needed
-       #LED status  (PWM flickers too fast if constantly reset, so set only on change)
-       if now != st :
-          if   now == 'off'           : LEDs.off(x)
-          elif now == 'bound'         : LEDs.bound(x)
-          elif now == 'warn'          : LEDs.warn(x)
-          elif now == 'center'        : LEDs.center(x)
-          elif now == 'update'        : LEDs.update(x)
-          elif now == 'systemProblem' : LEDs.systemProblem(x)
-          else :
-             logging.warning("LED now status (" + str(now) + ") incorrect.")
-             raise ValueError("LED now status (" + str(now) + ") incorrect.")
+      # this try allows recovery after restart, using an already saved file. 
+      try :
+         with open("activeBTzoneObj.json","r") as f:  self.zoneObj = json.load(f)
+         #globals().update(self.zoneObj)
+         logging.info("Existing BT course loaded.")
+      except:
+         self.zoneObj = None
+         cid = None
 
-       # and, BTW, record track
-       #p.time comes from the gps. If fractional seconds are available I think
-       #  they will be printed, but for now all seem to be .000.
-       #  This may be something that can be set on the gps ?
-       t.write(str(p.lat) + ' ' + str(p.lon) + ' @ ' + p.time +' LED status ' + now + '\n' )
-       return now
+      self.t = open("track.txt","w") 
 
-    st = 'off'  
+      try:
+         gpsd.connect(host=GPS_HOST, port=GPS_PORT) 
+      except:
+         logging.critical('stadiumBT cannot connect to GPS at ' + GPS_HOST + ':' + str(GPS_PORT))
+         logging.critical('stadiumBT will not work without GPS.')
+         # this kills thread raise Exception('stadiumBT will not work without GPS.')
+         # sys.exit() need to shut down main, but then what?
 
-    # this try allows recovery after restart, using an already saved file. 
-    try :
-       with open("activeBTzoneObj.json","r") as f:  zoneObj = json.load(f)
-       globals().update(zoneObj)
-       logging.info("Existing BT course loaded.")
-    except:
-       zoneObj = None
-       cid = None
+      try:
+         z = getGPS() # try now so fail can provide a message
+      except:
+         logging.warning("stadiumBT cannot get GPS position. Is gpsd working?")
+         logging.warning("Waiting 20 seconds. Check that GPS is connected if there are more errors!!!\n")
+         # this kills thread  raise Exception('stadiumBT will not work without GPS.')
+         # do not sys.exit(), gps may just not be ready
+         time.sleep(20)
 
-    def a(p):
-      if dom : a = p.lat - b * p.lon 
-      else   : a = p.lon - b * p.lat
-      return a
+      logging.info('zoneSignal initialized. cid = ' + str(cid))
 
-    p = gpsPos(None, None)
-    t = open("track.txt","w") 
+   def run(self):
+      logging.info('zoneSignal started.')
+      global cid
+      locals().update(self.zoneObj)
 
-    
-    try:
-       gpsd.connect(host=GPS_HOST, port=GPS_PORT) 
-    except:
-       logging.critical('stadiumBT cannot connect to GPS at ' + GPS_HOST + ':' + str(GPS_PORT))
-       logging.critical('stadiumBT will not work without GPS.')
-       # this kills thread raise Exception('stadiumBT will not work without GPS.')
-       # sys.exit() need to shut down main, but then what?
+      def record(p, now):
+         # record track
+         #p.time comes from the gps. If fractional seconds are available I think
+         #  they will be printed, but for now all seem to be .000.
+         #  This may be something that can be set on the gps ?
+         self.t.write(str(p.lat) + ' ' + str(p.lon) + ' @ ' + p.time +' LED status ' + now + '\n' )
+ 
+      def a(p):
+         if self.dom : a = p.lat - b * p.lon 
+         else        : a = p.lon - b * p.lat
+         return a
 
-    try:
-       z = a(getGPS()) # try now so fail can provide a message
-    except:
-       logging.warning("stadiumBT cannot get GPS position. Is gpsd working?")
-       logging.warning("Waiting 20 seconds. Check that GPS is connected if there are more errors!!!\n")
-       # this kills thread  raise Exception('stadiumBT will not work without GPS.')
-       # do not sys.exit(), gps may just not be ready
-       time.sleep(20)
+      def setNow(p, now, x=""):
+         LEDs.setLEDs(now, x)
+         record(p, now)
 
-    while True:
-        if shutdown.wait(0.01): # blocking for wait time.
-           logging.info('shutting down zoneSignal thread!')
-           LEDs.cleanup()
-           t.close()
-           return() 
-        if update.wait(0.01):   # blocking for wait time!
-           # read new file here
-           logging.info('updating to new zoneObj')
-           with open("activeBTzoneObj.json","r") as f:  zoneObj = json.load(f)
+      def unwind(zO):
+         # compare makezoneObj()  in stadiumRC
+         cid        = zO['cid']
+         courseDesc = zO['courseDesc']
+         courseType = zO['courseType']
+         distributionTime = zO['distributionTime']
+         length     = zO['length']
+         axis       = zO['axis']
+         S          = zO['S']
+         M          = zO['M']
+         dom        = zO['dom']
+         LtoR       = zO['LtoR']
+         b          = zO['b']
+         boundL     = zO['boundL']
+         boundR     = zO['boundR']
+         warnL      = zO['warnL']
+         warnR      = zO['warnR']
+         centerL    = zO['centerL']
+         centerR    = zO['centerR']
+         
+         return((cid, courseDesc, courseType, distributionTime, length, axis,
+           S, M, dom, LtoR, b, boundL, boundR, warnL, warnR, centerL, centerR ))
 
-           globals().update(zoneObj)
+      p = gpsPos(None, None)
 
-           if cid is None :
-              raise Exception('something is wrong. cid is none after update with zoneObj).')
+      while not self.shutdown.is_set():   
 
-           st = status(p, st, 'update')
+          if self.update.is_set():  
+             logging.info('updating to new zoneObj')
+             with open("activeBTzoneObj.json","r") as f:  self.zoneObj = json.load(f)
 
-           logging.info('  new cid: %s',  cid )
+             # There is an important difference between python2 and python3 
+             #  for exec(). In theory some variation on the next should work, but see
+             #https://stackoverflow.com/questions/1463306/how-does-exec-work-with-locals
+             #for k, v in self.zoneObj.items():  exec (k + '=v') # unpack
+             # so
+             (cid, courseDesc, courseType, distributionTime, length, axis,
+                S, M, dom, LtoR, b, boundL, boundR, warnL, warnR, 
+                centerL, centerR ) = unwind(self.zoneObj)
 
-           if cid is not 'none' :
-              logging.debug('new course axis:  %f',  axis)
-              logging.debug('new course S %f,%f: ', S[0], S[1])
+             if cid is None :
+                raise Exception('something is wrong. cid is none after update with zoneObj).')
 
-              t.write('new course loaded: ' + cid + '\n' )
-              update.clear()
-              logging.debug('update is clear:')
-        
-        if cid is not 'none' :
-            # run main signal setting loop here
-            #logging.debug('checking zone status.')
-            try:
-                p = getGPS() 
-                aa = a(p) # this is a in y = a + b * x
-                ps= '  @ ' +  str(p.lat) + '  ' + str(p.lon)  # only for debugging
-                
-                #logging.debug('aa %f', aa)
-                # LtoR, # True if bounds increase left to right
-                 
-                if LtoR :
-                   if   boundL  >  aa            : st = status(p, st, 'bound',  'LtoR boundL' + ps) 
-                   elif  warnL  >  aa            : st = status(p, st, 'warn',   'LtoR warnL'  + ps)
-                   elif centerL <= aa <= centerR : st = status(p, st, 'center', 'LtoR center' + ps)
-                   elif            aa >   boundR : st = status(p, st, 'bound',  'LtoR boundR' + ps)
-                   elif            aa >    warnR : st = status(p, st, 'warn',   'LtoR warnR'  + ps)
-                   else                          : st = status(p, st, 'off',     'LtoR '      + ps)
-                else :
-                   if    boundR >  aa            : st = status(p, st, 'bound',  'boundR'      + ps)
-                   elif   warnR >  aa            : st = status(p, st, 'warn',   'warnR'       + ps)
-                   elif centerR <= aa <= centerL : st = status(p, st, 'center', 'center'      + ps)
-                   elif            aa >   boundL : st = status(p, st, 'bound',  'boundL'      + ps)
-                   elif            aa >    warnL : st = status(p, st, 'warn',   'warnL'       + ps)
-                   else                          : st = status(p, st, 'off')
+             setNow(p,  'update')
 
-            except:
-               st = status(p, st, 'systemProblem', '. No GPS fix.')
+             logging.info('  new cid: %s',  cid)
+             #logging.debug('new course axis:  %f',  axis)
+             #logging.debug('new course S %f,%f: ', S[0], S[1])
 
-            time.sleep(0.1) #0.5 worked but is a bit slow
+             self.t.write('new course loaded: ' + cid + '\n' )
+             self.update.clear()
+             logging.debug('update is clear:')
+          
+          if cid is not None :
+              # run main signal setting loop here
+              #logging.debug('checking zone status.')
+              try:
+                  p = getGPS() 
+                  aa = a(p) # this is a in y = a + b * x
+                  ps= '  @ ' +  str(p.lat) + '  ' + str(p.lon)  # only for debugging
+                  
+                  #logging.debug('aa %f', aa)
+                  # LtoR, # True if bounds increase left to right
+                   
+                  if LtoR :
+                     if   boundL  >  aa            : setNow(p, 'bound',  'LtoR boundL' + ps) 
+                     elif  warnL  >  aa            : setNow(p, 'warn',   'LtoR warnL'  + ps)
+                     elif centerL <= aa <= centerR : setNow(p, 'center', 'LtoR center' + ps)
+                     elif            aa >   boundR : setNow(p, 'bound',  'LtoR boundR' + ps)
+                     elif            aa >    warnR : setNow(p, 'warn',   'LtoR warnR'  + ps)
+                     else                          : setNow(p, 'off',     'LtoR '      + ps)
+                  else :
+                     if    boundR >  aa            : setNow(p, 'bound',  'boundR'      + ps)
+                     elif   warnR >  aa            : setNow(p, 'warn',   'warnR'       + ps)
+                     elif centerR <= aa <= centerL : setNow(p, 'center', 'center'      + ps)
+                     elif            aa >   boundL : setNow(p, 'bound',  'boundL'      + ps)
+                     elif            aa >    warnL : setNow(p, 'warn',   'warnL'       + ps)
+                     else                          : setNow(p, 'off')
 
-    raise Exception('zoneSignal should not be here.')
+              except:
+                 setNow(p,'systemProblem', '. No GPS fix.')
+
+              time.sleep(0.1) #0.5 worked but is a bit slow
+
+      LEDs.cleanup()
+      self.t.close()
+      logging.info('exiting zoneSignal thread.')
+
 
 if __name__ == '__main__':
-   logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
+   print('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    update   = threading.Event()
    shutdown = threading.Event()
 
@@ -189,10 +215,13 @@ if __name__ == '__main__':
    distributionCheck(RC_IP, RC_PORT, BT_ID, update, shutdown).start()
 
    logging.info('main thread starting zoneSignal thread.')
-   threading.Thread(name='zoneSignal', 
-   		   target=zoneSignal, 
-   		   args=(update, shutdown)).start()
-   
+   zoneSignal(update, shutdown).start()
+
+   print(threading.enumerate())
+   logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+   logging.info('is info working?')
+   logging.debug('is debug working?')
+ 
    def shutdownHandler(signum, frame):
        logging.info('main thread setting shutdown signal.')
        shutdown.set()  # to exit threads
