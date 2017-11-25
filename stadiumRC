@@ -556,6 +556,7 @@ def But(w, text='x', command='') :
 
 
 if __name__ == '__main__':
+   logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    shutdown = threading.Event()
 
    dr = distribution.distributer(RC_IP, RC_PORT, shutdown)

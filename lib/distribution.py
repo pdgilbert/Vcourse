@@ -17,7 +17,7 @@ import threading
 
 import smp
 
-logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
 ####### this class is used only by BT #######
 

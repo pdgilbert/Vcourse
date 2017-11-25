@@ -117,6 +117,7 @@ class zoneSignal(threading.Thread):
          return a
 
       def setNow(p, now, x=""):
+         print('now ' + now)
          LEDs.setLEDs(now, x)
          record(p, now)
 
@@ -181,7 +182,9 @@ class zoneSignal(threading.Thread):
                   aa = a(p) # this is a in y = a + b * x
                   ps= '  @ ' +  str(p.lat) + '  ' + str(p.lon)  # only for debugging
                   
-                  #logging.debug('aa %f', aa)
+                  print('aa %f', aa)
+                  print('LtoR ', str(LtoR))
+                  print('boundL ', str(boundL))
                   # LtoR, # True if bounds increase left to right
                    
                   if LtoR :
@@ -202,7 +205,7 @@ class zoneSignal(threading.Thread):
               except:
                  setNow(p,'systemProblem', '. No GPS fix.')
 
-              time.sleep(0.1) #0.5 worked but is a bit slow
+              time.sleep(2) #0.1) #0.5 worked but is a bit slow IMPACTS TRACK FILE SIZE
 
       LEDs.cleanup()
       self.t.close()
