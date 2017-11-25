@@ -20,11 +20,14 @@ from distribution import distributionCheck
 #in decreasing order CRITICAL, ERROR, WARNING. INFO, DEBUG
 # level logs everything higher. NOTSET looks to parent levels
 
-# filemode='w' will start a new log file each run. Otherwise appending is done.
-#logging.basicConfig(filename='stadiumBT.log', 
-#           level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+logFormat ='(%(threadName)-9s) %(message)s'
+#logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+logging.basicConfig(level=logging.INFO, format=logFormat,)
 
-logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
+# filemode='w' will start a new log file each run. Otherwise appending is done.
+#logging.basicConfig(filename='stadiumBT.log',
+#                    level=logging.DEBUG, format=logFormat,)
+
 
 # Read config variable RC_IP, RC_PORT, BT_ID  from file BTconfig
 # in the working directory. 
@@ -207,20 +210,17 @@ class zoneSignal(threading.Thread):
 
 
 if __name__ == '__main__':
-   print('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
+   logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    update   = threading.Event()
    shutdown = threading.Event()
 
-   logging.info('main thread starting distributionCheck thread.')
+   logging.debug('main thread starting distributionCheck thread.')
    distributionCheck(RC_IP, RC_PORT, BT_ID, update, shutdown).start()
 
-   logging.info('main thread starting zoneSignal thread.')
+   logging.debug('main thread starting zoneSignal thread.')
    zoneSignal(update, shutdown).start()
 
-   print(threading.enumerate())
-   logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
-   logging.info('is info working?')
-   logging.debug('is debug working?')
+   logging.debug(threading.enumerate())
  
    def shutdownHandler(signum, frame):
        logging.info('main thread setting shutdown signal.')

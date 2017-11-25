@@ -21,8 +21,9 @@ from gpsPos import getGPS
 
 import distribution
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-9s) %(message)s',)
+logFormat ='(%(threadName)-9s) %(message)s'
+#logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 
 # Read config variable RC_IP, RC_PORT  from file RCconfig
