@@ -112,7 +112,7 @@ class zoneSignal(threading.Thread):
          self.t.write(str(p.lat) + ' ' + str(p.lon) + ' @ ' + p.time +' LED status ' + now + '\n' )
  
       def a(p):
-         if self.dom : a = p.lat - b * p.lon 
+         if dom : a = p.lat - b * p.lon 
          else        : a = p.lon - b * p.lat
          return a
 
@@ -177,33 +177,37 @@ class zoneSignal(threading.Thread):
           if cid is not None :
               # run main signal setting loop here
               #logging.debug('checking zone status.')
-              if True :  # TEMP, try is hiding some error try:
+              try:
                   p = getGPS() 
-                  aa = a(p) # this is a in y = a + b * x
-                  ps= '  @ ' +  str(p.lat) + '  ' + str(p.lon)  # only for debugging
-                  
-                  print('aa %f', aa)
-                  print('LtoR ', str(LtoR))
-                  print('boundL ', str(boundL))
-                  # LtoR, # True if bounds increase left to right
-                   
-                  if LtoR :
-                     if   boundL  >  aa            : setNow(p, 'bound',  'LtoR boundL' + ps) 
-                     elif  warnL  >  aa            : setNow(p, 'warn',   'LtoR warnL'  + ps)
-                     elif centerL <= aa <= centerR : setNow(p, 'center', 'LtoR center' + ps)
-                     elif            aa >   boundR : setNow(p, 'bound',  'LtoR boundR' + ps)
-                     elif            aa >    warnR : setNow(p, 'warn',   'LtoR warnR'  + ps)
-                     else                          : setNow(p, 'off',     'LtoR '      + ps)
-                  else :
-                     if    boundR >  aa            : setNow(p, 'bound',  'boundR'      + ps)
-                     elif   warnR >  aa            : setNow(p, 'warn',   'warnR'       + ps)
-                     elif centerR <= aa <= centerL : setNow(p, 'center', 'center'      + ps)
-                     elif            aa >   boundL : setNow(p, 'bound',  'boundL'      + ps)
-                     elif            aa >    warnL : setNow(p, 'warn',   'warnL'       + ps)
-                     else                          : setNow(p, 'off')
+              except:
+                 setNow(p,'systemProblem', '. No GPS fix.')
 
-              #except:
-              #   setNow(p,'systemProblem', '. No GPS fix.')
+              try:
+                 aa = a(p) # this is a in y = a + b * x
+                 ps= '  @ ' +  str(p.lat) + '  ' + str(p.lon)  # only for debugging
+                 
+                 print('aa %f', aa)
+                 print('LtoR ', str(LtoR))
+                 print('boundL ', str(boundL))
+                 # LtoR, # True if bounds increase left to right
+                  
+                 if LtoR :
+                    if   boundL  >  aa            : setNow(p, 'bound',  'LtoR boundL' + ps) 
+                    elif  warnL  >  aa            : setNow(p, 'warn',   'LtoR warnL'  + ps)
+                    elif centerL <= aa <= centerR : setNow(p, 'center', 'LtoR center' + ps)
+                    elif            aa >   boundR : setNow(p, 'bound',  'LtoR boundR' + ps)
+                    elif            aa >    warnR : setNow(p, 'warn',   'LtoR warnR'  + ps)
+                    else                          : setNow(p, 'off',     'LtoR '      + ps)
+                 else :
+                    if    boundR >  aa            : setNow(p, 'bound',  'boundR'      + ps)
+                    elif   warnR >  aa            : setNow(p, 'warn',   'warnR'       + ps)
+                    elif centerR <= aa <= centerL : setNow(p, 'center', 'center'      + ps)
+                    elif            aa >   boundL : setNow(p, 'bound',  'boundL'      + ps)
+                    elif            aa >    warnL : setNow(p, 'warn',   'warnL'       + ps)
+                    else                          : setNow(p, 'off')
+
+              except:
+                 setNow(p,'systemProblem', 'in zone calculation')
 
               time.sleep(2) #0.1) #0.5 worked but is a bit slow IMPACTS TRACK FILE SIZE
 
