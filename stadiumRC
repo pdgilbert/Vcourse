@@ -65,8 +65,11 @@ cc   = 20           # width (m) around center axis where center is  indicated
 tt   = 0            # target start time
 
 
-def readBoatList():
+def readBoatList(w=None):
    global  BoatList
+
+   if w is not None: w.destroy()
+
    try : 
       with open("BoatList") as f:  BoatList =  f.read().splitlines()
       BoatList = [b.strip() for b in BoatList]
@@ -75,8 +78,11 @@ def readBoatList():
 
 readBoatList()
 
-def readgpsList():
+def readgpsList(w=None):
    global  gpsList
+
+   if w is not None: w.destroy()
+
    gpsList = []
    try : 
       with open("gpsList") as f:
@@ -91,15 +97,17 @@ readgpsList()
 
 def writeRaceFile(w, filename = None):
    # no calc
+   w.destroy()
+
    readRaceWindow() #sync globals from screen
    if filename is None : 
-      t = tkinter.Toplevel(w)
+      #t = tkinter.Toplevel()
       filename =  filedialog.asksaveasfile(mode="w",  defaultextension=".raceParms",
           initialdir = "", title = "enter file name to save",
           filetypes = (("race parameters","*.raceParms"),("all files","*.*")))
    if filename is None: # i.e. cancel clicked in dialog
       return
-   filename.close()
+   filename.close() # use json.dump() below, but above opened the file
    filename = str(filename.name)
 
    try : 
@@ -112,11 +120,17 @@ def writeRaceFile(w, filename = None):
 
 def readRaceFile(w, filename = None):
    global  fl, dc, ty, cl, ax, ll, sw, RC, S, M, wn, cc, tt
+   w.destroy()
+
    if filename is None : 
-      t = tkinter.Toplevel(w)
+      #t = tkinter.Toplevel()
+      #t =  tkinter.Tk()
       filename =  filedialog.askopenfilename(initialdir = "",
         title = "choose file",
         filetypes = (("race parameters","*.raceParms"),("all files","*.*")))
+
+   if filename is "": # i.e. cancel clicked in dialog
+      return
 
    with open(filename) as f:  defaultRace = json.load(f)   
 
@@ -403,7 +417,7 @@ def readRaceWindow():
    cc = float(ents[14].get()) 
    tt = float(ents[15].get()) 
 
-def plotWindow(w):
+def plotWindow(x):
    # note that plot is based on gps and line length. NOT YET. CHANGE USE OF cl
    #      Changing axis or course length  NOT YET. CHANGE USE OF cl without re-calc does not change plot.
    #      This allows manual override of gps point (ie don't re-calc)
@@ -411,9 +425,12 @@ def plotWindow(w):
    import math
 
    global  cl, ax, ll, sw, RC, S, M, wn, cc, tt
+
+   x.destroy()
+
    readRaceWindow() #sync globals from screen
 
-   t = tkinter.Toplevel(w)
+   t = tkinter.Toplevel()
    t.wm_title("Course Plot")
 
    canvas_width  = 400
@@ -500,7 +517,9 @@ def updateStatus(w, revd):
 
 
 def gpsWindow(w):   
-   t = tkinter.Toplevel(w)
+   w.destroy()
+
+   t = tkinter.Toplevel()
    t.wm_title("Other GPS Status    lat    lon")
 
    # list of tuples (name, host, port)
@@ -520,6 +539,8 @@ def gpsWindow(w):
 def extraWindow(w):
 
    def debugWindow(w):
+     w.destroy()
+
      print('globals')
      for f in (cl, ax, ll, sw, RC, S, M, wn, cc, tt): print(f)
      print()
@@ -532,22 +553,22 @@ def extraWindow(w):
      print('distribution.distRecvd')
      print(distribution.distRecvd)
 
-   t = tkinter.Toplevel(w)
+   t = tkinter.Toplevel()
    t.wm_title("Extra Options")
 
-   bWD  = But(t, text='Save\nRace Parms',    command=(lambda : writeRaceFile(w)))
+   bWD  = But(t, text='Save\nRace Parms',    command=(lambda : writeRaceFile(t)))
 
-   bRD  = But(t, text='Load Saved\nRace Parms', command=(lambda : readRaceFile(w)))
+   bRD  = But(t, text='Load Saved\nRace Parms', command=(lambda : readRaceFile(t)))
 
-   bBL  = But(t, text='Re-read\n BoatList', command=(lambda : readBoatList()))
+   bBL  = But(t, text='Re-read\n BoatList', command=(lambda : readBoatList(t)))
 
-   bGL  = But(t, text='Re-read\n gpsList', command=(lambda : readgpsList()))
+   bGL  = But(t, text='Re-read\n gpsList', command=(lambda : readgpsList(t)))
 
-   bDbg = But(t, text='debugInfo',         command=(lambda : debugWindow(w)))
+   bDbg = But(t, text='debugInfo',         command=(lambda : debugWindow(t)))
 
-   bP   = But(t, text='plot',              command=(lambda : plotWindow(w)))
+   bP   = But(t, text='plot',              command=(lambda : plotWindow(t)))
 
-   bG   = But(t, text='other\n GPS',       command=(lambda : gpsWindow(w)))
+   bG   = But(t, text='other\n GPS',       command=(lambda : gpsWindow(t)))
 
 def But(w, text='x', command='') :
    b = tkinter.Button(w, text=text,  command=command)
