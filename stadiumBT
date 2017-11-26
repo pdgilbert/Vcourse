@@ -90,7 +90,7 @@ class zoneSignal(threading.Thread):
          logging.info('stadiumBT cannot connect to GPS at ' + GPS_HOST + ':' + str(GPS_PORT))
          # do not kill the thread, it may be temporary
 
-      z = getGPS() # try now so fail can provide a message
+      z = gpsPos.getGPS() # try now so fail can provide a message
 
       if z is None :
          # do not kill the thread, it may be temporary
