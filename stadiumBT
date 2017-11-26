@@ -139,7 +139,6 @@ class zoneSignal(threading.Thread):
                 S, M, dom, LtoR, b, boundL, boundR, warnL, warnR, 
                 centerL, centerR ) = unwind(self.zoneObj)
 
-      p = None   #gpsPos(None, None)
       sk =0
 
       while not self.shutdown.is_set():   
@@ -174,6 +173,7 @@ class zoneSignal(threading.Thread):
               # run main signal setting loop here
               #logging.debug('checking zone status.')
               
+              logging.info('p is ' + str(p.lat))
               p = getGPS()
               
               if p is None:
@@ -181,7 +181,7 @@ class zoneSignal(threading.Thread):
                  tr = 'No GPS fix. LED status  noGPSfix'
                  logging.info('p is None.')
               else:
-                 logging.info('p is ' + str(p.lat))
+                 #logging.info('p is ' + str(p.lat))
                  aa = a(p) # this is a in y = a + b * x
                  ps= '  @ ' +  str(p.lat) + '  ' + str(p.lon)  # only for debugging
                  
