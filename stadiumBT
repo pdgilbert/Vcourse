@@ -220,7 +220,6 @@ print('step 5')
 
 if __name__ == '__main__':
    print('step 6')
-   print('logging upper level ', str(getattr(logging, loglevel.upper())))
 
    logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    update   = threading.Event()
