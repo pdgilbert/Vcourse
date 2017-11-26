@@ -117,17 +117,18 @@ status = 'off'
 # beware, I think "from LEDs import setLEDs" will fail because 
 #  this needs global status.
 
-def  setLEDs(now, x ='')  : 
+def  setLEDs(nw, x ='')  : 
    global status
-   if status is not now :
-      if   now is 'off'           : off(x)
-      elif now is 'bound'         : bound(x)
-      elif now is 'warn'          : warn(x)
-      elif now is 'center'        : center(x)
-      elif now is 'update'        : update(x)
-      elif now is 'noGPSfix'      : noGPSfix(x)
-      elif now is 'systemProblem' : systemProblem(x)
+   if not status == nw :
+      if   nw == 'off'           : off(x)
+      elif nw == 'bound'         : bound(x)
+      elif nw == 'warn'          : warn(x)
+      elif nw == 'center'        : center(x)
+      elif nw == 'update'        : update(x)
+      elif nw == 'noGPSfix'      : noGPSfix(x)
+      elif nw == 'systemProblem' : systemProblem(x)
       else :
-         raise ValueError("LED now status (" + str(now) + ") incorrect.")
+         raise ValueError(
+         "LED now status ('" +nw+ "') incorrect value.\nOld status is '" +status+ "'. x is'" +x+ "'.")
 
-      status = now
+      status = nw

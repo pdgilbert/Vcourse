@@ -105,22 +105,11 @@ class zoneSignal(threading.Thread):
       logging.info('zoneSignal started.')
       global cid
       locals().update(self.zoneObj)
-
-      def record(p, now):
-         # record track
-         #p.time comes from the gps. If fractional seconds are available I think
-         #  they will be printed, but for now all seem to be .000.
-         #  This may be something that can be set on the gps ?
-         self.t.write(str(p.lat) + ' ' + str(p.lon) + ' @ ' + p.time +' LED status ' + now + '\n' )
  
       def a(p):
          if dom : a = p.lat - b * p.lon 
          else        : a = p.lon - b * p.lat
          return a
-
-      def setNow(p, now, x=""):
-         LEDs.setLEDs(now, x)
-         record(p, now)
 
       def unwind(zO):
          # compare makezoneObj()  in stadiumRC
@@ -145,7 +134,8 @@ class zoneSignal(threading.Thread):
          return((cid, courseDesc, courseType, distributionTime, length, axis,
            S, M, dom, LtoR, b, boundL, boundR, warnL, warnR, centerL, centerR ))
 
-      p = gpsPos(None, None)
+      p = None   #gpsPos(None, None)
+      sk =0
 
       while not self.shutdown.is_set():   
 
@@ -163,9 +153,9 @@ class zoneSignal(threading.Thread):
                 centerL, centerR ) = unwind(self.zoneObj)
 
              if cid is None :
-                raise Exception('something is wrong. cid is none after update with zoneObj).')
+                raise Exception('something is wrong. cid is None after update with zoneObj).')
 
-             setNow(p,  'update')
+             LEDs.setLEDs('update')
 
              logging.info('  new cid: %s',  cid)
              #logging.debug('new course axis:  %f',  axis)
@@ -178,35 +168,47 @@ class zoneSignal(threading.Thread):
           if cid is not None :
               # run main signal setting loop here
               #logging.debug('checking zone status.')
-              try:
-                 p = getGPS()
-                 gpsOK = True
-              except:
-                 setNow(p,'noGPSfix', '. No GPS fix.')
-                 gpsOK = False
-
-              if gpsOK:
+              
+              p = getGPS()
+              
+              if p is None:
+                 LEDs.setLEDs('noGPSfix', x='. No GPS fix.')
+                 tr = 'No GPS fix. LED status  noGPSfix'
+              else:
                  aa = a(p) # this is a in y = a + b * x
                  ps= '  @ ' +  str(p.lat) + '  ' + str(p.lon)  # only for debugging
                  
                  # LtoR, # True if bounds increase left to right
                   
                  if LtoR :
-                    if   boundL  >  aa            : setNow(p, 'bound',  'LtoR boundL' + ps) 
-                    elif  warnL  >  aa            : setNow(p, 'warn',   'LtoR warnL'  + ps)
-                    elif centerL <= aa <= centerR : setNow(p, 'center', 'LtoR center' + ps)
-                    elif            aa >   boundR : setNow(p, 'bound',  'LtoR boundR' + ps)
-                    elif            aa >    warnR : setNow(p, 'warn',   'LtoR warnR'  + ps)
-                    else                          : setNow(p, 'off',     'LtoR '      + ps)
+                    if   boundL  >  aa            : now = ('bound',  'LtoR boundL') 
+                    elif  warnL  >  aa            : now = ('warn',   'LtoR warnL' )
+                    elif centerL <= aa <= centerR : now = ('center', 'LtoR center')
+                    elif            aa >   boundR : now = ('bound',  'LtoR boundR')
+                    elif            aa >    warnR : now = ('warn',   'LtoR warnR' )
+                    else                          : now = ('off',    'LtoR'       )
                  else :
-                    if    boundR >  aa            : setNow(p, 'bound',  'boundR'      + ps)
-                    elif   warnR >  aa            : setNow(p, 'warn',   'warnR'       + ps)
-                    elif centerR <= aa <= centerL : setNow(p, 'center', 'center'      + ps)
-                    elif            aa >   boundL : setNow(p, 'bound',  'boundL'      + ps)
-                    elif            aa >    warnL : setNow(p, 'warn',   'warnL'       + ps)
-                    else                          : setNow(p, 'off')
+                    if    boundR >  aa            : now = ('bound',  'boundR')
+                    elif   warnR >  aa            : now = ('warn',   'warnR' )
+                    elif centerR <= aa <= centerL : now = ('center', 'center')
+                    elif            aa >   boundL : now = ('bound',  'boundL')
+                    elif            aa >    warnL : now = ('warn',   'warnL' )
+                    else                          : now = ('off',    ''      )
 
-              time.sleep(0.1) #0.5 worked but is a bit slow IMPACTS TRACK FILE SIZE
+                 LEDs.setLEDs(now[0], now[1]+ ps)
+                 tr = str(p.lat) + ' ' + str(p.lon) + ' @ ' + p.time +' LED status ' + now[0]
+
+              # record track. p.time comes from the gps. 
+              # If fractional seconds are available I think they will be printed,
+              #   but for now all seem to be .000.
+              #   This may be something that can be set on the gps ?
+              # Record only every 5 second so modulo in next depends on sleep 
+              #   time. Record frequency impacts track file size.
+              
+              if sk is 0 :  self.t.write(tr + '\n' )
+              sk = (sk + 1) % 50  
+   
+              time.sleep(0.1) #0.5 worked but is a bit slow
 
       LEDs.cleanup()
       self.t.close()

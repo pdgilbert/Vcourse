@@ -38,8 +38,11 @@ from gpsd import get_current
 import logging
 
 def getGPS():
-  p = get_current()
-  return(gpsPos(p.lat, p.lon, p.time))
+  try:
+     p = get_current()
+     return(gpsPos(p.lat, p.lon, p.time))
+  except:
+     return(None)
 
 class gpsPos():
     def __init__(self, lat, lon, time=None):
