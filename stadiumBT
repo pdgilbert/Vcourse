@@ -24,10 +24,6 @@ print('step 2')
 #in decreasing order CRITICAL, ERROR, WARNING. INFO, DEBUG
 # level logs everything higher. NOTSET looks to parent levels
 
-logFormat ='(%(threadName)-9s) %(message)s'
-logging.basicConfig(level=logging.DEBUG, format=logFormat,)
-#logging.basicConfig(level=logging.INFO, format=logFormat,)
-
 print('step 3')
 
 # filemode='w' will start a new log file each run. Otherwise appending is done.
@@ -221,6 +217,10 @@ print('step 5')
 if __name__ == '__main__':
    print('step 6')
 
+   logFormat ='(%(threadName)-9s) %(message)s'
+   logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+   #logging.basicConfig(level=logging.INFO, format=logFormat,)
+
    logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    update   = threading.Event()
    shutdown = threading.Event()
@@ -232,7 +232,6 @@ if __name__ == '__main__':
    zoneSignal(update, shutdown).start()
 
    logging.debug(threading.enumerate())
-   print('logging upper level ', str(getattr(logging, loglevel.upper())))
  
    def shutdownHandler(signum, frame):
        logging.info('main thread setting shutdown signal.')
