@@ -61,6 +61,13 @@ cid = None
 # start gpsd (-n don't wait for device,  #-S 2947 is default port  FIX?
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
 
+def getGPS():
+  try:
+     p = gpsd.get_current()
+     return(gpsPos.gpsPos(p.lat, p.lon, p.time))
+  except:
+     return(None)
+
 
 class zoneSignal(threading.Thread):
    # this thread class is used by BT
@@ -90,7 +97,7 @@ class zoneSignal(threading.Thread):
          logging.info('stadiumBT cannot connect to GPS at ' + GPS_HOST + ':' + str(GPS_PORT))
          # do not kill the thread, it may be temporary
 
-      z = gpsPos.getGPS() # try now so fail can provide a message
+      z = getGPS() # try now so fail can provide a message
 
       if z is None :
          # do not kill the thread, it may be temporary
@@ -172,7 +179,7 @@ class zoneSignal(threading.Thread):
               # run main signal setting loop here
               #logging.debug('checking zone status.')
               
-              p = gpsPos.getGPS()
+              p = getGPS()
               
               if p is None:
                  LEDs.setLEDs('noGPSfix', x='. No GPS fix.')
