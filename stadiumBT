@@ -12,10 +12,16 @@ import json
 import gpsd
 import os
 
+print('step 1')
+print('logging upper level ', str(getattr(logging, loglevel.upper())))
+
 import LEDs 
 from gpsPos import gpsPos
 from gpsPos import getGPS
 from distribution import distributionCheck
+
+print('step 2')
+print('logging upper level ', str(getattr(logging, loglevel.upper())))
 
 #in decreasing order CRITICAL, ERROR, WARNING. INFO, DEBUG
 # level logs everything higher. NOTSET looks to parent levels
@@ -209,6 +215,9 @@ class zoneSignal(threading.Thread):
 
 
 if __name__ == '__main__':
+   print('step 3')
+   print('logging upper level ', str(getattr(logging, loglevel.upper())))
+
    logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    update   = threading.Event()
    shutdown = threading.Event()
