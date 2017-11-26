@@ -24,8 +24,7 @@ import gpsd
 import os
 
 import LEDs 
-from gpsPos import gpsPos
-from gpsPos import getGPS
+import gpsPos
 from distribution import distributionCheck
 
 
@@ -173,7 +172,7 @@ class zoneSignal(threading.Thread):
               # run main signal setting loop here
               #logging.debug('checking zone status.')
               
-              p = getGPS()
+              p = gpsPos.getGPS()
               
               if p is None:
                  LEDs.setLEDs('noGPSfix', x='. No GPS fix.')
