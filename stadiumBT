@@ -79,9 +79,9 @@ class zoneSignal(threading.Thread):
          with open("activeBTzoneObj.json","r") as f:  self.zoneObj = json.load(f)
          #globals().update(self.zoneObj)
          logging.info("Existing BT course loaded.")
+         logging.info('   cid = ' + str(self.zoneObj["cid"]))
       except:
          self.zoneObj = None
-         cid = None
 
       self.t = open("track.txt","w") 
 
@@ -91,15 +91,16 @@ class zoneSignal(threading.Thread):
          logging.info('stadiumBT cannot connect to GPS at ' + GPS_HOST + ':' + str(GPS_PORT))
          # do not kill the thread, it may be temporary
 
-      try:
-         z = getGPS() # try now so fail can provide a message
-         LEDs.setLEDs('off', ' at initialization.')
-      except:
-         # do not kill the thread, it may be temporary
-         logging.warning("stadiumBT cannot get GPS position.")
-         LEDs.setLEDs('noGPSfix', ' at initialization.')
+      z = getGPS() # try now so fail can provide a message
 
-      logging.info('zoneSignal initialized. cid = ' + str(cid))
+      if z is None :
+         # do not kill the thread, it may be temporary
+         logging.warning("stadiumBT cannot get GPS position at initialization.")
+         LEDs.setLEDs('noGPSfix', ' at initialization.')
+      else :
+         LEDs.setLEDs('off', ' at initialization.')
+
+      logging.info('zoneSignal initialized.')
 
    def run(self):
       logging.info('zoneSignal started.')
@@ -133,6 +134,11 @@ class zoneSignal(threading.Thread):
          
          return((cid, courseDesc, courseType, distributionTime, length, axis,
            S, M, dom, LtoR, b, boundL, boundR, warnL, warnR, centerL, centerR ))
+
+      if self.zoneObj is not None:
+         (cid, courseDesc, courseType, distributionTime, length, axis,
+                S, M, dom, LtoR, b, boundL, boundR, warnL, warnR, 
+                centerL, centerR ) = unwind(self.zoneObj)
 
       p = None   #gpsPos(None, None)
       sk =0
@@ -220,10 +226,8 @@ if __name__ == '__main__':
    update   = threading.Event()
    shutdown = threading.Event()
 
-   logging.debug('main thread starting distributionCheck thread.')
    distributionCheck(RC_IP, RC_PORT, BT_ID, update, shutdown).start()
 
-   logging.debug('main thread starting zoneSignal thread.')
    zoneSignal(update, shutdown).start()
 
    logging.debug(threading.enumerate())
