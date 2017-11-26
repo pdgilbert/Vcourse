@@ -3,11 +3,22 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 
 # need     export PYTHONPATH=/path/to/Vcourse/lib
+
+import logging
+
+#in decreasing order CRITICAL, ERROR, WARNING. INFO, DEBUG
+# level logs everything higher. NOTSET looks to parent levels
+
+# basicConfigcan only be set once in a python session. Additional calls ignored.
+logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s')
+#logging.basicConfig(level=logging.INFO, format='(%(threadName)-9s) %(message)s')
+logging.info('message level info.')
+logging.debug('message level debug.')
+
 import threading
 import signal
 import sys
 import time
-import logging
 import json
 import gpsd
 import os
@@ -20,15 +31,6 @@ from gpsPos import getGPS
 from distribution import distributionCheck
 
 print('step 2')
-
-#in decreasing order CRITICAL, ERROR, WARNING. INFO, DEBUG
-# level logs everything higher. NOTSET looks to parent levels
-
-# basicConfigcan only be set once in a python session. Additional calls ignored.
-logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s')
-#logging.basicConfig(level=logging.INFO, format='(%(threadName)-9s) %(message)s')
-logging.info('message level info.')
-logging.debug('message level debug.')
 
 print('step 3')
 
