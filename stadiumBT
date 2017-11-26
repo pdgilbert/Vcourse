@@ -21,8 +21,8 @@ from distribution import distributionCheck
 # level logs everything higher. NOTSET looks to parent levels
 
 logFormat ='(%(threadName)-9s) %(message)s'
-#logging.basicConfig(level=logging.DEBUG, format=logFormat,)
-logging.basicConfig(level=logging.INFO, format=logFormat,)
+logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+#logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 # filemode='w' will start a new log file each run. Otherwise appending is done.
 #logging.basicConfig(filename='stadiumBT.log',

@@ -125,7 +125,7 @@ def  setLEDs(now, x ='')  :
       elif now is 'warn'          : warn(x)
       elif now is 'center'        : center(x)
       elif now is 'update'        : update(x)
-      elif now is 'noGPSfix' : noGPSfix(x)
+      elif now is 'noGPSfix'      : noGPSfix(x)
       elif now is 'systemProblem' : systemProblem(x)
       else :
          raise ValueError("LED now status (" + str(now) + ") incorrect.")
