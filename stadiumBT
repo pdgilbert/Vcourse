@@ -220,6 +220,7 @@ if __name__ == '__main__':
    zoneSignal(update, shutdown).start()
 
    logging.debug(threading.enumerate())
+   print('logging upper level ', str(getattr(logging, loglevel.upper())))
  
    def shutdownHandler(signum, frame):
        logging.info('main thread setting shutdown signal.')
