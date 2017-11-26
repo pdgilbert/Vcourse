@@ -10,8 +10,8 @@ import logging
 # level logs everything higher. NOTSET looks to parent levels
 
 # basicConfigcan only be set once in a python session. Additional calls ignored.
-logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s')
-#logging.basicConfig(level=logging.INFO, format='(%(threadName)-9s) %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s')
+logging.basicConfig(level=logging.INFO, format='(%(threadName)-9s) %(message)s')
 logging.info('message level info.')
 logging.debug('message level debug.')
 
@@ -23,16 +23,11 @@ import json
 import gpsd
 import os
 
-print('step 1')
-
 import LEDs 
 from gpsPos import gpsPos
 from gpsPos import getGPS
 from distribution import distributionCheck
 
-print('step 2')
-
-print('step 3')
 
 # filemode='w' will start a new log file each run. Otherwise appending is done.
 #logging.basicConfig(filename='stadiumBT.log',
@@ -67,8 +62,6 @@ cid = None
 # start gpsd (-n don't wait for device,  #-S 2947 is default port  FIX?
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
 
-
-print('step 4')
 
 class zoneSignal(threading.Thread):
    # this thread class is used by BT
@@ -219,11 +212,7 @@ class zoneSignal(threading.Thread):
       self.t.close()
       logging.info('exiting zoneSignal thread.')
 
-
-print('step 5')
-
 if __name__ == '__main__':
-   print('step 6')
 
    logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    update   = threading.Event()

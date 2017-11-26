@@ -24,8 +24,6 @@ import time
 import logging
 import threading
 
-#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
-
 try:
     from pyA20.gpio import gpio as GPIO
     from pyA20.gpio import port
@@ -33,8 +31,6 @@ except RuntimeError:
     logging.critical("Error importing pyA20.gpio!  Wrong hardware? or possibly need root privileges.")
     raise Exception('LED_OpiZero module will not work without pyA20.gpio.')
 
-
-#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
 RED    = port.PA7   # pin 12
 GREEN  = port.PA19  # pin 16

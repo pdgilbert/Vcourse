@@ -10,8 +10,6 @@ RED    =  101
 GREEN  =  102
 BLUE   =  103 
 
-#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
-
 # Raspberry Pi has PWM hardware. This simulation code follows 
 # Orange Pi more closely, and spawns process mainly to handle flashing.
 

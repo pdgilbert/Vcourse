@@ -17,7 +17,6 @@ except RuntimeError:
     raise Exception('LED_piZeroW module will not work without RPi.GPIO.')
 
 
-#logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-9s) %(message)s',)
 
 # https://pinout.xyz/pinout/io_pi_zero#
 
