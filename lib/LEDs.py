@@ -96,6 +96,10 @@ def  cleanup(x ='') :
    logging.info('cleanup GPIO for shutdown ' + str(x))
    leds.cleanup()  # cleanup GPIO and shut down threads
 
+def  noGPSfix(x ='')  : 
+   print('flash blue'   + str(x))
+   leds.off()  
+   leds.flash(BLUE)   #, FAST, 20)
 
 def  systemProblem(x ='')  : 
    print('system problem blue'   + str(x))
@@ -108,7 +112,7 @@ def  systemProblem(x ='')  :
 # reset, so set only on change
 
 status = 'off'
-# 'off' 'bound' 'warn' 'center' 'update' 'systemProblem' 
+# 'off' 'bound' 'warn' 'center' 'update' 'noGPSfix' 'systemProblem' 
 
 # beware, I think "from LEDs import setLEDs" will fail because 
 #  this needs global status.
@@ -121,6 +125,7 @@ def  setLEDs(now, x ='')  :
       elif now is 'warn'          : warn(x)
       elif now is 'center'        : center(x)
       elif now is 'update'        : update(x)
+      elif now is 'noGPSfix' : noGPSfix(x)
       elif now is 'systemProblem' : systemProblem(x)
       else :
          raise ValueError("LED now status (" + str(now) + ") incorrect.")

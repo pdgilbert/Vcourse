@@ -83,19 +83,16 @@ class zoneSignal(threading.Thread):
       try:
          gpsd.connect(host=GPS_HOST, port=GPS_PORT) 
       except:
-         logging.critical('stadiumBT cannot connect to GPS at ' + GPS_HOST + ':' + str(GPS_PORT))
-         logging.critical('stadiumBT will not work without GPS.')
-         # this kills thread raise Exception('stadiumBT will not work without GPS.')
-         # sys.exit() need to shut down main, but then what?
+         logging.info('stadiumBT cannot connect to GPS at ' + GPS_HOST + ':' + str(GPS_PORT))
+         # do not kill the thread, it may be temporary
 
       try:
          z = getGPS() # try now so fail can provide a message
+         LEDs.setLEDs('off', ' at initialization.')
       except:
-         logging.warning("stadiumBT cannot get GPS position. Is gpsd working?")
-         logging.warning("Waiting 20 seconds. Check that GPS is connected if there are more errors!!!\n")
-         # this kills thread  raise Exception('stadiumBT will not work without GPS.')
-         # do not sys.exit(), gps may just not be ready
-         time.sleep(20)
+         # do not kill the thread, it may be temporary
+         logging.warning("stadiumBT cannot get GPS position.")
+         LEDs.setLEDs('noGPSfix', ' at initialization.')
 
       logging.info('zoneSignal initialized. cid = ' + str(cid))
 
@@ -180,7 +177,7 @@ class zoneSignal(threading.Thread):
                  p = getGPS()
                  gpsOK = True
               except:
-                 setNow(p,'systemProblem', '. No GPS fix.')
+                 setNow(p,'noGPSfix', '. No GPS fix.')
                  gpsOK = False
 
               if gpsOK:
