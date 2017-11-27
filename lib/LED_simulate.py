@@ -1,6 +1,7 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
+"""Simulate LED signal hardware by simple print statements."""
 
-# simulate LED signal hardware by simple print statements
+__version__ = '0.0.3'
 
 import time
 import logging

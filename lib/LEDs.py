@@ -1,13 +1,30 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
+"""Generic part of LED control.
 
-#   generic part of LED control
+Turn LEDs off, on solid, or flashing corresponding to a specified state. 
+The states are those determined by zones on the course, that is 'off', 
+'bound', 'warn', 'center', 'update', 'noGPSfix',  or 'systemProblem' 
 
-# leds are off, on solid, or flashing. Flashing control (frequency and 
-# duty cycle) are set the same for all leds. With PWM it would be possible
-# to flash diferently, but that seems to hard to visually distinguish. 
-# The thread versions, which are used when PWM is not available, would
-# require a separate thread for each led to allow separate control.
-# That is not implemented.
+The primary function call is to setLEDs(nw, x =''), where nw is 
+the state and x is a (mainly debugging) string written to stdout.
+
+This module is intended to work with a hardware specific module for 
+controlling GPIO pins. (Currently LED_RpiZeroW for a Raspian on a
+Raspberry Pi ZeroW,  LED_OPi for Armbian on an Orange Pi Zero, or
+LED_simulate for simulating on an Intel based machine.)
+
+Some hardware specific modules require threading to implement LED
+flashing, This is necessary when PWM is not available. Flashing would
+require a separate thread for each LED to allow separate control.
+That is not implemented, so flashing control (frequency and duty cycle)
+are set the same for all LEDs. 
+With PWM it would be possible to flash differently, but that also seems
+hard to visually distinguish.
+
+"""
+
+__version__ = '0.0.3'
+
 
 import subprocess
 import time
@@ -118,6 +135,13 @@ status = 'off'
 #  this needs global status.
 
 def  setLEDs(nw, x ='')  : 
+   """
+   Set state of LEDs and return None.
+
+   Possible state settings are 'off', 'bound', 'warn', 'center', 'update', 
+   'noGPSfix',  or 'systemProblem'.
+   """
+   
    global status
    if not status == nw :
       if   nw == 'off'           : off(x)

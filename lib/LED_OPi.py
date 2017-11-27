@@ -1,5 +1,7 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
-#  Arbian / Orange Pi  LEDs
+"""Arbian / Orange Pi Zero LED signal hardware control."""
+
+__version__ = '0.0.3'
 
 #CAN WE DO THIS WITHOUT ROOT
 #http://linux-sunxi.org/GPIO

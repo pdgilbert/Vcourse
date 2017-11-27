@@ -1,8 +1,17 @@
 #!/usr/bin/python3
-
 # License GPL 2. Copyright Paul D. Gilbert, 2017
+"""Run on racing boats to receive course from RC and set LED signals.
 
-# need     export PYTHONPATH=/path/to/Vcourse/lib
+This progam should be set up to start automatically when the LED control
+gadget's system is booted. It needs a setting to find other modules, e.g.
+
+export PYTHONPATH=/path/to/Vcourse/lib
+
+Configuration for the local course setup is read from BTconfig.
+
+"""
+# consider pbr module for maintaining version.
+__version__ = '0.0.3'
 
 import logging
 

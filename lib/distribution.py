@@ -1,13 +1,18 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
+"""Object for distributing and receiving zone infomation to set LEDs.
 
-# BT sends RC the cid (cousreID and distritution time) BT has.
-# RC replies with  'ok' indicating there is no update,
-#     or 'none' indicating no course set yet, or with updated zoneObj.
-# BT confirms receipt of update with BT_ID  
+BT sends RC the cid (cousreID and distritution time) that BT has.
+RC replies with  'ok' indicating there is no update,
+or 'none' indicating no course set yet, or with an updated zoneObj.
+BT confirms receipt of update with BT_ID  
 
-# zoneObj and cid should both be valid or both be None. cid should not be "none"
-# nor should zoneObj  have a cid of "none" or None.
-# But transmition requires string "none".
+zoneObj and cid should both be valid or both be None. zoneObj should not
+have a cid of "none" or None, but transmition requires string "none".
+
+"""
+
+__version__ = '0.0.3'
+
 
 import socket
 import logging
@@ -20,8 +25,8 @@ import smp
 ####### this class is used only by BT #######
 
 class distributionCheck(threading.Thread):
-   # this thread class is used by BT
-  
+   """Threading object used by BT to check for and load new zone information objects."""
+   
    def __init__(self, RC_IP, RC_PORT, BT_ID, update, shutdown):
       threading.Thread.__init__(self)
       #RC_IP, RC_PORT could be read here from config rather than passed
@@ -108,6 +113,7 @@ class distributionCheck(threading.Thread):
 distRecvd = {}
 
 class distributer(threading.Thread):
+   """Threading object used by RC listen for BTs checking in."""
    # Wait for connections from BTs and pass each to a BThandlerThread.
    # Maintain zoneObj.
    # Maintain list distRecvd of boats that have received a distribution.
@@ -196,7 +202,9 @@ class distributer(threading.Thread):
          raise RuntimeError("zoneObj is None. Refusing to distribute.")
 
 class BThandlerThread(threading.Thread):
-   # handle a connection from a BT. Check if BT is current and update if not.
+   """Threading object used by RC to handle a BT connection.
+   
+   Check if BT is current and update with new zone information if not."""
 
    def __init__(self, ip, port, sock, zoneObj):
        threading.Thread.__init__(self)

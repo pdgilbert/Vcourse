@@ -1,4 +1,8 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
+"""Object for defining a GPS position and operation with it."""
+
+__version__ = '0.0.3'
+
 
 # PUT INTO UNIT TESTING
 #from gpsPos import gpsPos
@@ -38,6 +42,7 @@ from gpsd import get_current
 import logging
 
 def getGPS():
+  """Get the current GPS position and return a gpsPos object."""
   try:
      p = get_current()
      return(gpsPos(p.lat, p.lon, p.time))
@@ -46,6 +51,7 @@ def getGPS():
 
 class gpsPos():
     def __init__(self, lat, lon, time=None):
+        """Define and return a gpsPos object."""
         if lat is not None :
            if not (-90 <= lat <= 90):
               raise ValueError("must have  -90 <=  latitude <= 90")
@@ -60,11 +66,16 @@ class gpsPos():
         self.lon  = lon  # A float  -180 <= lon <= 180
         self.time = time 
     
-    def latitude(self) : return self.lat
+    def latitude(self) :
+       """Extract the latitude from a gpsPos object."""
+       return self.lat
     
-    def longitude(self): return self.lon
+    def longitude(self):
+       """Extract the longitude from a gpsPos object."""
+       return self.lon
     
     def nm(self, x):
+        """Calculate the distance in nautical miles to another gpsPos object."""
         #nm N and E  between two gpsPos, self and x
         if not isinstance(x, gpsPos):
            raise ValueError("x must be a gpsPos object")
@@ -79,8 +90,7 @@ class gpsPos():
     
     @classmethod
     def move(cls, pt, axis, distance):
-        # return gps coordinates of position which is
-        #  distance (nm) from pt at bearing axis
+        """Return gpsPos object at distance (nm) from pt at bearing axis."""
         
         # theta angle relative to E and counter clockwise (counter compass)
         #   gives correct signs for lat and long shift
@@ -97,7 +107,8 @@ class gpsPos():
     
     @classmethod
     def heading(cls, pt, target):
-        # return heading (degrees T) from gps position pt to gps position target
+        """Return heading (degrees T) from gpsPos object pt to gpsPos target."""
+ 
         # N is +ve y,  E is +ve x. Math angle is counterclockwise (counter compass).
 	# tan(y/x) cannot ditinguish NE from SW or NW from SE. atan2(y, x) does.
         Dy =   target.lat - pt.lat

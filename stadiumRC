@@ -1,6 +1,18 @@
 #!/usr/bin/python3
-
 # License GPL 2. Copyright Paul D. Gilbert, 2017
+"""Run on race committee to set the course and distribute to racing boats.
+
+This progam needs a setting to find other modules, e.g.
+
+export PYTHONPATH=/path/to/Vcourse/lib
+
+Configuration for the local course setup is read from RCconfig. A GUI is
+presented to the user for setting a course and distributing to racing boats.
+
+"""
+
+__version__ = '0.0.3'
+
 
 # need  export PYTHONPATH=/path/to/Vcourse/lib
 
