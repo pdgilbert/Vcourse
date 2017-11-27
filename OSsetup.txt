@@ -125,9 +125,13 @@ See Raspbian.txt or Armbian.txt re apt-get install python *.gpio
   
   cd /home/bt   
   git clone https://github.com/MartijnBraam/gpsd-py3.git
-  (or Downloading gpsd-py3-0.2.0.tar.gz )
+  (or Downloading at least version gpsd-py3-0.3.0.tar.gz )
+  I am testing with Oct 14, 2017 commit 41543d23daeca0ec0a9e7f4ed28de70bfd86451a
+  which has a few changes since 0.3.0. 
+  I had a small problem with 0.2.0 when gps was disconnected.
+
   cd gpsd-py3
-  python3 setup.py install
+  python3 setup.py install  # as root
 
  [above can be done with
    apt-get install python3-pip 

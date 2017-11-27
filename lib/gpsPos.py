@@ -34,12 +34,12 @@
 
 import gpsd
 import math
-import gpsd
+from gpsd import get_current
 import logging
 
 def getGPS():
   try:
-     p = gpsd.get_current()
+     p = get_current()
      return(gpsPos(p.lat, p.lon, p.time))
   except:
      return(None)

@@ -24,7 +24,8 @@ import gpsd
 import os
 
 import LEDs 
-import gpsPos
+from gpsPos import gpsPos
+from gpsPos import getGPS
 from distribution import distributionCheck
 
 
@@ -60,13 +61,6 @@ cid = None
 
 # start gpsd (-n don't wait for device,  #-S 2947 is default port  FIX?
 #sudo gpsd -n -S 2948 /dev/ttyACM0 
-
-def getGPS():
-  try:
-     p = gpsd.get_current()
-     return(gpsPos.gpsPos(p.lat, p.lon, p.time))
-  except:
-     return(None)
 
 
 class zoneSignal(threading.Thread):
@@ -186,7 +180,7 @@ class zoneSignal(threading.Thread):
                  tr = 'No GPS fix. LED status  noGPSfix'
                  logging.info('p is None.')
               else:
-                 logging.info('p is ' + str(p.lat))
+                 #logging.info('p is ' + str(p.lat))
                  aa = a(p) # this is a in y = a + b * x
                  ps= '  @ ' +  str(p.lat) + '  ' + str(p.lon)  # only for debugging
                  
