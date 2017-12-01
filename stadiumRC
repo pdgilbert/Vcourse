@@ -29,13 +29,13 @@ import math
 import sys
 
 from gpsPos import gpsPos
-from gpsPos import getGPS
+from gpsPos import gpsConnection
 
 import distribution
 
 logFormat ='(%(threadName)-9s) %(message)s'
-#logging.basicConfig(level=logging.DEBUG, format=logFormat,)
-logging.basicConfig(level=logging.INFO, format=logFormat,)
+logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+#logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 
 # Read config variable RC_IP, RC_PORT  from file RCconfig
@@ -165,22 +165,11 @@ def readRaceFile(w, filename = None):
 
    writeRaceWindow() #sync screen from globals
 
-def gpsRead(h, p):
-   logging.debug('gpsRead:' + h + ':' + str(p) + '.')
-   try : 
-      gpsCon = gpsd.connect(host=h, port=int(p))
-      pt = getGPS()
-      #logging.debug('gpsRead:' + h + ':' + str(p) + '.' + 
-      #                     ' pt  ' + str(pt.lat) + str(pt.lon))
-   except :
-      pt   = None
-      #logging.debug('gpsRead:' + h + ':' + str(p) + '.' + ' pt  ' + str(pt))
-   return(pt)
 
 def getRCgps():
    # update global RC and write to screen
    global  RC
-   RC = gpsRead(GPS_HOST, GPS_PORT)
+   RC = gpsConnection(GPS_HOST, GPS_PORT).getGPS()
    if RC == None :
       RC   = gpsPos(90.0, 0.0)  # this is really an error condition
       logging.info('attempted gpsd connection '   + str(GPS_HOST) + ':' +  str(GPS_PORT))
@@ -538,13 +527,15 @@ def gpsWindow(w):
    # gpsList=(('RC', GPS_HOST, GPS_PORT), ('pin', GPS_HOST, GPS_PORT)) #faking
    for f in gpsList :
       row = tkinter.Frame(t)
-      logging.debug('gpsWindow calling  gpsRead with host/port ' + f[1] + f[2])
-      pt = gpsRead(f[1], f[2])
-      if pt != None : 
+      logging.info('gpsWindow connect ' + f[0] +' ' + f[1] +':'+ f[2])
+      pt = gpsConnection(f[1], f[2]).getGPS()
+      if pt is None : 
+         logging.info('       no gps connection.' )
+         lab = tkinter.Label(row, width=30, text=f[0] + '   *****' , anchor='w')
+      else :
+         logging.info('       ' + str(pt.lat) + ' ' +str(pt.lon))
          lab = tkinter.Label(row, width=50, text=f[0] + '   ' + 
                      str(pt.lat) + '  '  + str(pt.lon) , anchor='w')
-      else :
-         lab = tkinter.Label(row, width=30, text=f[0] + '   *****' , anchor='w')
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
       lab.pack(side=tkinter.LEFT)
 

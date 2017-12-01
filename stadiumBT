@@ -34,7 +34,7 @@ import os
 
 import LEDs 
 from gpsPos import gpsPos
-from gpsPos import getGPS
+from gpsPos import gpsConnection
 from distribution import distributionCheck
 
 
@@ -94,15 +94,10 @@ class zoneSignal(threading.Thread):
 
       self.t = open("track.txt","w") 
 
-      try:
-         gpsd.connect(host=GPS_HOST, port=GPS_PORT) 
-      except:
-         logging.info('stadiumBT cannot connect to GPS at ' + GPS_HOST + ':' + str(GPS_PORT))
-         # do not kill the thread, it may be temporary
+      logging.debug('stadiumBT trying GPS at ' + GPS_HOST + ':' + str(GPS_PORT))
+      self.GPScon = gpsConnection(GPS_HOST, GPS_PORT)
 
-      z = getGPS() # try now so fail can provide a message
-
-      if z is None :
+      if self.GPScon.getGPS() is None :
          # do not kill the thread, it may be temporary
          logging.warning("stadiumBT cannot get GPS position at initialization.")
          LEDs.setLEDs('noGPSfix', ' at initialization.')
@@ -182,7 +177,7 @@ class zoneSignal(threading.Thread):
               # run main signal setting loop here
               #logging.debug('checking zone status.')
               
-              p = getGPS()
+              p = self.GPScon.getGPS()
               
               if p is None:
                  LEDs.setLEDs('noGPSfix', x='. No GPS fix.')

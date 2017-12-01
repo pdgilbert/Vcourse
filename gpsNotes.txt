@@ -197,6 +197,28 @@ BUG  gpsd seem to lose connection after awhile and needs restarting !!
      return (0,0) as the connection or GPS seem to take awhile to wake up.
      Try again after a few seconds.
 
+********   GPS devices disconnecting  ###############
+
+(laptop stadiumRC) If a gps device disappears the gpsd deamon drops it and does
+not automatically re-connected if it becomes active again. This fixes it when
+it is active again: 
+
+   [gpsdctl remove  /dev/ttyACM0 ]    # e.g. happens automatically
+   gpsdctl add /dev/ttyACM0           # e.g.
+or
+   gpsdctl add tcp://10.42.0.74:6000  # e.g.
+
+The same problem occurs when a USB gps is unplugged. Hotplug is suppose to do
+the gpsdctl add but there appears to be a conflict/issue.
+
+The gpsdctl command needs to run with the same permissions as the gpsd was
+started with.  (And the GPSD_SOCKET environment variable indicating the control
+socketdefaults to /var/run/gpsd.sock  for root and /tmp/gpsd.sock otherwise.)
+
+ if
+       the effective user ID of this program is root, /tmp/gpsd.sock
+       otherwise.
+
 ********  multiple GPS devices with GPS2Net or Share GPS###############
 
 It is possible to have multiple phones/tables on the network. Each would have its
