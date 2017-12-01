@@ -165,6 +165,8 @@ def readRaceFile(w, filename = None):
 
    writeRaceWindow() #sync screen from globals
 
+# just for testing: maintain con as global to check if changed by other GPS
+RCgpsCon = gpsConnection(GPS_HOST, GPS_PORT)
 
 def getRCgps():
    # update global RC and write to screen
@@ -339,7 +341,7 @@ def calcS():
 
    perp = (ax - 90 ) % 360 # bearing RC to pin, RC on starboard end of line
    
-   RC = gpsPos.move(S, perp, ll / (2 * 1852))
+   RC = gpsPos.move(S, perp, -ll / (2 * 1852))
    
    writeRaceWindow() # re-write screen with current globals
 
@@ -350,7 +352,7 @@ def defnRaceWindow(w):
    #    co-ordinated if fiels are changed !!!
    fldLabels = [
  	'fleet', 
- 	'decription', 
+ 	'description', 
  	'course type', 
  	'length (nm)', 
  	'axis (degrees)',	
@@ -432,7 +434,7 @@ def plotWindow(x):
    readRaceWindow() #sync globals from screen
 
    t = tkinter.Toplevel()
-   t.wm_title("Course Plot")
+   t.wm_title(fl + '  ' + dc)
 
    canvas_width  = 400
    canvas_height = 400
@@ -463,28 +465,47 @@ def plotWindow(x):
    #plot window top left is (0,0), bottom right is (canvas_height, canvas_width)
    # so +ve x is to right (as usual) but +ve y is down (not usual)
    # Use canvas center as start line center, so shift everything in degrees
-   #   by start line cemter, that is subtract (xShift, yShift), 
+   #   by start line cemter, that is subtract (Shift.lon, Shift.lat), 
    #  and then to plot shift to canvas center, that is add (x0, y0).
    Shift = S  # degrees lon and lat
 
    x0 = int(canvas_width  / 2) # pix
    y0 = int(canvas_height / 2) # pix
 
-   # axis (start line center to mark)
-   xm = (M.lon - Shift.lon) * lonScale * scale # pix
-   ym = (M.lat - Shift.lat) * latScale * scale # pix
-   w.create_line(x0, y0, x0 + xm, y0 - ym , fill="#476042", width=1)
-  
+   # Start line center to mark
+   # This is M as used for course calc, not current position of mark boat
+   x = x0 + ((M.lon - Shift.lon) * lonScale * scale)  # pix, shifted by x0
+   y = y0 - ((M.lat - Shift.lat) * latScale * scale)  # pix, shifted by x0
+   w.create_line(x0, y0, x, y , fill="#476042", width=1)
+   w.create_text(x, y, text="M")  # M position on plot
+
+   # Indicate axis at mid point 
+   x = x0 + ((M.lon - Shift.lon) * lonScale * scale / 2) 
+   y = y0 - ((M.lat - Shift.lat) * latScale * scale / 2)
+   w.create_text(x, y, text=str(int(ax))+'T')  # ax on plot
+
    #w.create_line(0, 0, 50, 20,      fill="#476042", width=3)
 
    # start line center (0,0)  to RC
-   xm = (RC.lon - Shift.lon) * lonScale * scale # pix
-   ym = (RC.lat - Shift.lat) * latScale * scale # pix
+   # This is RC as used for course calc, not current position of mark boat
+   x = x0 + ((RC.lon - Shift.lon) * lonScale * scale)  # pix, shifted by x0
+   y = y0 - ((RC.lat - Shift.lat) * latScale * scale)  # pix, shifted by x0
 
-   w.create_line(x0, y0, x0 + xm, y0 - ym , fill="#476042", width=3)
-   # other half of start line
-   w.create_line(x0, y0, x0 - xm, y0 + ym , fill="#476042", width=3)
-  
+   w.create_line(x0, y0, x, y, fill="#476042", width=3)
+   w.create_text(x, y, text="RC") # RC position on plot
+
+   # other half of start line to pin
+   x = x0 - ((RC.lon - Shift.lon) * lonScale * scale)  # pix, shifted by x0
+   y = y0 + ((RC.lat - Shift.lat) * latScale * scale)  # pix, shifted by x0
+   w.create_line(x0, y0, x, y, fill="#476042", width=3)
+
+   # This is actual RC from current gps
+   p = gpsConnection(GPS_HOST, GPS_PORT).getGPS()
+   x = x0 + ((p.lon - Shift.lon) * lonScale * scale)  # pix, shifted by x0
+   y = y0 - ((p.lat - Shift.lat) * latScale * scale)  # pix, shifted by x0
+   w.create_text(x, y, text="<RC>") # actual RC gps position on plot
+
+
 def updateStatus(w, revd):
    
    t = tkinter.Toplevel(w)
@@ -555,6 +576,9 @@ def extraWindow(w):
      print(dr.distributionRecvd())
      print('distribution.distRecvd')
      print(distribution.distRecvd)
+     # This is only as recorded in RCgpsCon. gpsd uses global stream so the actual
+     # result of RCgpsCon.getGPS() may be coming from elsewhere. TEST IT
+     print("RCgpsCon " + RCgpsCon.host + ":" + str(RCgpsCon.port))
 
    t = tkinter.Toplevel()
    t.wm_title("Extra Options")
