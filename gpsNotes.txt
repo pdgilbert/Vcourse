@@ -187,8 +187,6 @@ With gspd mode rather than NMEA data is flowing, but something is wrong format?
       gpsmon  127.0.0.1:2947
       gpsmon  127.0.0.1:2948
 
-BUG  gpsd seem to lose connection after awhile and needs restarting !!
-   whereas   gpsmon  10.42.0.223:6000   is ok? .
 
   -edit RCconfig to indicate the GPS port if changed (IP is that of the gpsd 
       running on the RC machine (127.0.0.1)
@@ -197,9 +195,18 @@ BUG  gpsd seem to lose connection after awhile and needs restarting !!
      return (0,0) as the connection or GPS seem to take awhile to wake up.
      Try again after a few seconds.
 
+********   exposing  GPS   ###############
+gpsd will listen on  all addresses with -G. 
+      gpsd -G -S 2947  -N -n /dev/ttyACM0
+
+This will allow anyone on the network (e.g. RC) to obtain gps info. (There is an
+obvious security question.) Test with gpsmon from remote.
+
 ********   GPS devices disconnecting  ###############
 
-(laptop stadiumRC) If a gps device disappears the gpsd deamon drops it and does
+(Following is on laptop with stadiumRC and somewhat less reliably on Pi with gpsmon. 
+ with python gpsd on Pi there is some caching) 
+If a gps device disappears the gpsd deamon drops it and does
 not automatically re-connected if it becomes active again. This fixes it when
 it is active again: 
 

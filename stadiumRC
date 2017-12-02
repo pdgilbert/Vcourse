@@ -27,6 +27,7 @@ from tkinter import filedialog
 import gpsd
 import math
 import sys
+from joblib import Parallel, delayed # for parallel requests to remote gps
 
 from gpsPos import gpsPos
 from gpsPos import gpsConnection
@@ -420,7 +421,12 @@ def readRaceWindow():
    cc = float(ents[14].get()) 
    tt = float(ents[15].get()) 
 
-def plotWindow(x):
+# this is only used for final option 2 step in plotWindow() but unfortunately must
+# be global or it cannot be pickled.
+def foo(n,h,p):
+   return((n, gpsConnection(h,p).getGPS()))
+
+def plotWindow(x, option=1):
    # note that plot is based on gps and line length. NOT YET. CHANGE USE OF cl
    #      Changing axis or course length  NOT YET. CHANGE USE OF cl without re-calc does not change plot.
    #      This allows manual override of gps point (ie don't re-calc)
@@ -499,12 +505,41 @@ def plotWindow(x):
    y = y0 + ((RC.lat - Shift.lat) * latScale * scale)  # pix, shifted by x0
    w.create_line(x0, y0, x, y, fill="#476042", width=3)
 
-   # This is actual RC from current gps
-   p = gpsConnection(GPS_HOST, GPS_PORT).getGPS()
-   x = x0 + ((p.lon - Shift.lon) * lonScale * scale)  # pix, shifted by x0
-   y = y0 - ((p.lat - Shift.lat) * latScale * scale)  # pix, shifted by x0
-   w.create_text(x, y, text="<RC>") # actual RC gps position on plot
+   if option == 2 :
+      # This is actual RC from current gps
+      p = gpsConnection(GPS_HOST, GPS_PORT).getGPS()
+      x = x0 + ((p.lon - Shift.lon) * lonScale * scale)  # pix, shifted by x0
+      y = y0 - ((p.lat - Shift.lat) * latScale * scale)  # pix, shifted by x0
+      w.create_text(x, y, text="<RC>") # actual RC gps position on plot
 
+      # Put next in a parallel loop, since each must wait for timeout on many that 
+      # are out of range
+
+      # n_jobs = number of processes 
+      pts = Parallel(n_jobs=len(gpsList))(delayed(foo)(f[0], f[1], f[2]) for f in gpsList)
+
+      for p in pts :
+        if p[1] is not None : 
+            x = x0 + ((p[1].lon - Shift.lon) * lonScale * scale) 
+            y = y0 - ((p[1].lat - Shift.lat) * latScale * scale) 
+            w.create_text(x, y, text='<' +p[0] +'>') # put gps position on plot
+            logging.debug(p[0] +'  ' + str(p[1].lat) + ' ' + str(p[1].lon))
+        else :
+            logging.debug(p[0] +'  None' )
+            pass
+
+      #pts = []
+      #for f in gpsList :
+      #       p = gpsConnection(f[1], f[2]).getGPS()
+      #   if p is not None : 
+      #      pts.append((f[0], p))
+      #   else :
+      #      pass
+      #
+      #for p in pts :
+      #      x = x0 + ((p[1].lon - Shift.lon) * lonScale * scale) 
+      #      y = y0 - ((p[1].lat - Shift.lat) * latScale * scale) 
+      #      w.create_text(x, y, text='<' +p[0] +'>') # put gps position on plot
 
 def updateStatus(w, revd):
    
@@ -544,8 +579,24 @@ def gpsWindow(w):
    t = tkinter.Toplevel()
    t.wm_title("Other GPS Status    lat    lon")
 
-   # list of tuples (name, host, port)
-   # gpsList=(('RC', GPS_HOST, GPS_PORT), ('pin', GPS_HOST, GPS_PORT)) #faking
+   # THIS WOULD BE FASTER BUT NEEDS gpsd TO HANDLE MULTIPLE CONNECTIONS
+   ## Put next in a parallel loop, since each must wait for timeout on many that 
+   ## are out of range
+   #pts = Parallel(n_jobs=len(gpsList))(delayed(foo)(f[0], f[1], f[2]) for f in gpsList)
+   #
+   #for pt in pts :
+   #   row = tkinter.Frame(t)
+   #   if pt[1] is None : 
+   #      logging.info(pt[0] + '       no gps connection.' )
+   #      lab = tkinter.Label(row, width=30, text=pt[0] + '   *****' , anchor='w')
+   #   else :
+   #      logging.info(pt[0] + ' ' + str(pt[1].lat) + ' ' +str(pt[1].lon))
+   #      lab = tkinter.Label(row, width=50, text=pt[0] + '   ' + 
+   #                  str(pt[1].lat) + '  '  + str(pt[1].lon) , anchor='w')
+   #   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
+   #   lab.pack(side=tkinter.LEFT)
+
+
    for f in gpsList :
       row = tkinter.Frame(t)
       logging.info('gpsWindow connect ' + f[0] +' ' + f[1] +':'+ f[2])
@@ -594,6 +645,7 @@ def extraWindow(w):
    bDbg = But(t, text='debugInfo',         command=(lambda : debugWindow(t)))
 
    bP   = But(t, text='plot',              command=(lambda : plotWindow(t)))
+   bP2  = But(t, text='plot with\n boats', command=(lambda : plotWindow(t,2)))
 
    bG   = But(t, text='other\n GPS',       command=(lambda : gpsWindow(t)))
 

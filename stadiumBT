@@ -99,7 +99,7 @@ class zoneSignal(threading.Thread):
 
       if self.GPScon.getGPS() is None :
          # do not kill the thread, it may be temporary
-         logging.warning("stadiumBT cannot get GPS position at initialization.")
+         logging.warning("stadiumBT cannot yet get GPS position at initialization.")
          LEDs.setLEDs('noGPSfix', ' at initialization.')
       else :
          LEDs.setLEDs('off', ' at initialization.')
