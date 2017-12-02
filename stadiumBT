@@ -43,24 +43,6 @@ from distribution import distributionCheck
 #                    level=logging.DEBUG, format=logFormat,)
 
 
-# Read config variable RC_IP, RC_PORT, BT_ID  from file BTconfig
-# in the working directory. 
-#    IF THE FILE IS NOT AVAILABLE THE PROGRAM WILL FAIL.
-#The file is json and can be generated in python by 
-# import json
-#  (edit next line example as required)
-# config = {'BT_ID' : 'boat 1', 'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001, "GPS_HOST": "127.0.0.1",  "GPS_PORT": 2947}
-# json.dump(config, open('BTconfig', 'w'))
-# The file can also be editted by hand with care to preserve the dict structure.
-
-# read config
-config = json.load(open('BTconfig'))   
-BT_ID   = config['BT_ID']
-RC_IP   = config['RC_IP']
-RC_PORT = int(config['RC_PORT'])
-GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
-GPS_PORT = int(config['GPS_PORT']) # 2947 is default
-
 # cid needs to be global as it is used and changed by both zoneSignal and 
 # distributionCheck threads. The usual update would be in zoneSignal, after
 # an update has been signalled by distributionCheck. But distributionCheck
@@ -94,8 +76,9 @@ class zoneSignal(threading.Thread):
 
       self.t = open("track.txt","w") 
 
-      logging.debug('stadiumBT trying GPS at ' + GPS_HOST + ':' + str(GPS_PORT))
-      self.GPScon = gpsConnection(GPS_HOST, GPS_PORT)
+      config = json.load(open('GPSconfig'))   # read config
+      logging.debug('stadiumBT trying GPS at ' + config['GPS_HOST'] + ':' + str(config['GPS_PORT']))
+      self.GPScon = gpsConnection(config['GPS_HOST'], int(config['GPS_PORT']))
 
       if self.GPScon.getGPS() is None :
          # do not kill the thread, it may be temporary
@@ -230,7 +213,7 @@ if __name__ == '__main__':
    update   = threading.Event()
    shutdown = threading.Event()
 
-   distributionCheck(RC_IP, RC_PORT, BT_ID, update, shutdown).start()
+   distributionCheck(update, shutdown).start()
 
    zoneSignal(update, shutdown).start()
 

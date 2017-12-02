@@ -24,23 +24,34 @@ import smp
 
 ####### this class is used only by BT #######
 
+# Read config variable RC_IP, RC_PORT, BT_ID  from file BTconfig
+# in the working directory. 
+#    IF THE FILE IS NOT AVAILABLE THE PROGRAM WILL FAIL.
+#The file is json and can be generated in python by 
+# import json
+#  (edit next line example as required)
+# config = {'BT_ID' : 'boat 1', 'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001}
+# json.dump(config, open('BTconfig', 'w'))
+# The file can also be editted by hand with care to preserve the dict structure.
+
 class distributionCheck(threading.Thread):
    """Threading object used by BT to check for and load new zone information objects."""
    
-   def __init__(self, RC_IP, RC_PORT, BT_ID, update, shutdown):
+   def __init__(self, update, shutdown):
       threading.Thread.__init__(self)
-      #RC_IP, RC_PORT could be read here from config rather than passed
+
+      config = json.load(open('BTconfig'))   # read config
+
       self.name='distributionCheck'
 
-      self.RC_IP   = RC_IP
-      self.RC_PORT = RC_PORT
-      self.BT_ID   = BT_ID
+      self.BT_ID   = config['BT_ID']
+      self.RC_IP   = config['RC_IP']
+      self.RC_PORT = int(config['RC_PORT'])
       self.update = update
       self.shutdown = shutdown
 
       self.sleepInterval = 10
 
-      #THIS WOULD BE CLEANER IF JSON ALWAYS HAD 'none' rather than None
       # This loads an active zoneObj if it exists, so gadget is a bit
       # robust to an accidental reboot. (distributionCheck only needs the cid)
       global cid  # see note in stadiumBT re zoneSignal and cid
@@ -54,7 +65,7 @@ class distributionCheck(threading.Thread):
 
    def run(self):
       global cid  # see note in stadiumBT re zoneSignal and cid
-      logging.info('distributionCheck starting')
+      logging.info('distributionCheck started')
       logging.info('   ' + self.BT_ID + ' watching for RC at ' + self.RC_IP + ':' + str(self.RC_PORT))
 
       while not self.shutdown.is_set():   
@@ -112,23 +123,37 @@ class distributionCheck(threading.Thread):
 
 distRecvd = {}
 
+# Read config variable RC_IP, RC_PORT  from file RCconfig
+# in the working directory. 
+#    IF THE FILE IS NOT AVAILABLE THE PROGRAM WILL FAIL.
+#The file is json and can be generated in python by 
+# import json
+#  (edit next line example as required)
+# config = {'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001}
+# json.dump(config, open('RCconfig', 'w'))
+# The file can also be editted by hand with care to preserve the dict structure.
+
 class distributer(threading.Thread):
-   """Threading object used by RC listen for BTs checking in."""
-   # Wait for connections from BTs and pass each to a BThandlerThread.
-   # Maintain zoneObj.
-   # Maintain list distRecvd of boats that have received a distribution.
+   """
+   Threading object used by RC to listen for BTs checking in.
    
-   #RC_IP, RC_PORT could be read here from config rather than passed
-   def __init__(self, RC_IP, RC_PORT, shutdown):
+   This thread waits for connections from BTs and pass each to a BThandlerThread.
+   It keeps the current zoneObj to distribute.
+   It maintains the list distRecvd of boats that have received a distribution.
+   """
+
+   def __init__(self, shutdown):
       threading.Thread.__init__(self)
 
       self.name='distributer'
-      logging.info('distributer starting. Using RC_IP ' + str(RC_IP) + ':' +str(RC_PORT))
-      
       self.shutdown=shutdown
+
+      config = json.load(open('RCconfig'))   # read config
+
       self.tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       self.tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-      self.tcpsock.bind((RC_IP, RC_PORT))
+      self.tcpsock.bind((config['RC_IP'], int(config['RC_PORT'])))
+
       # without timeout the while loop waits indefinitely when no BT connect,
       # so never checks for shutdown.
       self.tcpsock.settimeout(5)
@@ -145,6 +170,9 @@ class distributer(threading.Thread):
          self.zoneObj = None
          cid =  None
       
+      logging.info('distributer initialized.')
+      logging.debug('    using '+ config['RC_IP'] + ':' + str(config['RC_PORT']))
+
    def run(self):
       #logging.debug("distributer started.")
       while not  self.shutdown.is_set() :
@@ -202,9 +230,12 @@ class distributer(threading.Thread):
          raise RuntimeError("zoneObj is None. Refusing to distribute.")
 
 class BThandlerThread(threading.Thread):
-   """Threading object used by RC to handle a BT connection.
+   """
+   Threading object used by RC to handle a BT connection.
    
-   Check if BT is current and update with new zone information if not."""
+   Check if BT is current and update with new zoneObj information if not.
+   Update global distRecvd when a BT has been updated.
+   """
 
    def __init__(self, ip, port, sock, zoneObj):
        threading.Thread.__init__(self)

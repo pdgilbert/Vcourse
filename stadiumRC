@@ -39,20 +39,7 @@ logging.basicConfig(level=logging.DEBUG, format=logFormat,)
 #logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 
-# Read config variable RC_IP, RC_PORT  from file RCconfig
-# in the working directory. 
-#    IF THE FILE IS NOT AVAILABLE THE PROGRAM WILL FAIL.
-#The file is json and can be generated in python by 
-# import json
-#  (edit next line example as required)
-# config = {'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001, "GPS_HOST": "127.0.0.1",  "GPS_PORT": 2947}
-# json.dump(config, open('RCconfig', 'w'))
-# The file can also be editted by hand with care to preserve the dict structure.
-
-# read config
-config = json.load(open('RCconfig'))   
-RC_IP   = config['RC_IP']
-RC_PORT = int(config['RC_PORT'])
+config = json.load(open('GPSconfig'))   
 GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
 GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
@@ -166,8 +153,6 @@ def readRaceFile(w, filename = None):
 
    writeRaceWindow() #sync screen from globals
 
-# just for testing: maintain con as global to check if changed by other GPS
-RCgpsCon = gpsConnection(GPS_HOST, GPS_PORT)
 
 def getRCgps():
    # update global RC and write to screen
@@ -506,6 +491,7 @@ def plotWindow(x, option=1):
    w.create_line(x0, y0, x, y, fill="#476042", width=3)
 
    if option == 2 :
+      # NB this does not work correctly (I think  because gpsd use a global stream).
       # This is actual RC from current gps
       p = gpsConnection(GPS_HOST, GPS_PORT).getGPS()
       x = x0 + ((p.lon - Shift.lon) * lonScale * scale)  # pix, shifted by x0
@@ -627,9 +613,6 @@ def extraWindow(w):
      print(dr.distributionRecvd())
      print('distribution.distRecvd')
      print(distribution.distRecvd)
-     # This is only as recorded in RCgpsCon. gpsd uses global stream so the actual
-     # result of RCgpsCon.getGPS() may be coming from elsewhere. TEST IT
-     print("RCgpsCon " + RCgpsCon.host + ":" + str(RCgpsCon.port))
 
    t = tkinter.Toplevel()
    t.wm_title("Extra Options")
@@ -659,7 +642,7 @@ if __name__ == '__main__':
    logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    shutdown = threading.Event()
 
-   dr = distribution.distributer(RC_IP, RC_PORT, shutdown)
+   dr = distribution.distributer(shutdown)
    
    dr.start() 
    
