@@ -195,12 +195,79 @@ With gspd mode rather than NMEA data is flowing, but something is wrong format?
      return (0,0) as the connection or GPS seem to take awhile to wake up.
      Try again after a few seconds.
 
+********   note on systemd services  (esp gpsd) ###############
+
+Note that it can be difficult to shut down the  gpsd servicestarted on boot, 
+socket connections will keep restarting it. If stadiumBT is running then it gets 
+activated by gpsd.socket calls. Hotplug may also have a affect?
+(And NB, if stadiumBT is set to automatically start on boot then it will be
+running if it has not been killed.)
+
+Use these to  check / stop
+  ps -elf | grep gps
+  systemctl status  gpsd
+  service --status-all | grep gpsd
+
+  systemctl stop gpsd
+  systemctl disable gpsd
+  ps -elf | grep gps
+
+  killall gpsd
+  rm /var/run/gpsd.sock  #Remove any sockets gpsd left
+  [  lsof -n | grep /dev/ttyACM0 ]
+
+and retart 
+  systemctl start gpsd
+  systemctl enable gpsd
+
+and check
+  tail /var/log/syslog
+
 ********   exposing  GPS   ###############
+See
+  http://www.catb.org/gpsd/troubleshooting.html under Ubuntu/Debian
+
+and esp. regarding using  -G at boot see
+  https://lists.gnu.org/archive/html/gpsd-users/2017-03/msg00010.html
+
+amd general background on sockets at
+  https://askubuntu.com/questions/817294/systemd-init-bind-to-port
+
+
 gpsd will listen on  all addresses with -G. 
-      gpsd -G -S 2947  -N -n /dev/ttyACM0
+   gpsd -G -S 2947 -N  -n /dev/ttyACM0 # [ -N Don't daemonize for debugging ]
 
 This will allow anyone on the network (e.g. RC) to obtain gps info. (There is an
-obvious security question.) Test with gpsmon from remote.
+obvious security question.) Test with gpsmon from a remote system using:
+
+    gpsmon tcp://10.42.0.10:2947   # e.g.
+
+To expose at system  boot startup,  
+   cp /lib/systemd/system/gpsd.socket /etc/systemd/system/gpsd.socket
+and  in the copy modify  127.0.0.1:2947 to 0.0.0.0:2947 
+and see https://lists.gnu.org/archive/html/gpsd-users/2017-03/msg00010.html
+for some additional possible changes.
+
+Then edit /etc/systemd/system/gpsd.service as in above link so 
+that /etc/default/gpsd is not used, or edit /etc/default/gpsd to 
+add GPSD_OPTIONS="-G -S 2947 -n"
+
+Then
+    systemctl stop gpsd
+    systemctl daemon-reload
+    systemctl enable gpsd
+    systemctl start gpsd
+    tail /var/log/syslog 
+
+and if it failed for socket already in use then go through the steps above
+(in note on systemd services) to make sure all gpsd instances are stopped.
+
+Reboot the system and check
+  netstat -lpn
+
+When start/stopping gpsd the warning 
+ insserv: warning: current ... of script `gpsd' overrides LSB defaults ...
+seems to be harmless.
 
 ********   GPS devices disconnecting  ###############
 
