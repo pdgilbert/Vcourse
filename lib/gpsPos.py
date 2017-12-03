@@ -85,6 +85,7 @@ class gpsConnection():
          except:
             return(None)
       logging.debug('getGPS:' + str(p.lat) + ' ' + str(p.lon) )
+      if (p.lat, p.lon) == (0, 0) : return(None) # occassional error result in gpsd
       return(gpsPos(p.lat, p.lon, p.time))
 
 class gpsPos():
