@@ -273,14 +273,15 @@ seems to be harmless.
 
 (Following is on laptop with stadiumRC and somewhat less reliably on Pi with gpsmon. 
  with python gpsd on Pi there is some caching) 
-If a gps device disappears the gpsd deamon drops it and does
-not automatically re-connected if it becomes active again. This fixes it when
-it is active again: 
+If a gps device disappears (e.g unplugged or inside building) the gpsd deamon drops it 
+and does not automatically re-connect when it starts working again. 
 
-   [gpsdctl remove  /dev/ttyACM0 ]    # e.g. happens automatically
-   gpsdctl add /dev/ttyACM0           # e.g.
+This fixes it when it is working again: 
+
+   [sudo gpsdctl remove  /dev/ttyACM0 ]    # e.g. happens automatically
+   sudo gpsdctl add /dev/ttyACM0           # e.g.
 or
-   gpsdctl add tcp://10.42.0.74:6000  # e.g.
+   sudo gpsdctl add tcp://10.42.0.74:6000  # e.g.
 
 The same problem occurs when a USB gps is unplugged. Hotplug is suppose to do
 the gpsdctl add but there appears to be a conflict/issue.
@@ -288,10 +289,6 @@ the gpsdctl add but there appears to be a conflict/issue.
 The gpsdctl command needs to run with the same permissions as the gpsd was
 started with.  (And the GPSD_SOCKET environment variable indicating the control
 socketdefaults to /var/run/gpsd.sock  for root and /tmp/gpsd.sock otherwise.)
-
- if
-       the effective user ID of this program is root, /tmp/gpsd.sock
-       otherwise.
 
 ********  multiple GPS devices with GPS2Net or Share GPS###############
 

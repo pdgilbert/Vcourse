@@ -79,13 +79,12 @@ class LEDs(threading.Thread):
         for c in self.channels :
            self.FLASH[c] = False
            print(str(c) + ' off.')
-    def join(self):  
-        # join should not be called from outside because not all implementations
-        # of the class need threads. Use cleanup() instead.
-        self.stoprequest.set()
+    # join() should not be called from outside because not all implementations
+    # of the class need threads. Use cleanup() instead.
     def cleanup(self): 
         logging.info('LEDs cleanup() for shutdown.')
-        self.join()
+        self.stoprequest.set()
+        #self.join() ??
 
 #leds = LEDs((RED, GREEN, BLUE), 2, 20) #  (channels, frequency, dc)
 #leds.start()
