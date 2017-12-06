@@ -248,7 +248,7 @@ class BThandlerThread(threading.Thread):
        #logging.debug('in BThandlerThread.run()')
        #logging.debug(str(self.zoneObj))
 
-       #course id that RC has
+       #course (zone) id that RC has
        if self.zoneObj is None :
                 RCcid = None
        else :   RCcid = self.zoneObj['cid']

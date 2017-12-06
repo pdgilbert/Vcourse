@@ -1,5 +1,5 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
-"""Object for overall race management, not specific to a courseType."""
+"""Object for overall race management, not specific to a zoneType."""
 
 import json
 import tkinter
@@ -27,7 +27,7 @@ GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 # set initial default race parameters
 #  Could save last on exit and reload ?
 
-ty   = 'stadium'    # course type
+ty   = 'stadium'    # zone type
 fl   = 'no fleet'   # fleet
 dc   = 'race 1'     # description
 
@@ -40,7 +40,7 @@ ax   = 240          # course bearing (degrees)
 ll   = 100          # start line length (m)
 tt   = 0            # target start time
 
-#def makeCourseTypeObj():
+#def makeZoneTypeObj():
 if ty == 'stadium':  CTobj = stadium.stadium()
 
 
@@ -51,13 +51,13 @@ def defnRCWindow(w):
    #    co-ordinated if fields are changed !!!
    global ents
    fldLabels = [
- 	'course type', 
+ 	'zone type', 
  	'fleet', 
  	'description', 
- 	'RC	latitude',
- 	'RC	longitude',
- 	'start center latitude', 
- 	'start center longitude',
+ 	'RC       latitude',
+ 	'RC      longitude',
+ 	'start center lat.', 
+ 	'start center lon.',
  	'mark 1 latitude',	
  	'mark 1 longitude',	
  	'length (nm)', 
@@ -163,7 +163,7 @@ def makezoneObj():
    r = {
       'cid'       : cid,
       'courseDesc'       : dc,
-      'courseType'       : 'stadium',
+      'zoneType'         : 'stadium',
       'distributionTime' : distributionTime,
       'length' :  cl,  # course length
       'axis'   :  ax,  # axis (degrees)
@@ -295,7 +295,7 @@ def getRCgps():
 
 #########################       Extra  Window            ######################### 
 
-def courseTypeParms(w):
+def zoneTypeParms(w):
    global CTobj
    w.destroy()
    CTobj.edit()
@@ -533,7 +533,7 @@ def extraWindow(w):
    t = tkinter.Toplevel()
    t.wm_title("Extra Options")
 
-   But(t, text='Set Course\nType Parms', command=(lambda : courseTypeParms(t)))
+   But(t, text='Set Zone\nType Parms',   command=(lambda : zoneTypeParms(t)))
    But(t, text='Save\nRace Parms',       command=(lambda : writeRaceFile(t)))
    But(t, text='Load Saved\nRace Parms', command=(lambda : readRaceFile(t)))
    But(t, text='Re-read\n BoatList',     command=(lambda : readBoatList(t)))
