@@ -1,6 +1,7 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 """Object for overall race management, not specific to a zoneType."""
 
+import logging
 import json
 import tkinter
 from tkinter import filedialog
@@ -59,12 +60,28 @@ def Drop(w, options=['one', 'two'], default=0) :
    return v
 
 
+#########################    Main  Window  Functions     ######################### 
+
+def getRCgps():
+   # update global RC and write to screen
+   global  RC
+   RC = gpsConnection(GPS_HOST, GPS_PORT).getGPS()
+   if RC == None :
+      RC   = gpsPos(90.0, 0.0)  # this is really an error condition
+      logging.info('attempted gpsd connection '   + str(GPS_HOST) + ':' +  str(GPS_PORT))
+      logging.info('gpsd connection failed. No RC automatic position available.')
+   writeRCWindow()
+
 #################### MAKE THIS A CLASS AS FOR STADIUM  ####################
-def defnRCWindow(w):
+def defnRCWindow(w, dr):
    # fields on RC Window main page
    # NB This functionand the next two (writeRCWindow and readRCWindow) MUST be
    #    co-ordinated if fields are changed !!!
    global ents, zoneChoice
+
+   w.wm_title("RC Management")
+   #w.bind('<Return>', (lambda event, e=ents: readRaceWindow(e)))   
+   w.bind('<Return>', (lambda event : readRCWindow()))   
    
    row = tkinter.Frame(w)
    lab = tkinter.Label(row, width=15, text="Zone Type", anchor='w')
@@ -100,10 +117,24 @@ def defnRCWindow(w):
       entries.append((e))
       i += 1
    ents = entries
+  
+   But(w,  text='get RC GPS',     command=(lambda : getRCgps()))
+   But(w,  text='calc using\n RC & axis',           command=calcA)
+   But(w,  text='calc using\n RC & mark',           command=calcM)
+   But(w,  text='calc using start\n center & mark', command=calcS)
+   But(w,  text='distribute',  command=(lambda :  dr.distribute(makezoneObj())))
+   But(w,  text='update\nStatus',
+                      command=(lambda : updateStatus(w, dr.distributionRecvd())))
+   But(w, text='extra',        command=(lambda : extraWindow()))
+
+   writeRCWindow()
+
 
 def writeRCWindow():
    # re-write screen with current  global variables
    global ents
+   
+   zoneChoice.set(ty)
 
    for i in range (0, len(ents)):
       ents[i].delete(0, tkinter.END)
@@ -121,15 +152,15 @@ def readRCWindow():
    
    ty = zoneChoice.get()
 
-   fl = str(ents[1].get())
-   dc = str(ents[2].get())
-   RC = gpsPos(float(ents[3].get()),  float(ents[4].get()))
-   S  = gpsPos(float(ents[5].get()),  float(ents[6].get()))
-   M  = gpsPos(float(ents[7].get()), float(ents[8].get()))
-   cl = float(ents[9].get()) 
-   ax = float(ents[10].get()) 
-   ll = float(ents[11].get()) 
-   tt = float(ents[12].get()) 
+   fl = str(ents[0].get())
+   dc = str(ents[1].get())
+   RC = gpsPos(float(ents[2].get()),  float(ents[3].get()))
+   S  = gpsPos(float(ents[4].get()),  float(ents[5].get()))
+   M  = gpsPos(float(ents[6].get()), float(ents[7].get()))
+   cl = float(ents[8].get()) 
+   ax = float(ents[9].get()) 
+   ll = float(ents[10].get()) 
+   tt = float(ents[11].get()) 
 
 #  THIS IS NOT CLEAN YET. NEED PARTS FROM STADIUM AND PARTS FROM RC
 def makezoneObj():
@@ -295,18 +326,6 @@ def calcS():
    
    writeRCWindow() # re-write screen with current globals
 
-
-#########################    Main  Window  Functions     ######################### 
-
-def getRCgps():
-   # update global RC and write to screen
-   global  RC
-   RC = gpsConnection(GPS_HOST, GPS_PORT).getGPS()
-   if RC == None :
-      RC   = gpsPos(90.0, 0.0)  # this is really an error condition
-      logging.info('attempted gpsd connection '   + str(GPS_HOST) + ':' +  str(GPS_PORT))
-      logging.info('gpsd connection failed. No RC automatic position available.')
-   writeRCWindow()
 
 #########################       Extra  Window            ######################### 
 
@@ -544,7 +563,7 @@ def updateStatus(w, revd):
             lab.pack(side=tkinter.LEFT)
 
 
-def extraWindow(w):
+def extraWindow():
    t = tkinter.Toplevel()
    t.wm_title("Extra Options")
 
@@ -621,14 +640,16 @@ def extraMoreWindow(w):
      w.destroy()
 
      print('globals')
-     for f in (cl, ax, ll, sw, RC, S, M, wn, cc, tt): print(f)
+     for f in (cl, ax, ll, RC, S, M, tt): print(f)
      print()
+     print('Zone parms:')
+     print(ZTobj.parms())
      print('zoneObj')
      dr.prt()
      print('threads')
      print(str(threading.enumerate()))
-     print('dr.distributionRecvd()')
-     print(dr.distributionRecvd())
+     #print('dr.distributionRecvd()')
+     #print(dr.distributionRecvd())
      print('distribution.distRecvd')
      print(distribution.distRecvd)
 

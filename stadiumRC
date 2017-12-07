@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 """
-Run on race committee to set the course and distribute to racing boats.
+Run by race committee to set the course and distribute to racing boats.
 
 This progam needs PYTHONPATH setting to find other modules, e.g.
 
@@ -22,8 +22,7 @@ import tkinter
 import sys
 
 import distribution
-import RCmanagement as  mng
-from RCmanagement import But
+import RCmanagement
 
 logFormat ='(%(threadName)-9s) %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=logFormat,)
@@ -36,30 +35,8 @@ if __name__ == '__main__':
    dr = distribution.distributer(shutdown)
    dr.start() 
    
-   logging.debug(threading.enumerate())
-
    race = tkinter.Tk()
-   race.wm_title("RC Management")
-   #race.bind('<Return>', (lambda event, e=ents: readRaceWindow(e)))   
-   race.bind('<Return>', (lambda event : readRCWindow()))   
-
-   mng.defnRCWindow(race)
-   mng.writeRCWindow()
-  
-   But(race,  text='get RC GPS',     command=(lambda : mng.getRCgps()))
-   
-   But(race,  text='calc using\n RC & axis',           command=mng.calcA)
-   
-   But(race,  text='calc using\n RC & mark',           command=mng.calcM)
-   
-   But(race,  text='calc using start\n center & mark', command=mng.calcS)
-   
-   But(race,  text='distribute',  command=(lambda :  dr.distribute(mng.makezoneObj())))
-
-   But(race,  text='update\nStatus',
-                      command=(lambda : mng.updateStatus(race, dr.distributionRecvd())))
-
-   But(race, text='extra',        command=(lambda : mng.extraWindow(race)))
+   RCmanagement.defnRCWindow(race, dr)
 
    def abortHandler(signum, frame):
        logging.debug('main thread abortHandler setting shutdown signal.')
@@ -73,6 +50,8 @@ if __name__ == '__main__':
    # ^C works if process is not deamonized with &
    signal.signal(signal.SIGINT,  abortHandler) # ^C, kill -2
    signal.signal(signal.SIGTERM, abortHandler) # kill -15 (default)
+
+   logging.debug(threading.enumerate())
 
    race.mainloop()
 
