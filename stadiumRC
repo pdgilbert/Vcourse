@@ -1,22 +1,19 @@
 #!/usr/bin/python3
 # License GPL 2. Copyright Paul D. Gilbert, 2017
-"""Run on race committee to set the course and distribute to racing boats.
+"""
+Run on race committee to set the course and distribute to racing boats.
 
-This progam needs a setting to find other modules, e.g.
+This progam needs PYTHONPATH setting to find other modules, e.g.
 
 export PYTHONPATH=/path/to/Vcourse/lib
 
-Configuration for the local course setup is read from RCconfig. A GUI is
-presented to the user for setting a course and distributing to racing boats.
-
+Configuration for the local course setup is read from RCconfig. 
+Configuration for the computer GPS setup is read from GPSconfig. 
+A GUI is opened for setting a course and distributing to racing boats.
 """
 
 __version__ = '0.0.5'
 
-
-# need  export PYTHONPATH=/path/to/Vcourse/lib
-
-#import socket
 import threading
 import signal
 import logging
@@ -32,20 +29,17 @@ logFormat ='(%(threadName)-9s) %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=logFormat,)
 #logging.basicConfig(level=logging.INFO, format=logFormat,)
 
-
-
 if __name__ == '__main__':
    logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    shutdown = threading.Event()
 
    dr = distribution.distributer(shutdown)
-   
    dr.start() 
    
    logging.debug(threading.enumerate())
 
    race = tkinter.Tk()
-   race.wm_title("RC Management NOT Stadium Race")
+   race.wm_title("RC Management")
    #race.bind('<Return>', (lambda event, e=ents: readRaceWindow(e)))   
    race.bind('<Return>', (lambda event : readRCWindow()))   
 

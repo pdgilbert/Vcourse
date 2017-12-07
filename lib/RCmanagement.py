@@ -41,17 +41,38 @@ ll   = 100          # start line length (m)
 tt   = 0            # target start time
 
 #def makeZoneTypeObj():
-if ty == 'stadium':  CTobj = stadium.stadium()
+if ty == 'stadium':  ZTobj = stadium.stadium()  #Zone Type Obj
 
 
-# MAKE THIS A CLASS AS FOR STADIUM
+#########################    Utility  Functions     ######################### 
+
+def But(w, text='x', command='') :
+   b = tkinter.Button(w, text=text,  command=command)
+   b.pack(side=tkinter.LEFT, padx=5, pady=5)
+   return(b)
+
+def Drop(w, options=['one', 'two'], default=0) :
+   v = tkinter.StringVar(w)
+   v.set(options[default]) 
+   b = tkinter.OptionMenu(w, v, *options)
+   b.pack()
+   return v
+
+
+#################### MAKE THIS A CLASS AS FOR STADIUM  ####################
 def defnRCWindow(w):
    # fields on RC Window main page
    # NB This functionand the next two (writeRCWindow and readRCWindow) MUST be
    #    co-ordinated if fields are changed !!!
-   global ents
+   global ents, zoneChoice
+   
+   row = tkinter.Frame(w)
+   lab = tkinter.Label(row, width=15, text="Zone Type", anchor='w')
+   lab.pack(side=tkinter.LEFT)
+   zoneChoice = Drop(row, options=['stadium', 'none'], default = 0)
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
    fldLabels = [
- 	'zone type', 
  	'fleet', 
  	'description', 
  	'RC       latitude',
@@ -88,17 +109,18 @@ def writeRCWindow():
       ents[i].delete(0, tkinter.END)
 
    i = 0
-   for v in (ty, fl, dc, RC.lat, RC.lon, S.lat, S.lon, M.lat, M.lon, cl, ax, ll, tt):
+   for v in (fl, dc, RC.lat, RC.lon, S.lat, S.lon, M.lat, M.lon, cl, ax, ll, tt):
       ents[i].insert(10, str(v))
       i += 1
 
 
 def readRCWindow():
    # update globals from screen
-   # using global ents for entries
+   # using global ents and zoneChoice for entries
    global  ty, fl, RC, S, M, dc, ty, cl, ax, ll, tt
+   
+   ty = zoneChoice.get()
 
-   ty = str(ents[0].get())
    fl = str(ents[1].get())
    dc = str(ents[2].get())
    RC = gpsPos(float(ents[3].get()),  float(ents[4].get()))
@@ -109,6 +131,7 @@ def readRCWindow():
    ll = float(ents[11].get()) 
    tt = float(ents[12].get()) 
 
+#  THIS IS NOT CLEAN YET. NEED PARTS FROM STADIUM AND PARTS FROM RC
 def makezoneObj():
    # This  syncronizes globals dist, generates zoneObj, calls distribute
    # info to pass to stadiumBT (boat gadget) for calculations.
@@ -133,7 +156,7 @@ def makezoneObj():
    # These are positions at intersection of the start line extension and one of
    # the lines parallel to axis used for switching indicators (LEDs) on boats.
 
-   w = CTobj.sw / 1852  # stadium width in nm
+   w = ZTobj.sw / 1852  # stadium width in nm
    perp = (ax - 90 ) % 360 # bearing RC to pin, RC on starboard end of line.
    #                         This is bearing used for extensions of starting line
 
@@ -174,10 +197,10 @@ def makezoneObj():
       'b'      :   b,  # slope constant
       'boundL' :  a(gpsPos.move(S, perp,   w/2 )),                  # constant a for left  boundary
       'boundR' :  a(gpsPos.move(S, perp,  -w/2 )),                  # constant a for right boundary
-      'warnL'  :  a(gpsPos.move(S, perp,  (w/2 - CTobj.wn/1852) )), # constant a for left  warning
-      'warnR'  :  a(gpsPos.move(S, perp, -(w/2 - CTobj.wn/1852) )), # constant a for right warning
-      'centerL':  a(gpsPos.move(S, perp,  CTobj.cc/(2*1852) )),     # constant a for left  center
-      'centerR':  a(gpsPos.move(S, perp, -CTobj.cc/(2*1852) ))      # constant a for right center
+      'warnL'  :  a(gpsPos.move(S, perp,  (w/2 - ZTobj.wn/1852) )), # constant a for left  warning
+      'warnR'  :  a(gpsPos.move(S, perp, -(w/2 - ZTobj.wn/1852) )), # constant a for right warning
+      'centerL':  a(gpsPos.move(S, perp,  ZTobj.cc/(2*1852) )),     # constant a for left  center
+      'centerR':  a(gpsPos.move(S, perp, -ZTobj.cc/(2*1852) ))      # constant a for right center
       }
 
    #check
@@ -273,14 +296,6 @@ def calcS():
    writeRCWindow() # re-write screen with current globals
 
 
-#########################    Utility  Functions     ######################### 
-
-def But(w, text='x', command='') :
-   b = tkinter.Button(w, text=text,  command=command)
-   b.pack(side=tkinter.LEFT, padx=5, pady=5)
-   return(b)
-
-
 #########################    Main  Window  Functions     ######################### 
 
 def getRCgps():
@@ -296,9 +311,9 @@ def getRCgps():
 #########################       Extra  Window            ######################### 
 
 def zoneTypeParms(w):
-   global CTobj
+   global ZTobj
    w.destroy()
-   CTobj.edit()
+   ZTobj.edit()
 
 
 def writeRaceFile(w, filename = None):
@@ -321,7 +336,7 @@ def writeRaceFile(w, filename = None):
       'RC.lat':RC.lat, 'RC.lon':RC.lon, 'S.lat':S.lat, 'S.lon':S.lon, 
       'M.lat':M.lat, 'M.lon':M.lon, 'tt':tt }
       
-      Race.update( CTobj.parms() )
+      Race.update( ZTobj.parms() )
  
       with open(filename, "w") as f:  json.dump(Race, f)
    except :
@@ -353,7 +368,7 @@ def readRaceFile(w, filename = None):
       M    = gpsPos(RF[ 'M.lat'], RF[ 'M.lon'])
       tt   = RF['tt']
 
-      CTobj.setparms(RF)  # setparms() only uses 'sw', 'wn', 'cc'
+      ZTobj.setparms(RF)  # setparms() only uses 'sw', 'wn', 'cc'
    except :
       raise Exception('error defining race parameters from file ' + filename)
 
