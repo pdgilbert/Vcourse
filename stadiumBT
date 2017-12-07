@@ -134,10 +134,10 @@ class ZSsupervisor(threading.Thread):
             self.t.write('new course loaded: ' + cid + '\n' )
             logging.info('  new cid: ' + cid)
  
-            if self.zoneObj['courseType'] == 'stadium' :
+            if self.zoneObj['zoneType'] == 'stadium' :
                zs = stadium_zoneSignal(self.zoneObj,  self.stoprequest, self.GPScon, self.t)
 
-            elif self.zoneObj['courseType'] == 'NoCourse' :
+            elif self.zoneObj['zoneType'] == 'NoCourse' :
                zs = NoCourse_zoneSignal(self.stoprequest, self.GPScon, self.t)
    
             else :
@@ -188,7 +188,7 @@ class NoCourse_zoneSignal(threading.Thread):
          time.sleep(1) 
 
       self.stoprequest.clear()
-      logging.info('Exiting stadium_zoneSignal thread, for new course update or shutdown')
+      logging.info('Exiting NoCourse_zoneSignal thread, for new course update or shutdown')
 
 
 class stadium_zoneSignal(threading.Thread):

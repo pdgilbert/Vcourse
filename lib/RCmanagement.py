@@ -41,8 +41,9 @@ ax   = 240          # course bearing (degrees)
 ll   = 100          # start line length (m)
 tt   = 0            # target start time
 
-#def makeZoneTypeObj():
-if ty == 'stadium':  ZTobj = stadium.stadium()  #Zone Type Obj
+#def makeZoneTypeObj():       #Zone Type Obj
+if   ty == 'stadium' :  ZTobj = stadium.stadium() 
+elif ty == 'NoCourse':  ZTobj =    NoCourse()      
 
 
 #########################    Utility  Functions     ######################### 
@@ -52,7 +53,7 @@ def But(w, text='x', command='') :
    b.pack(side=tkinter.LEFT, padx=5, pady=5)
    return(b)
 
-def Drop(w, options=['one', 'two'], default=0) :
+def Drop(w, options=['zero', 'one', 'two'], default=0) :
    v = tkinter.StringVar(w)
    v.set(options[default]) 
    b = tkinter.OptionMenu(w, v, *options)
@@ -86,7 +87,7 @@ def defnRCWindow(w, dr):
    row = tkinter.Frame(w)
    lab = tkinter.Label(row, width=15, text="Zone Type", anchor='w')
    lab.pack(side=tkinter.LEFT)
-   zoneChoice = Drop(row, options=['stadium', 'none'], default = 0)
+   zoneChoice = Drop(row, options=['stadium', 'NoCourse'], default = 0)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    fldLabels = [
