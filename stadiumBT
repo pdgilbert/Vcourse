@@ -99,15 +99,15 @@ class ZSsupervisor(threading.Thread):
       if self.zoneObj is None:
          zs = NoCourse_zoneSignal(self.stoprequest, self.GPScon, self.t)
       else:
-         if self.zoneObj['courseType'] == 'stadium' :
+         if self.zoneObj['zoneType'] == 'stadium' :
             zs = stadium_zoneSignal(self.zoneObj,  self.stoprequest, self.GPScon, self.t)
    
          # usually this would not be a distributed object but None above
-         elif self.zoneObj['courseType'] == 'NoCourse' :
+         elif self.zoneObj['zoneType'] == 'NoCourse' :
             zs = NoCourse_zoneSignal(self.stoprequest, self.GPScon, self.t)
    
          else :
-               raise Exception('courseType not recognized.')
+               raise Exception('zoneType not recognized.')
  
       zs.start()
 
@@ -141,7 +141,7 @@ class ZSsupervisor(threading.Thread):
                zs = NoCourse_zoneSignal(self.stoprequest, self.GPScon, self.t)
    
             else :
-               raise Exception('courseType not recognized.')
+               raise Exception('zoneType not recognized.')
 
             zs.start()
          
@@ -205,7 +205,7 @@ class stadium_zoneSignal(threading.Thread):
       # compare makezoneObj()  in stadiumRC
       #cid        = zoneObj['cid']
       #courseDesc = zoneObj['courseDesc']
-      #courseType = zoneObj['courseType']
+      #zoneType   = zoneObj['zoneType']
       #distributionTime =zoneObj['distributionTime']
       #length     = zoneObj['length']
       #axis       = zoneObj['axis']
