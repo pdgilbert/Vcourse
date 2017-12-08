@@ -33,7 +33,7 @@ def Drop(w, options=['zero', 'one', 'two'], default=0) :
    v = tkinter.StringVar(w)
    v.set(options[default]) 
    b = tkinter.OptionMenu(w, v, *options)
-   b.pack()
+   b.pack(side=tkinter.LEFT)
    return v
 
 
@@ -74,9 +74,12 @@ class RCmanager():
       # NB writeRCWindow and readRCWindow MUST be with this co-ordinated if fields are changed!!!
 
       row = tkinter.Frame(w)
-      lab = tkinter.Label(row, width=15, text="Zone Type", anchor='w')
-      lab.pack(side=tkinter.LEFT)
+      tkinter.Label(row, width=10, text="Zone Type", anchor='w').pack(side=tkinter.LEFT)
+
       self.zoneChoice = Drop(row, options=['stadium', 'NoCourse'], default = 0)
+      But(row,  text='calc   \n  using',           command=self.calc)
+      self.calcChoice = Drop(row, options=['RC & axis', 'RC & mark', 'start center\n& mark'])
+
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
       fldLabels = [
@@ -109,9 +112,6 @@ class RCmanager():
       self.ents = entries
      
       But(w,  text='get RC GPS',                       command=self.getRCgps)
-      But(w,  text='calc using\n RC & axis',           command=self.calcA)
-      But(w,  text='calc using\n RC & mark',           command=self.calcM)
-      But(w,  text='calc using start\n center & mark', command=self.calcS)
       But(w,  text='distribute',     command=(lambda : dr.distribute(makezoneObj(self))))
       But(w,  text='update\nStatus', command=(lambda : self.updateStatus(w, dr.distributionRecvd())))
       But(w, text='extra',           command=(lambda : extraWindow(self, dr)))
@@ -193,6 +193,16 @@ class RCmanager():
          logging.info('gpsd connection failed. No RC automatic position available.')
       self.writeRCWindow()
 
+   def calc(self):
+      """Calculate race parameters""" 
+
+      ch = self.calcChoice.get()
+
+      if   ch == 'RC & axis'            : self.calcA()
+      elif ch == 'RC & mark'            : self.calcM()
+      elif ch == 'start center\n& mark' : self.calcS()
+      else :
+         raise Exception('Something is wrong. calcChoice not recognized.')
 
    def calcA(self):
       """
