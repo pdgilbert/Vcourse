@@ -36,7 +36,7 @@ if __name__ == '__main__':
    dr.start() 
    
    race = tkinter.Tk()
-   RCmanagement.defnRCWindow(race, dr)
+   z = RCmanagement.RCmanager(race, dr)
 
    def abortHandler(signum, frame):
        logging.debug('main thread abortHandler setting shutdown signal.')

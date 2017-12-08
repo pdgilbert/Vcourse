@@ -28,7 +28,9 @@ class stadium():
       self.cc   = nw['cc']        
   
 
-   def edit(self):
+   def edit(self, w=None):
+      if w is not None : w.destroy() # to destroy calling menu window
+
       def readEntries():
          self.sw = float(entries[0].get())
          self.wn = float(entries[1].get()) 
