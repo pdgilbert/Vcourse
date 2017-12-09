@@ -112,7 +112,7 @@ class RCmanager():
       self.ents = entries
      
       But(w,  text='get RC GPS',                       command=self.getRCgps)
-      But(w,  text='distribute',     command=(lambda : dr.distribute(makezoneObj(self))))
+      But(w,  text='distribute',     command=(lambda : dr.distribute(self.makezoneObj())))
       But(w,  text='update\nStatus', command=(lambda : self.updateStatus(w, dr.distributionRecvd())))
       But(w, text='extra',           command=(lambda : extraWindow(self, dr)))
 
@@ -415,15 +415,12 @@ class RCmanager():
 
 
    def plotWindow(self, x=None, option=1):
-      # note that plot is based on gps and line length. NOT YET. CHANGE USE OF cl
-      #      Changing axis or course length  NOT YET. CHANGE USE OF cl without re-calc does not change plot.
-      #      This allows manual override of gps point (ie don't re-calc)
-
+      """Plot is based on S, M positions and line length, not  cl. The object state is not changed."""
       import math
 
       if x is not None: x.destroy()
 
-      self.readRCWindow() #sync parameters from screen (should not be needed
+      #self.readRCWindow() #sync parameters from screen (should not be needed)
 
       t = tkinter.Toplevel()
       t.wm_title(self.fl + '  ' + self.dc)
@@ -449,10 +446,10 @@ class RCmanager():
       latScale = 60.0  #  nm per degree lat
       lonScale = 60.0 * math.cos(math.radians(self.RC.lat)) #   nm per degree long
 
-      #z    = self.cl /latScale  # course length in degrees (aprox )
-      z    = self.cl   # course length in nm
+      # self.cl /latScale  # course length in degrees (aprox )
+      # self.cl   # course length in nm
 
-      scale = 0.4 * canvas_height / z # pix/nm, course length is 0.4 of plot height
+      scale = 0.4 * canvas_height / self.cl #  pix/nm, course length is 0.4 of plot height
 
       #plot window top left is (0,0), bottom right is (canvas_height, canvas_width)
       # so +ve x is to right (as usual) but +ve y is down (not usual)
@@ -530,107 +527,62 @@ class RCmanager():
 
 
 
-#  THIS IS NOT CLEAN YET. NEED PARTS FROM STADIUM AND PARTS FROM RC
-def makezoneObj(RCobj):
-   # This  syncronizes globals dist, generates zoneObj, calls distribute
-   # info to pass to stadiumBT (boat gadget) for calculations.
-   # Info for stadiumBT is all in gps positions as that is the best for the
-   # boats' calculation of what indicators should go on.
-   # The same info is used by plot but is convert to nm in plot.
+   def makezoneObj(self):
+      """
+      Generate the zoneObj for distribution to boats for calculating LED signals.
       
-   # base on current screen values so ensure correct values in globals
-   RCobj.readRCWindow() 
+      Part of the final zoneObj passed to boats is calculated by RCmanager.makezoneObj()
+      and part by ZTobj.makezoneObj().
+      """ 
 
-   # y = a + b * x
-   # b = (y_1 - y_2) / (x_1 - x_2)
-   # a = y_1 - b * x_1
+      # Ensure parameters  correspond to current screen values.
+      self.readRCWindow() 
 
-   # Use positions at intersection of the start line extension and one of
-   # the lines parallel to axis used for switching indicators (LEDs) on boats.
-   
-   # 0 or 180 axis would give infinite slope is x is longitude, 
-   # so depending on the axis treat domain as longitude (dom=True)
-   # or treat domain as latitude (dom=False)
-   if        45 <= RCobj.ax <= 135 : dom = True
-   elif     225 <= RCobj.ax <= 315 : dom = True
-   else                      : dom = False
+      # y = a + b * x
+      # b = (y_1 - y_2) / (x_1 - x_2)
+      # a = y_1 - b * x_1
+      
+      # 0 or 180 axis would give infinite slope is x is longitude, 
+      # so depending on the axis treat domain as longitude (dom=True)
+      # or treat domain as latitude (dom=False)
+      if        45 <= self.ax <= 135 : dom = True
+      elif     225 <= self.ax <= 315 : dom = True
+      else                      : dom = False
 
+      if dom :
+         if   45 <= self.ax <= 135  : LtoR = False
+         else                       : LtoR = True  # 225 <= self.ax <= 315 
+      else :
+         if   135 <= self.ax <= 225 : LtoR = False 
+         else                       : LtoR = True #(315 <= self.ax <= 360) | (0 <= self.ax <= 45)
 
-   perp = (RCobj.ax - 90 ) % 360 # bearing RC to pin, RC on starboard end of line.
-   #                         This is bearing used for extensions of starting line
+      # cl, M and S are not needed the for stadiumBT calculations but
+      #  are nice for debugging.
+      
+      distributionTime = time.strftime('%Y-%m-%d_%H:%M:%S_%Z')
 
-   # Two positions on axis (S and M) give slope b.
-   if dom : b = (RCobj.M.lat - RCobj.S.lat) / (RCobj.M.lon - RCobj.S.lon)
-   else   : b = (RCobj.M.lon - RCobj.S.lon) / (RCobj.M.lat - RCobj.S.lat)
+      # left and right looking up the course, from race committee (RC) to windward mark (M)
 
-   if dom :
-      if   45 <= RCobj.ax <= 135 : LtoR = False
-      else                       : LtoR = True  # 225 <= RCobj.ax <= 315 
-   else :
-      if   135 <= RCobj.ax <= 225 : LtoR = False 
-      else                        : LtoR = True #(315 <= RCobj.ax <= 360) | (0 <= RCobj.ax <= 45)
-  
-   def a(p):
-      if dom : a = p.lat - b * p.lon 
-      else   : a = p.lon - b * p.lat
-      return a
+      rRC = {
+         'cid'       : self.fl + '-' + self.dc + '-' +  distributionTime,
+         'courseDesc'       : self.dc,
+         'zoneType'         : self.ty,
+         'distributionTime' : distributionTime,
+         'length' :  self.cl,  # course length
+         'axis'   :  self.ax,  # axis (degrees)
+         'S'      :  (self.S.lat, self.S.lon),  # position of center of start line
+         'M'      :  (self.M.lat, self.M.lon),  # position of windward mark
+         'dom'    :  dom, # domain, function of long (true) or latitude (False)
+         'LtoR'   :  LtoR, # True if bounds increase left to right
+         }
 
-   # cl, M and S are not needed the for stadiumBT calculations but
-   #  are nice for debugging.
-   
-   distributionTime = time.strftime('%Y-%m-%d_%H:%M:%S_%Z')
+      r = self.ZTobj.makezoneObj(rRC)  # this adds zone specific parts and returns complete r
 
-   # left and right looking up the course, from race committee (RC) to windward mark (M)
-
-   r = {
-      'cid'       : RCobj.fl + '-' + RCobj.dc + '-' +  distributionTime,
-      'courseDesc'       : RCobj.dc,
-      'zoneType'         : RCobj.ty,
-      'distributionTime' : distributionTime,
-      'length' :  RCobj.cl,  # course length
-      'axis'   :  RCobj.ax,  # axis (degrees)
-      'S'      :  (RCobj.S.lat, RCobj.S.lon),  # position of center of start line
-      'M'      :  (RCobj.M.lat, RCobj.M.lon),  # position of windward mark
-      'dom'    :  dom, # domain, function of long (true) or latitude (False)
-      'LtoR'   :  LtoR, # True if bounds increase left to right
-      'b'      :   b  # slope constant
-      }
-
-   w = RCobj.ZTobj.sw / 1852  # stadium width in nm
-
-   r.update( {
-      'boundL' :  a(gpsPos.move(RCobj.S, perp,   w/2 )),                  # constant a for left  boundary
-      'boundR' :  a(gpsPos.move(RCobj.S, perp,  -w/2 )),                  # constant a for right boundary
-      'warnL'  :  a(gpsPos.move(RCobj.S, perp,  (w/2 - RCobj.ZTobj.wn/1852) )), # constant a for left  warning
-      'warnR'  :  a(gpsPos.move(RCobj.S, perp, -(w/2 - RCobj.ZTobj.wn/1852) )), # constant a for right warning
-      'centerL':  a(gpsPos.move(RCobj.S, perp,  RCobj.ZTobj.cc/(2*1852) )),     # constant a for left  center
-      'centerR':  a(gpsPos.move(RCobj.S, perp, -RCobj.ZTobj.cc/(2*1852) ))      # constant a for right center
-      } )
-
-   #check
-   if r['dom'] :
-      if        not LtoR : 
-         if not ( r['boundR']  < r['warnR'] < r['centerR']  <
-	          r['centerL'] < r['warnL'] < r['boundL'] ) :
-	          raise ValueError("something is messed up in 45 <= ax <= 135.")
-      elif       LtoR : 
-         if not ( r['boundL']  < r['warnL'] < r['centerL']  <
-	          r['centerR'] < r['warnR'] < r['boundR'] ) :
-	          raise ValueError("something is messed up in 225 <= ax <= 315.")
-      else :  raise ValueError("something is messed up in dom=True.")
-   
-   if not  r['dom'] :
-      if        not LtoR : 
-         if not ( r['boundR']  < r['warnR'] < r['centerR']  <
-	          r['centerL'] < r['warnL'] < r['boundL'] ) :
-	          raise ValueError("something is messed up in 135 <= ax <= 225.")
-      elif     LtoR : 
-         if not ( r['boundL']  < r['warnL'] < r['centerL']  <
-	          r['centerR'] < r['warnR'] < r['boundR'] ) :
-	          raise ValueError("something is messed up in (315 <= ax <= 360) | (0 <= ax <= 45).")
-      else :  raise ValueError("something is messed up in dom=False.")
-
-   return r
+      if not self.ZTobj.verifyzoneObj(r) :
+         raise Exception('error verifying zoneObj.')
+         return None
+      else :
+         return r
 
 #########################       Extra  Window            ######################### 
 ######################### (possibly be an object too?)   ######################### 

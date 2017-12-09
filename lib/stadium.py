@@ -2,6 +2,7 @@
 """Object for stadium race."""
 
 import tkinter
+from gpsPos import gpsPos
 
 
 class stadium():
@@ -56,3 +57,79 @@ class stadium():
       b = tkinter.Button(t, text='save',  command=readEntries)
       b.pack(side=tkinter.RIGHT, padx=5, pady=5)
 
+   def makezoneObj(self, r):
+      """
+      Add stadium specific parts to the zoneObj for distribution to boats for calculating LED signals.
+      """
+      LtoR = r["LtoR"]
+      dom  = r["dom"]
+      S    = r["S"]
+      S    = gpsPos(S[0], S[1])
+      M    = r["M"]
+      M    = gpsPos(M[0], M[1])
+
+      # y = a + b * x
+      # b = (y_1 - y_2) / (x_1 - x_2)
+      # a = y_1 - b * x_1
+
+      # Use positions at intersection of the start line extension and one of
+      # the lines parallel to axis used for switching indicators (LEDs) on boats.
+     
+      def a(p):
+         if dom : a = p.lat - b * p.lon 
+         else   : a = p.lon - b * p.lat
+         return a
+
+      # Two positions on axis (S and M) give slope b.
+      if dom : b = (M.lat - S.lat) / (M.lon - S.lon)
+      else   : b = (M.lon - S.lon) / (M.lat - S.lat)
+
+      w = self.sw / 1852  # stadium width in nm
+
+      perp = (r["axis"] - 90 ) % 360 # bearing RC to pin, RC on starboard end of line.
+      #                         This is bearing used for extensions of starting line
+
+      r.update( {
+         'b'      :   b,                                              # slope constant
+         'boundL' :  a(gpsPos.move(S, perp,   w/2 )),                 # constant a for left  boundary
+         'boundR' :  a(gpsPos.move(S, perp,  -w/2 )),                 # constant a for right boundary
+         'warnL'  :  a(gpsPos.move(S, perp,  (w/2 - self.wn/1852) )), # constant a for left  warning
+         'warnR'  :  a(gpsPos.move(S, perp, -(w/2 - self.wn/1852) )), # constant a for right warning
+         'centerL':  a(gpsPos.move(S, perp,  self.cc/(2*1852) )),     # constant a for left  center
+         'centerR':  a(gpsPos.move(S, perp, -self.cc/(2*1852) ))      # constant a for right center
+         } )
+
+      return r
+
+
+   def verifyzoneObj(self, r):
+      """check zoneOb and return True or raise exceptions in which case nothing is returned."""
+
+      LtoR = r["LtoR"]
+      dom  = r["dom"]
+      
+      if dom :
+         if        not LtoR : 
+            if not ( r['boundR']  < r['warnR'] < r['centerR']  <
+                                 r['centerL'] < r['warnL'] < r['boundL'] ) :
+                                 raise ValueError("something is messed up in 45 <= ax <= 135.")
+         elif       LtoR : 
+            if not ( r['boundL']  < r['warnL'] < r['centerL']  <
+                                 r['centerR'] < r['warnR'] < r['boundR'] ) :
+                                 raise ValueError("something is messed up in 225 <= ax <= 315.")
+         else :  
+                                 raise ValueError("something is messed up in dom=True.")
+      
+      if not  dom :
+         if        not LtoR : 
+            if not ( r['boundR']  < r['warnR'] < r['centerR']  <
+                                 r['centerL'] < r['warnL'] < r['boundL'] ) :
+                                 raise ValueError("something is messed up in 135 <= ax <= 225.")
+         elif     LtoR : 
+            if not ( r['boundL']  < r['warnL'] < r['centerL']  <
+                                 r['centerR'] < r['warnR'] < r['boundR'] ) :
+                                 raise ValueError("something is messed up in (315 <= ax <= 360) | (0 <= ax <= 45).")
+         else :  
+                                 raise ValueError("something is messed up in dom=False.")
+
+      return True
