@@ -23,31 +23,33 @@ hard to visually distinguish.
 
 """
 
-__version__ = '0.0.3'
-
-
 import subprocess
 import time
 import logging
 
-try:
-   hw = str(subprocess.check_output("grep Hardware /proc/cpuinfo", shell=True))
-except:
-   try:
-     hw = str(subprocess.check_output("grep vendor_id /proc/cpuinfo", shell=True))
-   except RuntimeError:
+hw    = subprocess.run("grep Hardware /proc/cpuinfo", shell=True, stdout=subprocess.PIPE)
+
+if not 0 == hw.returncode :
+   hw = subprocess.run("grep part /proc/cpuinfo", shell=True, stdout=subprocess.PIPE)
+
+if not 0 == hw.returncode :
+   hw = subprocess.run("grep vendor_id /proc/cpuinfo", shell=True, stdout=subprocess.PIPE)
+
+if not 0 == hw.returncode :
      logging.critical("Error hardware not recognized.")
      raise  Exception('Error hardware not recognized.')
 
-if "BCM2835"  in hw :
+Hardware =  str(hw.stdout)
+
+if "BCM2835"  in Hardware :                     # Raspbian / Raspberry Pi Zero W
    logging.info("importing LED_RpiZeroW")
-   import LED_RpiZeroW   as gpio                 # Raspbian / Raspberry Pi Zero W
-elif "Allwinner sun8i Family" in hw :
-   logging.info("importing LED_OPi")
-   import LED_OPi       as gpio                  # Armbian  / Orange Pi Zero
-elif "GenuineIntel" in hw :
+   import LED_RpiZeroW   as gpio          
+elif "0xc07" in Hardware  or "0xd03" in Hardware : #Armbian/Orange Pi Zero & Lite, Plus
+   logging.info("importing LED_OPi") 
+   import LED_OPi       as gpio 
+elif "GenuineIntel" in Hardware :
    logging.info("importing LED_simulate")
-   import LED_simulate  as gpio                  # my laptop
+   import LED_simulate  as gpio               # my laptop
 else  :
    logging.critical("Error hardware not recognized.")
    raise  Exception('Error hardware not recognized.')

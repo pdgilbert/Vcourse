@@ -119,6 +119,11 @@ do not, then the problem is probably gpsd startup or hotplug
 
 (with X it shoud also be possible to run xgps or cgps and show data from gpsd.)
 
+If gpsd is running but gps stops working (unplugged donggle, in building, ...)
+then it seems necessary to re-add it when it is working again:
+  sudo gpsdctl add /dev/ttyACM0    # e.g.
+
+
 BTW
 gpsmon -L # lists a table showing which GPS device types gpsmon has
        built-in support for, and which generic commands can be applied...

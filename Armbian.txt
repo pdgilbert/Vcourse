@@ -46,22 +46,28 @@ Following needs mostly to be as root.
 
 1/  Burn the image to microSD card. 
      dd  bs=4M if=Armbianxxx.img of=/dev/sdc
-  ( used if=Armbian_5.34_Orangepizero_Ubuntu_xenial_next_4.13.8.img )
   ( root / 1234 )
+ (used if=Armbian_5.34_Orangepizero_Ubuntu_xenial_next_4.13.8.img for O Pi Zero)
+ (used if= 
+      Armbian_5.34.171121_Orangepilite_Debian_stretch_next_4.13.14_desktop.img
+    for O Pi Zero Lite. Only nightly has 4. kernel as of Dec 15, 2017)
+ (used if= 
+      Armbian_5.34.171121_Orangepizeroplus_Debian_stretch_next_4.13.14.img
+     for O Pi Zero Plus.)
 
-  (Also tried Armbian_5.34_Orangepizero_Debian_jessie_next_4.13.8.img but
-   wifi seems even more problematic.)
+ (Also tried Armbian_5.34_Orangepizero_Debian_jessie_next_4.13.8.img on Pi Zero
+   but wifi seems even more problematic.)
 
   (Hope it boots and establishes eth0 connection to AP, as there is no monitor
    support on the board.)
   Need to boot with eth0 plugged in, it does not seem to hotplug. 
   Also, wifi is not on by default. See more notes about wifi below.
  
-2/ get IP address from hardwired router DHCP (wireless needs ssid etc to work)
+2/ get IP address (if no monitor then from from hardwired router DHCP)
 
 3/ ssh root@192.168.2.160(eg)  /1234  and change to better password.
    Create user bt.
-   Also remove or change password for user  orangepi
+   Also remove or change password for user  orangepi if it exists.
 
 4/ Mics Armbian/Orange Pi specific
    (armbian-config needs an Internet connection, so not used here.)
@@ -75,6 +81,20 @@ Following needs mostly to be as root.
    get rid of avahi
      apt-get remove avahi-autoipd
 
+[Pi Zero Lite and Pi Zero Plus
+
+SHOULD set no auto-login
+SHOULD disable desktop but have not yet
+
+systemctl disable bluetooth.service
+systemctl disable apt-daily-upgrade.service
+systemctl disable apt-daily.service
+
+[Pi Zero Lite
+systemctl start systemd-resolved.service
+systemctl enable systemd-resolved.service
+]
+
    (need Internet here)
    gpio on Orange:
        apt-get install python3-dev # orangepi_PC_gpio_pyH3 setup needs headers
@@ -82,9 +102,17 @@ Following needs mostly to be as root.
        cd /home/bt
        as bt:
        git clone https://github.com/duxingkei33/orangepi_PC_gpio_pyH3.git
+THIS DOES NOT WORK ON H5
        cd orangepi_PC_gpio_pyH3
        as root:
        python3 setup.py install  # this is python package pyA20.gpio
+
+TRYING INSTEAD
+       git clone https://github.com/rm-hull/OPi.GPIO.git
+       cd OPi.GPIO
+       as root:
+       python3 setup.py install  # this is python package OPi.GPIO
+       
 
 
 5/ See Setup after image is "burned" on SD card in OSsetup.txt
@@ -127,11 +155,61 @@ Examples of nmcli
   NOT? nmcli radio wifi off 
 dmesg | tail -20
 
+set ssid
+   nmcli device wifi con "egSSID" password "secret"
+(which generates egSSID file in /etc/NetworkManager/system-connections/ )
+
 NetworkManager
 https://help.ubuntu.com/community/NetworkManager#Editing_Network_Settings_in_GConf
 
 I tried to remove Network Manager on Armbian but that messed up.
 
+############################  gpio  ############################
+
+ sudo groupadd gpio
+ sudo adduser bt  gpio 
+
+ sudo chgrp -R gpio  /sys/devices/platform/soc/1c20800.pinctrl/gpio*
+ 
+following https://superuser.com/questions/826124/use-sys-class-gpio-in-python-without-root-permissions
+
+edit (create)  /etc/udev/rules.d/99-com.rules and append:
+
+SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c 'chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio; chown -R root:gpio /sys/devices/virtual/gpio && chmod -R 770 /sys/devices/virtual/gpio'"
+
+SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c 'chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio; chown -R root:gpio /sys/devices/platform/sunxi-pinctrl/gpio && chmod -R 770 /sys/devices/platform/sunxi-pinctrl/gpio;'"
+
+SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c 'chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio; chown -R root:gpio /sys/devices/platform/soc@01c00000/1c20800.pinctrl/gpiochip0/gpio && chmod -R 770 /sys/devices/platform/soc@01c00000/1c20800.pinctrl/gpiochip0/gpio;'"
+
+echo 7 >  /sys/class/gpio/export                  # enable access to PA7                 
+sleep 0.1                                          # wait some time to become gpio12 active
+echo out > /sys/class/gpio/gpio7/direction        # PA7 is output
+echo 0 >   /sys/class/gpio/gpio7/value            # PA7 is low
+echo 1 >   /sys/class/gpio/gpio7/value            # PA7 is high
+echo 7 >  /sys/class/gpio/unexport                # disable access to PA7
+
+echo 19 >  /sys/class/gpio/export                 
+sleep 0.1                                         
+echo out > /sys/class/gpio/gpio19/direction       
+echo 0 >   /sys/class/gpio/gpio19/value           
+echo 1 >   /sys/class/gpio/gpio19/value           
+echo 19 >  /sys/class/gpio/unexport               
+
+echo 12 >  /sys/class/gpio/export                  # enable access to PA12                 
+sleep 0.1                                          # wait some time to become gpio12 active
+echo out > /sys/class/gpio/gpio12/direction        # PA12 is output
+echo 0 >   /sys/class/gpio/gpio12/value            # PA12 is low
+echo 1 >   /sys/class/gpio/gpio12/value            # PA12 is high
+echo 12 >  /sys/class/gpio/unexport                # disable access to PA12
+
+https://forum.armbian.com/topic/1851-rfc-make-armbian-more-iot-friendly/?page=2
+Dec 5, 2017 post
+
+SUBSYSTEM=="gpio", ACTION=="add", RUN="/bin/sh -c '\
+   echo $DEVPATH >> /tmp/pippo;\
+        chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio;\
+        chown -R root:gpio /sys$DEVPATH && chmod -R 770 /sys$DEVPATH\
+'"   
 ############################  still cleaning up
 
 

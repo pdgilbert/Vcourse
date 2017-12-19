@@ -1,13 +1,27 @@
 #######################################################################
 
-          General linux setup notes
-   common to Raspian (tested on Raspberry PiZeroW )
-	and  Armbian (tested on Orange Pi Zero )
+             General linux setup notes
+     common to Raspian (tested on Raspberry PiZeroW )
+  and  Armbian (tested on Orange Pi Zero, ... )
+
+  See the Raspian.txt and Arbian.txt note for specific notes.
 
 #######################################################################
 
+A wifi connection requires some information for the first connection, in order 
+to get an IP address, so it is difficult to use it for the very initial setup. 
+(In desperation, it might be possible to edit this information on the SD card
+in another computer.) On boards with HDMI but no eth0 (eg Raspberry Pi Zero W,
+Orange Pi Zero Lite) this intial step requires a monitor. On boards with eth0
+but no HDMI or other easy video (eg Orange Pi Zero,  Orange Pi Zero Plus) the
+eth0 can be hardwired to a router and the IP address discovered from the 
+router side, the ssh to connect.
+
+One of the first things to do is get the wifi working so monitor or eth0 are no
+longer needed. See nmcli notes in  Arbian.txt or wpa_sipplicant in Raspian.txt.
+
 #######################################################################
-   OS reference  misc notes 
+   OS reference  misc quick notes 
 #######################################################################
     
 cat /sys/class/thermal/thermal_zone0/temp
@@ -86,13 +100,13 @@ http://dietpi.com/
 
 reboot
 
-Now you can use ssh to Raspberry Pi and work from a desktop to get 
-thing set up. (On Orange Pi you didn't get this far without ssh.)
+If you have not been doing this already, you can use ssh and work from another
+computer to get thing set up. 
 
-At this point be sure you can get the wifi network setup working (see further
-below and Raspbian.txt or Armbian.txt) as you may need to start over if that 
-messes up, and then the following updates/upgrades/additions will need to 
-be done again.
+If you have been using eth0, at this point be sure you can get the wifi network 
+setup working (see further below and Raspbian.txt or Armbian.txt) as you may 
+need to start over if that messes up, and then the following 
+updates/upgrades/additions will need to be done again.
 
 You need an Internet connection for the next. If wlan and eth0 are both working,
 and wlan does not go to Internet, it may is better to bring it down so Internet
@@ -139,7 +153,7 @@ See Raspbian.txt or Armbian.txt re apt-get install python *.gpio
  but try avoiding this as it installs lots extra I think.]
  
 [  chmod g+rw /dev/gpiomem  ## NOT there on Orange !!! ]
-
+  on Orange  /dev/gpiochip0  but still NOT DONE RIGHT
 
 [  adduser bt gpio  # so bt can turn LEDs on/off [NOT OM ORANGE YET ]
 
@@ -156,11 +170,11 @@ plug in gps usb and check
   cat /dev/ttyACM0     #should show data, directly from device not from gpsd
   gpsmon /dev/ttyACM0  #should show data, directly from device not from gpsd
 
-  gpsmon 127.0.0.1     suppose to acces deamon, but have not got something right
+  gpsmon 127.0.0.1  #uses deamon. works immediately on some systems but not all
   gpsmon 127.0.0.1:2947  (the same, 2947 is default port
 
 If you get  Permission denied then, as root, you need to (assuming ttyACM0 was indicated above)
-   chmod 0666 /dev/ttyACM0  
+   chmod 0666 /dev/ttyACM0  # or rw for dialout group
 so that you do not need to be root to access the gps. Then so the change 
 persists after reboot, create (or edit) a new rule 
 file  /etc/udev/rules.d/99-gps.rules   with the line
@@ -171,7 +185,7 @@ KERNEL=="ttyACM0", MODE="0666"
 
 sign on as bt
 
-The python code uses gpsd so as root
+The python code uses gpsd so, if it is not running, as root
    systemctl start gpsd
    systemctl enable gpsd
    
@@ -188,10 +202,13 @@ gpsCon = gpsd.connect(host="127.0.0.1", port=2947)
 or
 gpsCon = gpsd.connect(host="127.0.0.1", port=2948) #default 2947
 z = gpsd.get_current() 
-# <GpsResponse No mode> means not yet ready
-# WORKS ON     STANDARD PORT on Arbian OPiZ 
-# WORKS ON NON STANDARD PORT on Raspian RPiZw
 z
+# <GpsResponse No mode> means not yet ready
+# WORKS ON     STANDARD PORT on Arbian OPiZ      as root
+# WORKS ON     STANDARD PORT on Arbian OPiZPlus  as bt
+# WORKS ON     STANDARD PORT on Arbian OPiZLite  as bt
+# WORKS ON NON STANDARD PORT on Raspian RPiZw
+
 z.time.format("%a, %d %b %Y %H:%M:%S +0000")  NOT
 quit()
 

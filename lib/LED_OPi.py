@@ -1,9 +1,7 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 """Arbian / Orange Pi Zero LED signal hardware control."""
 
-__version__ = '0.0.3'
-
-#CAN WE DO THIS WITHOUT ROOT
+#see Armbian.txt on how to do this without being root
 #http://linux-sunxi.org/GPIO
 
 # pinout
@@ -26,18 +24,33 @@ import time
 import logging
 import threading
 
-try:
-    from pyA20.gpio import gpio as GPIO
-    from pyA20.gpio import port
-except RuntimeError:
-    logging.critical("Error importing pyA20.gpio!  Wrong hardware? or possibly need root privileges.")
-    raise Exception('LED_OpiZero module will not work without pyA20.gpio.')
+import OPi.GPIO as GPIO
+#from pyA20.gpio import gpio as GPIO
+#from pyA20.gpio import port
 
+# ALSO NEED TO DISTINGUISH GPIO PINOUT SETUP ??
+#Armbian/Orange Pi Zero & O Pi Zero Plus
+RED    = 12     # port.PA7   # pin 12
+GREEN  = 16     # port.PA19  # pin 16
+BLUE   = 18     # port.PA18  # pin 18  
 
-RED    = port.PA7   # pin 12
-GREEN  = port.PA19  # pin 16
-BLUE   = port.PA18  # pin 18  
+#Armbian/Orange  Pi Lite      THIS IS NOT RIGHT
+#   RED    = 12     # port.PA7   # pin 12
+#   GREEN  = 16     # port.PA19  # pin 16
+#   BLUE   = 18     # port.PA18  # pin 18  
+#else  :
+#   logging.critical("Error hardware not recognized.")
+#   raise  Exception('Error hardware not recognized.')
 
+GPIO.setmode(GPIO.BOARD)
+
+#GPIO.setup(RED, GPIO.OUT)
+#GPIO.setup(GREEN, GPIO.OUT)
+#GPIO.setup(BLUE, GPIO.OUT)
+
+for c in (RED, GREEN, BLUE):  GPIO.setup(c, GPIO.OUT) #set pins as output
+
+for c in (RED, GREEN, BLUE):  GPIO.output(c, GPIO.LOW)    #init all off
 
 #GPIO.init()
 #for c in (RED, GREEN, BLUE):  GPIO.setcfg(c, GPIO.OUTPUT) #set pins as output
@@ -77,13 +90,15 @@ class LEDs(threading.Thread):
         self.ont  = (1/self.freq) * (self.dc / 100)
         self.offt = (1/self.freq) - self.ont
         self.FLASH = {RED : False, GREEN : False, BLUE : False}
+        #GPIO.setwarnings(True) # Orange equivalent??
+        #GPIO.init()  # for pyA20.gpio
+        # not sure if this setup should be done her in class or above in mudule.
+        # but I think it can only be done once
+        #for c in self.channels:  GPIO.setup(c, GPIO.OUT) #set pins as output
+        for c in self.channels:  GPIO.output(c, GPIO.LOW)    #init all off
     def run(self):
         logging.info('LEDs run() started.')
         logging.debug(threading.enumerate())
-        #GPIO.setwarnings(True) # Orange equivalent??
-        GPIO.init()
-        for c in self.channels:  GPIO.setcfg(c, GPIO.OUTPUT) #set pins as output
-        for c in self.channels:  GPIO.output(c, GPIO.LOW)    #init all off
         # ont, offt = seconds on and off, these add to freq which is in Hz
         while not self.stoprequest.isSet():
             if self.FLASH[RED]   : GPIO.output(RED,   GPIO.HIGH)
@@ -125,14 +140,14 @@ class LEDs(threading.Thread):
         for c in self.channels :
            self.FLASH[c] = False
            GPIO.output(c, GPIO.LOW)
-    # join() should not be called from outside because not all implementations
-    # of the class need threads. Use cleanup() instead.
+    # join() should not be used because not all implementations
+    # of this class need threads. 
+    # Use cleanup() before system shutdown.
     def cleanup(self): 
         #  Orange equivalent of ?
         # GPIO.cleanup()  # GPIO.cleanup(RED)   GPIO.cleanup( CHANNELS )
         logging.debug('LEDs cleanup() for shutdown.')
         self.stoprequest.set()
-        #self.join() ??
 
 #leds = LEDs((RED, GREEN, BLUE), 2, 20) #  (channels, frequency, dc)
 #leds.start()
