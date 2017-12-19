@@ -36,22 +36,25 @@ if not 0 == hw.returncode :
    hw = subprocess.run("grep vendor_id /proc/cpuinfo", shell=True, stdout=subprocess.PIPE)
 
 if not 0 == hw.returncode :
-     logging.critical("Error hardware not recognized.")
-     raise  Exception('Error hardware not recognized.')
+     logging.critical('Error hardware test non-zero return code.')
+     raise  Exception('Error hardware test non-zero return code.')
 
 Hardware =  str(hw.stdout)
 
-if "BCM2835"  in Hardware :                     # Raspbian / Raspberry Pi Zero W
+if "BCM2835"  in Hardware :                     
+   # Raspbian / Raspberry Pi Zero W
    logging.info("importing LED_RpiZeroW")
    import LED_RpiZeroW   as gpio          
-elif "0xc07" in Hardware  or "0xd03" in Hardware : #Armbian/Orange Pi Zero & Lite, Plus
+elif "Allwinner" in Hardware  or "0xc07" in Hardware  or "0xd03" in Hardware : 
+   #Armbian/Orange Pi Zero & Lite, Plus
    logging.info("importing LED_OPi") 
    import LED_OPi       as gpio 
 elif "GenuineIntel" in Hardware :
+   # my laptop
    logging.info("importing LED_simulate")
-   import LED_simulate  as gpio               # my laptop
+   import LED_simulate  as gpio              
 else  :
-   logging.critical("Error hardware not recognized.")
+   logging.critical('Error hardware not recognized.')
    raise  Exception('Error hardware not recognized.')
 
 # flash speed in Hz
