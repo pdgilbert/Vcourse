@@ -115,7 +115,7 @@ connection is only attempted through eth0.  Update the system:
   apt-get update    #check autoremove list in case there is something 
  [ apt autoremove ] #that really should not be removed.
 
-  apt-get upgrade    # didn't yet on Raspbian!
+  apt-get upgrade  
   apt-get update 
 
   [reboot]

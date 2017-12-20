@@ -27,19 +27,24 @@ import subprocess
 import time
 import logging
 
-hw    = subprocess.run("grep Hardware /proc/cpuinfo", shell=True, stdout=subprocess.PIPE)
+if not hasattr(subprocess, "run") :
+   # this workaround for old Raspian subprocess which does not have .run
+   Hardware =  "BCM2835"
 
-if not 0 == hw.returncode :
-   hw = subprocess.run("grep part /proc/cpuinfo", shell=True, stdout=subprocess.PIPE)
+else :
+   hw  = subprocess.run("grep Hardware /proc/cpuinfo", shell=True, stdout=subprocess.PIPE)
 
-if not 0 == hw.returncode :
-   hw = subprocess.run("grep vendor_id /proc/cpuinfo", shell=True, stdout=subprocess.PIPE)
+   if not 0 == hw.returncode :
+      hw = subprocess.run("grep part /proc/cpuinfo", shell=True, stdout=subprocess.PIPE)
 
-if not 0 == hw.returncode :
-     logging.critical('Error hardware test non-zero return code.')
-     raise  Exception('Error hardware test non-zero return code.')
+   if not 0 == hw.returncode :
+      hw = subprocess.run("grep vendor_id /proc/cpuinfo", shell=True, stdout=subprocess.PIPE)
 
-Hardware =  str(hw.stdout)
+   if not 0 == hw.returncode :
+      logging.critical('Error hardware test non-zero return code.')
+      raise  Exception('Error hardware test non-zero return code.')
+
+   Hardware =  str(hw.stdout)
 
 if "BCM2835"  in Hardware :                     
    # Raspbian / Raspberry Pi Zero W

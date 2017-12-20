@@ -164,22 +164,22 @@ https://help.ubuntu.com/community/NetworkManager#Editing_Network_Settings_in_GCo
 
 I tried to remove Network Manager on Armbian but that messed up.
 
-############################  gpio  ############################
+############################  So gpio  does not require root ############################
 
  sudo groupadd gpio
  sudo adduser bt  gpio 
 
- sudo chgrp -R gpio  /sys/devices/platform/soc/1c20800.pinctrl/gpio*
- 
-following https://superuser.com/questions/826124/use-sys-class-gpio-in-python-without-root-permissions
-
 edit (create)  /etc/udev/rules.d/99-com.rules and append:
 
-SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c 'chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio; chown -R root:gpio /sys/devices/virtual/gpio && chmod -R 770 /sys/devices/virtual/gpio'"
+https://forum.armbian.com/topic/1851-rfc-make-armbian-more-iot-friendly/?page=2
+Dec 5, 2017 post
 
-SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c 'chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio; chown -R root:gpio /sys/devices/platform/sunxi-pinctrl/gpio && chmod -R 770 /sys/devices/platform/sunxi-pinctrl/gpio;'"
-
-SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c 'chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio; chown -R root:gpio /sys/devices/platform/soc@01c00000/1c20800.pinctrl/gpiochip0/gpio && chmod -R 770 /sys/devices/platform/soc@01c00000/1c20800.pinctrl/gpiochip0/gpio;'"
+SUBSYSTEM=="gpio", ACTION=="add", RUN="/bin/sh -c '\
+   echo $DEVPATH >> /tmp/pippo;\
+    chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio;\
+    chown -R root:gpio /sys$DEVPATH && chmod -R 770 /sys$DEVPATH\
+'"   
+############################  tests
 
 echo 7 >  /sys/class/gpio/export                  # enable access to PA7                 
 sleep 0.1                                          # wait some time to become gpio12 active
@@ -202,14 +202,6 @@ echo 0 >   /sys/class/gpio/gpio12/value            # PA12 is low
 echo 1 >   /sys/class/gpio/gpio12/value            # PA12 is high
 echo 12 >  /sys/class/gpio/unexport                # disable access to PA12
 
-https://forum.armbian.com/topic/1851-rfc-make-armbian-more-iot-friendly/?page=2
-Dec 5, 2017 post
-
-SUBSYSTEM=="gpio", ACTION=="add", RUN="/bin/sh -c '\
-   echo $DEVPATH >> /tmp/pippo;\
-        chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio;\
-        chown -R root:gpio /sys$DEVPATH && chmod -R 770 /sys$DEVPATH\
-'"   
 ############################  still cleaning up
 
 
