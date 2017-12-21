@@ -179,6 +179,10 @@ SUBSYSTEM=="gpio", ACTION=="add", RUN="/bin/sh -c '\
     chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio;\
     chown -R root:gpio /sys$DEVPATH && chmod -R 770 /sys$DEVPATH\
 '"   
+
+And (as of Dec 22, 2017) patch GPIO as described (but different line numbers in checked out version)
+https://forum.armbian.com/topic/5225-gpio-from-python-user-space-opigpio-app/?tab=comments#comment-39842
+
 ############################  tests
 
 echo 7 >  /sys/class/gpio/export                  # enable access to PA7                 

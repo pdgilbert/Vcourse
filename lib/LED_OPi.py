@@ -24,37 +24,65 @@ import time
 import logging
 import threading
 
-import OPi.GPIO as GPIO
-#from pyA20.gpio import gpio as GPIO
-#from pyA20.gpio import port
+import subprocess  # only for hardware detection
 
-# ALSO NEED TO DISTINGUISH GPIO PINOUT SETUP ??
-#Armbian/Orange Pi Zero & O Pi Zero Plus
-RED    = 12     # port.PA7   # pin 12
-GREEN  = 16     # port.PA19  # pin 16
-BLUE   = 18     # port.PA18  # pin 18  
+#  OPi.GPIO   works with Pi Zero and Pi Zero Plus but not Pi Lite
+#             (reason seems to be header GPIO pins are different on Pi Lite)
+#  pyA20.gpio works with Pi Zero and Pi Lite but not Pi Zero Plus
+#             (reason seems to be Pi Zero Plus is H5 chip)
+# so ... yuk
 
-#Armbian/Orange  Pi Lite      THIS IS NOT RIGHT
-#   RED    = 12     # port.PA7   # pin 12
-#   GREEN  = 16     # port.PA19  # pin 16
-#   BLUE   = 18     # port.PA18  # pin 18  
-#else  :
-#   logging.critical("Error hardware not recognized.")
-#   raise  Exception('Error hardware not recognized.')
+hw  = subprocess.run('grep "BOARD=" /etc/armbian-release', shell=True, stdout=subprocess.PIPE)
 
-GPIO.setmode(GPIO.BOARD)
+if not 0 == hw.returncode :
+   logging.critical('Error hardware test non-zero return code.')
+   raise  Exception('Error hardware test non-zero return code.')
 
-#GPIO.setup(RED, GPIO.OUT)
-#GPIO.setup(GREEN, GPIO.OUT)
-#GPIO.setup(BLUE, GPIO.OUT)
+hw =  str(hw.stdout)
 
-for c in (RED, GREEN, BLUE):  GPIO.setup(c, GPIO.OUT) #set pins as output
+if "orangepizero" in hw  or  "orangepizeroplus" in hw:                     
+   logging.info("using ")
+   import OPi.GPIO as GPIO
+   
+   #Armbian/Orange Pi Zero & O Pi Zero Plus
+   RED    = 12     # port.PA7   pin 12   BCM 18
+   GREEN  = 16     # port.PA19  pin 16   BCM 23
+   BLUE   = 18     # port.PA18  pin 18   BCM 24
+   
+   GPIO.setmode(GPIO.BOARD)
+   for c in (RED, GREEN, BLUE):  GPIO.setup(c, GPIO.OUT)     #set pins as output
+   
+elif "orangepilite" in hw :
+   from pyA20.gpio import gpio as GPIO
+   from pyA20.gpio import port
+   
+   #Armbian/Orange  Pi Lite    
+   #https://linux-sunxi.org/Orange_Pi_Lite
+   RED    =  port.PD14    # PD14    pin 12  
+   GREEN  =  port.PC4     # PC4     pin 16  
+   BLUE   =  port.PC7     # PC7     pin 18  
+   
+   GPIO.init()
+   for c in (RED, GREEN, BLUE):  GPIO.setcfg(c, GPIO.OUTPUT) #set pins as output
+   
+else  :
+   logging.critical("Error hardware not recognized.")
+   raise  Exception('Error hardware not recognized.')
 
 for c in (RED, GREEN, BLUE):  GPIO.output(c, GPIO.LOW)    #init all off
 
-#GPIO.init()
-#for c in (RED, GREEN, BLUE):  GPIO.setcfg(c, GPIO.OUTPUT) #set pins as output
-#for c in (RED, GREEN, BLUE):  GPIO.output(c, GPIO.LOW)    #init all off
+# OPi.GPIO fiddling
+#GPIO.setmode(GPIO.BCM)
+#GPIO.setup(24, GPIO.OUT) 
+#GPIO.output(24, GPIO.HIGH)
+#GPIO.output(24, GPIO.LOW)
+
+#GPIO.setmode(GPIO.SUNXI)
+#GPIO.setup(12, GPIO.OUT)
+#GPIO.output(12, GPIO.HIGH)
+#GPIO.output(12, GPIO.LOW)
+
+
 #GPIO.output(RED, GPIO.HIGH)
 #GPIO.output(RED, GPIO.LOW)
 #GPIO.output(GREEN, GPIO.HIGH)
@@ -91,11 +119,8 @@ class LEDs(threading.Thread):
         self.offt = (1/self.freq) - self.ont
         self.FLASH = {RED : False, GREEN : False, BLUE : False}
         #GPIO.setwarnings(True) # Orange equivalent??
-        #GPIO.init()  # for pyA20.gpio
-        # not sure if this setup should be done her in class or above in mudule.
-        # but I think it can only be done once
-        #for c in self.channels:  GPIO.setup(c, GPIO.OUT) #set pins as output
         for c in self.channels:  GPIO.output(c, GPIO.LOW)    #init all off
+    
     def run(self):
         logging.info('LEDs run() started.')
         logging.debug(threading.enumerate())

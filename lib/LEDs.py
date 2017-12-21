@@ -51,7 +51,7 @@ if "BCM2835"  in Hardware :
    logging.info("importing LED_RpiZeroW")
    import LED_RpiZeroW   as gpio          
 elif "Allwinner" in Hardware  or "0xc07" in Hardware  or "0xd03" in Hardware : 
-   #Armbian/Orange Pi Zero & Lite, Plus
+   #Armbian/Orange Pi Zero & Lite, Pi Zero Plus
    logging.info("importing LED_OPi") 
    import LED_OPi       as gpio 
 elif "GenuineIntel" in Hardware :
