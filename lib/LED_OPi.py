@@ -50,7 +50,9 @@ if "orangepizero" in hw  or  "orangepizeroplus" in hw:
    BLUE   = 18     # port.PA18  pin 18   BCM 24
    
    GPIO.setmode(GPIO.BOARD)
+   GPIO.setwarnings(False)
    for c in (RED, GREEN, BLUE):  GPIO.setup(c, GPIO.OUT)     #set pins as output
+   GPIO.setwarnings(True)
    
 elif "orangepilite" in hw :
    from pyA20.gpio import gpio as GPIO
