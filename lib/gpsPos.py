@@ -1,8 +1,6 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 """Object for defining a GPS position and operation with it."""
 
-__version__ = '0.0.3'
-
 
 # PUT INTO UNIT TESTING
 #from gpsPos import gpsConnection

@@ -12,7 +12,6 @@ Configuration for the local course setup is read from BTconfig.
 
 """
 # consider pbr module for maintaining version.
-__version__ = '0.0.3'
 
 import logging
 

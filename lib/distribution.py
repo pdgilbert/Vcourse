@@ -11,8 +11,6 @@ have a cid of "none" or None, but transmition requires string "none".
 
 """
 
-__version__ = '0.0.3'
-
 
 import socket
 import logging

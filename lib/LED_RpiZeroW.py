@@ -1,8 +1,6 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 """Raspbian / Raspberry Pi Zero W LED signal hardware control."""
 
-__version__ = '0.0.3'
-
 #https://sourceforge.net/p/raspberry-gpio-python/wiki/BasicUsage/
 #https://sourceforge.net/p/raspberry-gpio-python/wiki/PWM/
 #https://pythonhosted.org/RPIO/pwm_py.html

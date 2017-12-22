@@ -1,8 +1,6 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2017
 """Simple message protocol for communication between RC and race boats (BTs)."""
 
-__version__ = '0.0.3'
-
 import logging
 import socket
 

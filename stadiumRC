@@ -12,8 +12,6 @@ Configuration for the computer GPS setup is read from GPSconfig.
 A GUI is opened for setting a course and distributing to racing boats.
 """
 
-__version__ = '0.0.5'
-
 import threading
 import signal
 import logging
