@@ -14,7 +14,7 @@ from joblib import Parallel, delayed # for parallel requests to remote gps
 from gpsPos import gpsPos
 from gpsPos import gpsConnection
 
-import stadium
+import stadiumRC as stadium
 
 config = json.load(open('GPSconfig'))   
 GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"

@@ -4,7 +4,6 @@
 import tkinter
 from gpsPos import gpsPos
 
-
 class stadium():
    def __init__(self):
 
