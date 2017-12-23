@@ -43,7 +43,7 @@ if __name__ == '__main__':
        logging.info('main thread exit via abortHandler. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z')+ '\n')
        logging.debug('threads running: ')
        logging.debug(threading.enumerate())
-       sys.exit("stadiumRC process killed.")
+       sys.exit("RC process killed.")
 
    # ^C works if process is not deamonized with &
    signal.signal(signal.SIGINT,  abortHandler) # ^C, kill -2

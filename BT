@@ -38,10 +38,10 @@ from gpsPos import gpsConnection
 from distribution import distributionCheck
 
 import stadiumBT as stadium
+import stadium2BT as stadium2
 
 # filemode='w' will start a new log file each run. Otherwise appending is done.
-#logging.basicConfig(filename='stadiumBT.log',
-#                    level=logging.DEBUG, format=logFormat,)
+#logging.basicConfig(filename='BT.log', level=logging.DEBUG, format=logFormat,)
 
 
 # cid needs to be global as it is used and changed by both zoneSignal and 
@@ -96,18 +96,20 @@ class ZSsupervisor(threading.Thread):
    def run(self):
       logging.info('ZSsupervisor started.')
       
-      if self.zoneObj is None:
+      if   self.zoneObj is None:
          zs = NoCourse_zoneSignal(self.stoprequest, self.GPScon, self.t)
-      else:
-         if self.zoneObj['zoneType'] == 'stadium' :
-            zs = stadium.zoneSignal(self.zoneObj,  self.stoprequest, self.GPScon, self.t)
-   
+      
+      elif self.zoneObj['zoneType'] == 'stadium' :
+         zs = stadium.zoneSignal(self.zoneObj,  self.stoprequest, self.GPScon, self.t)
+      
+      elif self.zoneObj['zoneType'] == 'stadium2' :
+         zs = stadium2.zoneSignal(self.zoneObj,  self.stoprequest, self.GPScon, self.t)
+      
+      elif self.zoneObj['zoneType'] == 'NoCourse' :
          # usually this would not be a distributed object but None above
-         elif self.zoneObj['zoneType'] == 'NoCourse' :
-            zs = NoCourse_zoneSignal(self.stoprequest, self.GPScon, self.t)
+         zs = NoCourse_zoneSignal(self.stoprequest, self.GPScon, self.t)
    
-         else :
-               raise Exception('zoneType not recognized.')
+      else :  raise Exception('zoneType not recognized.')
  
       zs.start()
 
@@ -136,12 +138,15 @@ class ZSsupervisor(threading.Thread):
  
             if self.zoneObj['zoneType'] == 'stadium' :
                zs = stadium.zoneSignal(self.zoneObj,  self.stoprequest, self.GPScon, self.t)
+ 
+            if self.zoneObj['zoneType'] == 'stadium2' :
+               zs = stadium2.zoneSignal(self.zoneObj,  self.stoprequest, self.GPScon, self.t)
 
             elif self.zoneObj['zoneType'] == 'NoCourse' :
                zs = NoCourse_zoneSignal(self.stoprequest, self.GPScon, self.t)
    
             else :
-               raise Exception('zoneType not recognized.')
+               raise Exception("zoneType '" + self.zoneObj['zoneType'] + "' not recognized.")
 
             zs.start()
          

@@ -15,6 +15,7 @@ from gpsPos import gpsPos
 from gpsPos import gpsConnection
 
 import stadiumRC as stadium
+import stadium2RC as stadium2
 
 config = json.load(open('GPSconfig'))   
 GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
@@ -49,7 +50,7 @@ class RCmanager():
       """RC Management main control window and parameters."""
 
       # Initial default parameters. Could save last on exit and reload ?
-      self.ty   = 'stadium'    # zone type
+      self.ty   = 'stadium2'    # zone type
       self.fl   = 'no fleet'   # fleet
       self.dc   = 'race 1'     # description
 
@@ -64,7 +65,7 @@ class RCmanager():
       self.tt   = 0            # target start time
       
       #Zone Type Obj
-      if   self.ty == 'stadium' :  self.ZTobj = stadium.stadium() 
+      if   self.ty == 'stadium2' :  self.ZTobj = stadium2.stadium2() 
       elif self.ty == 'NoCourse':  self.ZTobj =    NoCourse()      
 
       w.wm_title("RC Management")
@@ -76,7 +77,7 @@ class RCmanager():
       row = tkinter.Frame(w)
       tkinter.Label(row, width=10, text="Zone Type", anchor='w').pack(side=tkinter.LEFT)
 
-      self.zoneChoice = Drop(row, options=['stadium', 'NoCourse'], default = 0)
+      self.zoneChoice = Drop(row, options=['stadium', 'stadium2', 'NoCourse'], default = 0)
       But(row,  text='calc   \n  using',           command=self.calc)
       self.calcChoice = Drop(row, options=['RC & axis', 'RC & mark', 'start center\n& mark'])
 
