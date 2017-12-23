@@ -139,7 +139,7 @@ class ZSsupervisor(threading.Thread):
             if self.zoneObj['zoneType'] == 'stadium' :
                zs = stadium.zoneSignal(self.zoneObj,  self.stoprequest, self.GPScon, self.t)
  
-            if self.zoneObj['zoneType'] == 'stadium2' :
+            elif self.zoneObj['zoneType'] == 'stadium2' :
                zs = stadium2.zoneSignal(self.zoneObj,  self.stoprequest, self.GPScon, self.t)
 
             elif self.zoneObj['zoneType'] == 'NoCourse' :
