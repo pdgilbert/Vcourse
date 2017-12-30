@@ -21,6 +21,7 @@ import threading
 import smp
 
 ####### this class is used only by BT #######
+#######      (see below for RC)       #######
 
 # Read config variable RC_IP, RC_PORT, BT_ID  from file BTconfig
 # in the working directory. 
@@ -42,6 +43,7 @@ class distributionCheck(threading.Thread):
 
       self.name='distributionCheck'
 
+      self.FLEET   = config['FLEET']
       self.BT_ID   = config['BT_ID']
       self.RC_IP   = config['RC_IP']
       self.RC_PORT = int(config['RC_PORT'])
@@ -157,11 +159,12 @@ class distributer(threading.Thread):
       self.tcpsock.settimeout(5)
       #logging.debug("Incoming socket timeout " + str(self.tcpsock.gettimeout()))
 
-      # This loads an active zoneObj if it exists, to be a bit
+      # This loads an active zoneObj if it exists for the fleet, to be a bit
       # robust when restarted
+      
       global cid  # see note in stadiumBT re zoneSignal and cid
       try :
-         with open("activeBTzoneObj.json","r") as f:  self.zoneObj = json.load(f)
+         with open('FLEETS' + self.fl + '/activeBTzoneObj.json','r') as f:  self.zoneObj = json.load(f)
          cid = self.zoneObj['cid']
          logging.info("distributer loaded existing active zoneObj.")
       except :
@@ -212,17 +215,15 @@ class distributer(threading.Thread):
           global distRecvd
           distRecvd = {}    # clear dict of boats that have update
 
-          #  distribute is done with zoneObj but ...
-                   
-          # but write zoneObj to activeBTzoneObj.json file for load on restart
-          with open("activeBTzoneObj.json","w") as f:  
+          #  distribute is done with zoneObj but write zoneObj to 
+          #  activeBTzoneObj.json file for restart or on switching fleets.
+          fleet = 'FLEETS/' + zoneObj['fleet'] 
+          with open(fleet + '/activeBTzoneObj.json', 'w') as f:  
              json.dump(self.zoneObj, f, indent=4)
 
           # also write zoneObj to a file, for the record.
-          with open('distributedzoneObj/' + self.zoneObj['cid'] + '.json',"w")  as f:
+          with open(fleet + '/DISTRIBUTEDZONES/' + self.zoneObj['cid'] + '.json',"w")  as f:
              json.dump(self.zoneObj, f, indent=4)
-
-          # consider also writing race obj here, for debug and/or reload
       
       else:
          raise RuntimeError("zoneObj is None. Refusing to distribute.")

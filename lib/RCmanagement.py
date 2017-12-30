@@ -9,6 +9,8 @@ import time
 import gpsd
 import math
 
+import os  # just for mkdir
+
 from joblib import Parallel, delayed # for parallel requests to remote gps
 
 from gpsPos import gpsPos
@@ -22,6 +24,22 @@ GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
 GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
 
+# FLEETS sets options in drop down menu. To change the menu it seems to be
+# necessary to restart, so a re-read button is not usable.
+try : 
+   with open("FleetList.txt") as f:  FLEETS =  f.read().splitlines()
+   FLEETS = [b.strip() for b in FLEETS]
+except :
+   FLEETS = 'No fleet'   
+
+if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
+if not os.path.exists('RACEPARMS'):  os.makedirs('RACEPARMS')
+
+for d in FLEETS:
+   if not os.path.exists('FLEETS/' + d):
+             os.makedirs('FLEETS/' + d)
+   if not os.path.exists('FLEETS/' + d + '/DISTRIBUTEDZONES'):
+             os.makedirs('FLEETS/' + d + '/DISTRIBUTEDZONES')
 
 #########################    Utility  Functions     ######################### 
 
@@ -45,13 +63,16 @@ def foo(n,h,p): return((n, gpsConnection(h,p).getGPS()))
 
 #########################  RCmanager class and  Main  Window     ######################### 
 
+# NOT SURE IF THIS SHOULD BE A CLASS OBJECT. THERE WILL ONLY BE ONE INSTANCE.
+
 class RCmanager():
    def __init__(self, w, dr):
       """RC Management main control window and parameters."""
 
       # Initial default parameters. Could save last on exit and reload ?
       self.ty   = 'stadium2'    # zone type
-      self.fl   = 'no fleet'   # fleet
+      self.fleets   = FLEETS   # FleetList
+      self.fl   = self.fleets[0]                # default fleet
       self.dc   = 'race 1'     # description
 
       #         position below means a gpsPos object.
@@ -65,8 +86,10 @@ class RCmanager():
       self.tt   = 0            # target start time
       
       #Zone Type Obj
-      if   self.ty == 'stadium2' :  self.ZTobj = stadium2.stadium2() 
-      elif self.ty == 'NoCourse':  self.ZTobj =    NoCourse()      
+      if   self.ty == 'stadium'  :  self.ZTobj = stadium.stadium() 
+      elif self.ty == 'stadium2' :  self.ZTobj = stadium2.stadium2()      
+      elif self.ty == 'NoCourse' :  self.ZTobj =    NoCourse()      
+      else                       :  self.ZTobj =    NoCourse()      
 
       w.wm_title("RC Management")
       #w.bind('<Return>', (lambda event, e=ents: readRaceWindow(e)))   
@@ -76,15 +99,17 @@ class RCmanager():
 
       row = tkinter.Frame(w)
       tkinter.Label(row, width=10, text="Zone Type", anchor='w').pack(side=tkinter.LEFT)
-
       self.zoneChoice = Drop(row, options=['stadium', 'stadium2', 'NoCourse'], default = 0)
       But(row,  text='calc   \n  using',           command=self.calc)
       self.calcChoice = Drop(row, options=['RC & axis', 'RC & mark', 'start center\n& mark'])
+      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
+      row = tkinter.Frame(w)
+      tkinter.Label(row, width=10, text="fleet", anchor='w').pack(side=tkinter.LEFT)
+      self.fleetChoice = Drop(row, options=self.fleets, default = 0)
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
       fldLabels = [
-                       'fleet', 
                        'description', 
                        'RC       latitude',
                        'RC      longitude',
@@ -120,10 +145,12 @@ class RCmanager():
       self.writeRCWindow()
 
       self.readgpsList()  # this could be in an extra object
-      self.readBoatList() # this could be in an extra object
+      self.readBoatList() # only current fleet
 
 
    def parms(self):  
+      self.readRCWindow() # Ensure using current screen values.
+
       return {'ty':self.ty, 'fl':self.fl, 'dc':self.dc, 
           'RC.lat' : self.RC.lat, 'RC.lon' : self.RC.lon, 
            'S.lat' : self.S.lat,   'S.lon' : self.S.lon,
@@ -156,33 +183,37 @@ class RCmanager():
       """re-write screen with current parameters."""
       
       self.zoneChoice.set(self.ty)
+      self.fleetChoice.set(self.fl)
 
-      prms = self.parmsTuple() # includes ty which is alraedy set above
+      prms = self.parmsTuple() # includes ty and fl alraedy set above
 
-      if not len(self.ents) == (len(prms) - 1):
+      if not len(self.ents) == (len(prms) - 2):
          raise Exception('Something is wrong. length of entries is not equal length of parms.')
 
-      # (fl, dc, RC.lat, RC.lon, S.lat, S.lon, M.lat, M.lon, cl, ax, ll, tt)
+      # (dc, RC.lat, RC.lon, S.lat, S.lon, M.lat, M.lon, cl, ax, ll, tt)
 
-      for i in range (0, len(self.ents)):
-         self.ents[i].delete(0, tkinter.END)
-         self.ents[i].insert(10, str(prms[i+1]))
+      def refresh(e, l, v):        # entry, length, string
+         self.ents[e].delete(0, tkinter.END)
+         self.ents[e].insert(l, v)
+     
+      for i in range (0, len(self.ents)): refresh(i, 10, str(prms[i+2]))
 
 
    def readRCWindow(self):
       """Update current parameters from screen."""
       
       self.ty = self.zoneChoice.get()
+      self.fl = self.fleetChoice.get()
+      self.readBoatList() # new fleet
 
-      self.fl = str(self.ents[0].get())
-      self.dc = str(self.ents[1].get())
-      self.RC = gpsPos(float(self.ents[2].get()),  float(self.ents[3].get()))
-      self.S  = gpsPos(float(self.ents[4].get()),  float(self.ents[5].get()))
-      self.M  = gpsPos(float(self.ents[6].get()), float(self.ents[7].get()))
-      self.cl = float(self.ents[8].get()) 
-      self.ax = float(self.ents[9].get()) 
-      self.ll = float(self.ents[10].get()) 
-      self.tt = float(self.ents[11].get()) 
+      self.dc = str(self.ents[0].get())
+      self.RC = gpsPos(float(self.ents[1].get()),  float(self.ents[2].get()))
+      self.S  = gpsPos(float(self.ents[3].get()),  float(self.ents[4].get()))
+      self.M  = gpsPos(float(self.ents[5].get()),  float(self.ents[6].get()))
+      self.cl = float(self.ents[7].get()) 
+      self.ax = float(self.ents[8].get()) 
+      self.ll = float(self.ents[9].get()) 
+      self.tt = float(self.ents[10].get()) 
 
    def getRCgps(self):
       """Update RC position from gps and write to screen."""
@@ -306,14 +337,15 @@ class RCmanager():
    def readBoatList(self, w=None):
       if w is not None: w.destroy()
 
+      logging.info('readBoatList()   FLEETS/' + self.fl + '/BoatList.txt')
       try : 
-         with open("BoatList") as f:  bl =  f.read().splitlines()
+         with open('FLEETS/' + self.fl + '/BoatList.txt') as f: bl = f.read().splitlines()
          bl = [b.strip() for b in bl]
       except :
          bl = None   
 
-      self.BoatList = bl   
-
+      logging.info('self.BoatList = bl is ' + str(bl))
+      self.BoatList = bl
 
 
    def writeRaceFile(self, w=None, filename = None):
@@ -323,7 +355,7 @@ class RCmanager():
 
       if filename is None : 
          filename =  filedialog.asksaveasfile(mode="w",  defaultextension=".raceParms",
-             initialdir = "", title = "enter file name to save",
+             initialdir = "RACEPARMS/", title = "enter file name to save",
              filetypes = (("race parameters","*.raceParms"),("all files","*.*")))
 
       if filename is None:  return   # i.e. cancel clicked in dialog
@@ -345,7 +377,7 @@ class RCmanager():
       if w is not None: w.destroy()
 
       if filename is None : 
-         filename =  filedialog.askopenfilename(initialdir = "",
+         filename =  filedialog.askopenfilename(initialdir = "RACEPARMS/",
                             title = "choose file",
                         filetypes = (("race parameters","*.raceParms"),("all files","*.*")))
 
@@ -407,7 +439,7 @@ class RCmanager():
 
       self.gpsList = []
       try : 
-         with open("gpsList") as f:
+         with open("gpsList.txt") as f:
             for i in f.readlines():
                l =  i.split()
                self.gpsList.append( (l[0], l[1], l[2]) )
@@ -536,8 +568,9 @@ class RCmanager():
       and part by ZTobj.makezoneObj().
       """ 
 
+
       # Ensure parameters  correspond to current screen values.
-      self.readRCWindow() 
+      self.readRCWindow() # this shoud be automatic and not needed !!!
 
       # y = a + b * x
       # b = (y_1 - y_2) / (x_1 - x_2)
@@ -568,6 +601,7 @@ class RCmanager():
          'cid'       : self.fl + '-' + self.dc + '-' +  distributionTime,
          'courseDesc'       : self.dc,
          'zoneType'         : self.ty,
+         'fleet'            : self.fl,
          'distributionTime' : distributionTime,
          'length' :  self.cl,  # course length
          'axis'   :  self.ax,  # axis (degrees)
@@ -612,8 +646,10 @@ def extraMoreWindow(w, RCobj, dr):
    def debugWindow(w):
      w.destroy()
 
-     print('globals')
-     for f in (RCobj.cl, RCobj.ax, RCobj.ll, RCobj.RC, RCobj.S, RCobj.M, RCobj.tt): print(f)
+     print('debugWindow')
+     print('RCobj.parms')
+     #for f in (RCobj.cl, RCobj.ax, RCobj.ll, RCobj.RC, RCobj.S, RCobj.M, RCobj.tt): print(f)
+     print(RCobj.parms())
      print()
      print('Zone parms:')
      print(RCobj.ZTobj.parms())

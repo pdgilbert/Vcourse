@@ -3,7 +3,7 @@
 """
 Run by race committee to set the course and distribute to racing boats.
 
-This progam needs PYTHONPATH setting to find other modules, e.g.
+This program needs PYTHONPATH setting to find other modules, e.g.
 
 export PYTHONPATH=/path/to/Vcourse/lib
 
