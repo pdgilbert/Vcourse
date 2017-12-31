@@ -9,7 +9,6 @@ import time
 import gpsd
 import math
 
-import os  # just for mkdir
 
 from joblib import Parallel, delayed # for parallel requests to remote gps
 
@@ -24,23 +23,6 @@ GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
 GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
 
-# FLEETS sets options in drop down menu. To change the menu it seems to be
-# necessary to restart, so a re-read button is not usable.
-try : 
-   with open("FleetList.txt") as f:  FLEETS =  f.read().splitlines()
-   FLEETS = [b.strip() for b in FLEETS]
-except :
-   FLEETS = 'No fleet'   
-
-if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
-if not os.path.exists('RACEPARMS'):  os.makedirs('RACEPARMS')
-
-for d in FLEETS:
-   if not os.path.exists('FLEETS/' + d):
-             os.makedirs('FLEETS/' + d)
-   if not os.path.exists('FLEETS/' + d + '/DISTRIBUTEDZONES'):
-             os.makedirs('FLEETS/' + d + '/DISTRIBUTEDZONES')
-
 #########################    Utility  Functions     ######################### 
 
 def But(w, text='x', command='') :
@@ -48,10 +30,13 @@ def But(w, text='x', command='') :
    b.pack(side=tkinter.LEFT, padx=5, pady=5)
    return(b)
 
-def Drop(w, options=['zero', 'one', 'two'], default=0) :
+def Drop(w, options=['zero', 'one', 'two'], default=0, command=None) :
+   #command below needs to accept the selection, which is passed to it,
+   # eg,  self.readRCWindow() will be passes (self, 'FX')
    v = tkinter.StringVar(w)
    v.set(options[default]) 
-   b = tkinter.OptionMenu(w, v, *options)
+   if command is None : b = tkinter.OptionMenu(w, v, *options)
+   else :               b = tkinter.OptionMenu(w, v, *options,  command=command)
    b.pack(side=tkinter.LEFT)
    return v
 
@@ -66,13 +51,16 @@ def foo(n,h,p): return((n, gpsConnection(h,p).getGPS()))
 # NOT SURE IF THIS SHOULD BE A CLASS OBJECT. THERE WILL ONLY BE ONE INSTANCE.
 
 class RCmanager():
-   def __init__(self, w, dr):
+   def __init__(self, w, dr, fleets):
       """RC Management main control window and parameters."""
 
-      # Initial default parameters. Could save last on exit and reload ?
+      # fleetList sets options in drop down menu. To change the menu it seems 
+      # to be necessary to restart, so a re-read fleetList button is not usable.
+      self.fleetList   = fleets['fleetList']  
+
+      self.fl   = self.fleetList[0]          # default active fleet
+
       self.ty   = 'stadium2'    # zone type
-      self.fleets   = FLEETS   # FleetList
-      self.fl   = self.fleets[0]                # default fleet
       self.dc   = 'race 1'     # description
 
       #         position below means a gpsPos object.
@@ -99,14 +87,16 @@ class RCmanager():
 
       row = tkinter.Frame(w)
       tkinter.Label(row, width=10, text="Zone Type", anchor='w').pack(side=tkinter.LEFT)
-      self.zoneChoice = Drop(row, options=['stadium', 'stadium2', 'NoCourse'], default = 0)
+      self.zoneChoice = Drop(row, options=['stadium', 'stadium2', 'NoCourse'], default = 0,
+                command= (lambda event : self.readRCWindow()))
       But(row,  text='calc   \n  using',           command=self.calc)
       self.calcChoice = Drop(row, options=['RC & axis', 'RC & mark', 'start center\n& mark'])
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
       row = tkinter.Frame(w)
       tkinter.Label(row, width=10, text="fleet", anchor='w').pack(side=tkinter.LEFT)
-      self.fleetChoice = Drop(row, options=self.fleets, default = 0)
+      self.fleetChoice = Drop(row, options=self.fleetList, default = 0,
+                 command= (lambda event : self.readRCWindow()))
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
       fldLabels = [
@@ -149,7 +139,7 @@ class RCmanager():
 
 
    def parms(self):  
-      self.readRCWindow() # Ensure using current screen values.
+      # self.readRCWindow() # Ensure using current screen values SHOULD NOT BE NEEDED
 
       return {'ty':self.ty, 'fl':self.fl, 'dc':self.dc, 
           'RC.lat' : self.RC.lat, 'RC.lon' : self.RC.lon, 

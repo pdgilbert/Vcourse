@@ -54,7 +54,7 @@ class distributionCheck(threading.Thread):
 
       # This loads an active zoneObj if it exists, so gadget is a bit
       # robust to an accidental reboot. (distributionCheck only needs the cid)
-      global cid  # see note in stadiumBT re zoneSignal and cid
+      global cid  # see note in BT re zoneSignal and cid
       try :
          with open("activeBTzoneObj.json","r") as f:  zoneObj = json.load(f)
          cid = zoneObj['cid']
@@ -142,7 +142,7 @@ class distributer(threading.Thread):
    It maintains the list distRecvd of boats that have received a distribution.
    """
 
-   def __init__(self, shutdown):
+   def __init__(self, shutdown, fleets):
       threading.Thread.__init__(self)
 
       self.name='distributer'
@@ -162,7 +162,7 @@ class distributer(threading.Thread):
       # This loads an active zoneObj if it exists for the fleet, to be a bit
       # robust when restarted
       
-      global cid  # see note in stadiumBT re zoneSignal and cid
+      global cid 
       try :
          with open('FLEETS' + self.fl + '/activeBTzoneObj.json','r') as f:  self.zoneObj = json.load(f)
          cid = self.zoneObj['cid']

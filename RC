@@ -18,6 +18,7 @@ import logging
 import time
 import tkinter
 import sys
+import os  # just for mkdir
 
 import distribution
 import RCmanagement
@@ -26,15 +27,41 @@ logFormat ='(%(threadName)-9s) %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=logFormat,)
 #logging.basicConfig(level=logging.INFO, format=logFormat,)
 
+try : 
+   with open("FleetList.txt") as f:  FLEETS =  f.read().splitlines()
+   FLEETS = [b.strip() for b in FLEETS]
+except :
+   FLEETS = ('No fleet',)  
+
+if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
+if not os.path.exists('RACEPARMS'):  os.makedirs('RACEPARMS')
+
+for d in FLEETS:
+   if not os.path.exists('FLEETS/' + d):
+             os.makedirs('FLEETS/' + d)
+   if not os.path.exists('FLEETS/' + d + '/DISTRIBUTEDZONES'):
+             os.makedirs('FLEETS/' + d + '/DISTRIBUTEDZONES')
+
+
+# RCmanagement.RCmanager reads and uses BoatList
+# distribution.distributer uses zoneObj and cid (currently RCmanager creates zoneObj)
+# both use fleetList and distRecvd
+
+# fleets eventual has a sub-dict for each fleet, eg: 
+#fleets = {'fleetList' : ('FX',), 'FX': {'BoatList':('FX 1',), 'zoneObj':None, 'cid': None, 'distRecvd':('FX 1',)}}
+
+fleets = {'fleetList' : FLEETS}
+
+
 if __name__ == '__main__':
    logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    shutdown = threading.Event()
 
-   dr = distribution.distributer(shutdown)
+   dr = distribution.distributer(shutdown, fleets)
    dr.start() 
    
    race = tkinter.Tk()
-   z = RCmanagement.RCmanager(race, dr)
+   z = RCmanagement.RCmanager(race, dr, fleets)
 
    def abortHandler(signum, frame):
        logging.debug('main thread abortHandler setting shutdown signal.')
