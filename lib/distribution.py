@@ -17,6 +17,7 @@ import logging
 import json
 import time
 import threading
+import os  # just for mkdir
 
 import smp
 
@@ -117,21 +118,37 @@ class distributionCheck(threading.Thread):
 
 ####### following classes and variables are used only by RC #######
 
-# Having distRecvd global to the module is so that BThandler 
-# threads can append to it, and distributer thread can clear it,
-# and status button can access it.
+# RCmanagement.RCmanager uses fleetList, distRecvd and BoatList through dr object.
+# distributer manages and uses zoneObj and cid 
+# (BUT currently RCmanager creates zoneObj PROBABLY SHOULD CHANGE THIS)
 
-distRecvd = {}
+# fleets will have a sub-dict for each fleet, eg: 
+#fleets = {'fleetList' : ('FX',), 'FX': {'BoatList':('FX 1',), 'zoneObj':None, 'cid': None, 'distRecvd':('FX 1',)}}
 
-# Read config variable RC_IP, RC_PORT  from file RCconfig
-# in the working directory. 
-#    IF THE FILE IS NOT AVAILABLE THE PROGRAM WILL FAIL.
-#The file is json and can be generated in python by 
-# import json
-#  (edit next line example as required)
-# config = {'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001}
-# json.dump(config, open('RCconfig', 'w'))
-# The file can also be editted by hand with care to preserve the dict structure.
+
+try : 
+   with open("FleetList.txt") as f:  FLEETS =  f.read().splitlines()
+   FLEETS = [b.strip() for b in FLEETS]
+except :
+   FLEETS = ('No fleet',)  
+
+if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
+if not os.path.exists('RACEPARMS'):  os.makedirs('RACEPARMS')
+
+# fleets is global to the module is so that BThandler 
+# threads can append to distRecvd, and distributer thread can clear it.
+# THIS COULD BE CHANGED IF distRecvd  PASSED BThandler THE OBJECT.
+# RC status button accesses it through dr object.
+
+fleets = {'fleetList' : FLEETS}
+
+for d in fleets['fleetList']:
+   if not os.path.exists('FLEETS/' + d):
+             os.makedirs('FLEETS/' + d)
+   if not os.path.exists('FLEETS/' + d + '/DISTRIBUTEDZONES'):
+             os.makedirs('FLEETS/' + d + '/DISTRIBUTEDZONES')
+
+
 
 class distributer(threading.Thread):
    """
@@ -140,9 +157,18 @@ class distributer(threading.Thread):
    This thread waits for connections from BTs and pass each to a BThandlerThread.
    It keeps the current zoneObj to distribute.
    It maintains the list distRecvd of boats that have received a distribution.
+
+   Config variable RC_IP, RC_PORT are read from file RCconfig in the working 
+   directory.  IF THE FILE IS NOT AVAILABLE THE PROGRAM WILL FAIL.
+   The file is json and can be generated in python by 
+     import json
+     (edit next line example as required)
+     config = {'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001}
+     json.dump(config, open('RCconfig', 'w'))
+   The file can also be edited by hand with care to preserve the dict structure.
    """
 
-   def __init__(self, shutdown, fleets):
+   def __init__(self, shutdown):
       threading.Thread.__init__(self)
 
       self.name='distributer'
@@ -158,6 +184,17 @@ class distributer(threading.Thread):
       # so never checks for shutdown.
       self.tcpsock.settimeout(5)
       #logging.debug("Incoming socket timeout " + str(self.tcpsock.gettimeout()))
+
+      global fleets 
+      self.fleets=fleets
+
+      for d in self.fleets['fleetList']:
+        self.fleets.update({d:{'BoatList':(), 'zoneObj':None, 'cid': None, 'distRecvd': None}})
+        self.readBoatList(d) #also set it in self.fleets
+        self.fleets[d]['distRecvd'] = {}
+        self.fleets[d]['zoneObj'] = None
+        self.fleets[d]['cid'] = None
+
 
       # This loads an active zoneObj if it exists for the fleet, to be a bit
       # robust when restarted
@@ -190,14 +227,37 @@ class distributer(threading.Thread):
    
    def prt(self):
       print(json.dumps(self.zoneObj, indent=4))
-      print('Received by:')
-      global distRecvd
-      print(distRecvd)
+      print('Fleets:')
+      print(self.fleetList)
+    
+   def fleetList(self):
+      return self.fleets['fleetList']
+
+   def cid(self, fl):
+      return self.fleets[fl]['zoneObj']
+
+   def zoneObj(self, fl):
+      return self.fleets[fl]['zoneObj']
+
+   def distributionRecvd(self, fl):
+      return self.fleets[fl]['distRecvd']
   
-   def distributionRecvd(self):
-      global distRecvd
-      return distRecvd
+   def BoatList(self, fl):
+      return self.fleets[fl]['BoatList']
       
+   def readBoatList(self, fl, w=None):
+      if w is not None: w.destroy()
+
+      try : 
+         with open('FLEETS/' +fl + '/BoatList.txt') as f: bl = f.read().splitlines()
+         bl = [b.strip() for b in bl]
+      except :
+         bl = None   
+
+      logging.debug('BoatList = bl is ' + str(bl))
+      self.fleets[fl].update({'BoatList': bl})
+
+
    def distribute(self, zoneObj):
       #  IT might BE BETTER IF THE ARG WAS raceObj and makezoneObj was done
       #    here or in a stadium module. But probably want raceObj class 

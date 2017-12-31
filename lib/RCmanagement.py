@@ -51,14 +51,16 @@ def foo(n,h,p): return((n, gpsConnection(h,p).getGPS()))
 # NOT SURE IF THIS SHOULD BE A CLASS OBJECT. THERE WILL ONLY BE ONE INSTANCE.
 
 class RCmanager():
-   def __init__(self, w, dr, fleets):
+   def __init__(self, w, dr):
       """RC Management main control window and parameters."""
 
       # fleetList sets options in drop down menu. To change the menu it seems 
       # to be necessary to restart, so a re-read fleetList button is not usable.
-      self.fleetList   = fleets['fleetList']  
+      self.fleetList   = dr.fleets['fleetList']  
 
-      self.fl   = self.fleetList[0]          # default active fleet
+      logging.info('dr.fleetList')
+      logging.info(dr.fleetList())
+      self.fl   = dr.fleetList()[0]          # default active fleet
 
       self.ty   = 'stadium2'    # zone type
       self.dc   = 'race 1'     # description
@@ -129,13 +131,13 @@ class RCmanager():
      
       But(w,  text='get RC GPS',                       command=self.getRCgps)
       But(w,  text='distribute',     command=(lambda : dr.distribute(self.makezoneObj())))
-      But(w,  text='update\nStatus', command=(lambda : self.updateStatus(w, dr.distributionRecvd())))
+      But(w,  text='update\nStatus', command=(lambda : self.updateStatus(w, dr)))
       But(w, text='extra',           command=(lambda : extraWindow(self, dr)))
 
       self.writeRCWindow()
 
       self.readgpsList()  # this could be in an extra object
-      self.readBoatList() # only current fleet
+      #self.readBoatList() # only current fleet
 
 
    def parms(self):  
@@ -194,7 +196,6 @@ class RCmanager():
       
       self.ty = self.zoneChoice.get()
       self.fl = self.fleetChoice.get()
-      self.readBoatList() # new fleet
 
       self.dc = str(self.ents[0].get())
       self.RC = gpsPos(float(self.ents[1].get()),  float(self.ents[2].get()))
@@ -204,6 +205,8 @@ class RCmanager():
       self.ax = float(self.ents[8].get()) 
       self.ll = float(self.ents[9].get()) 
       self.tt = float(self.ents[10].get()) 
+      logging.info('in readRCWindow, new parms set:')
+      logging.info(str(self.parms()))
 
    def getRCgps(self):
       """Update RC position from gps and write to screen."""
@@ -291,9 +294,12 @@ class RCmanager():
 
    ###### following methods COULD BE in a separate 'extra' object ######
 
-   def updateStatus(self, w, revd):
+   def updateStatus(self, w, dr):
       # if w is not None: w.destroy()  Do not destroy when button is on main window
      
+      BoatList =  dr.BoatList(self.fl)
+      revd     =  dr.distributionRecvd(self.fl)
+
       t = tkinter.Toplevel(w)
       t.wm_title("Update Status")
       logging.debug('revd:')
@@ -305,7 +311,7 @@ class RCmanager():
          row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
          lab.pack(side=tkinter.LEFT)
 
-      if  self.BoatList is None : 
+      if  BoatList is None : 
          bl = 'boat list not available.'
       else :
          bl = ''
@@ -315,27 +321,14 @@ class RCmanager():
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=2)
       lab.pack(side=tkinter.LEFT)
 
-      if (self.BoatList is not None) : 
-         for f in self.BoatList :
+      if (BoatList is not None) : 
+         for f in BoatList :
             if f not in  revd :
                row = tkinter.Frame(t)
                lab = tkinter.Label(row, width=30, text='*** ' + f , anchor='w')
                row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
                lab.pack(side=tkinter.LEFT)
 
-
-   def readBoatList(self, w=None):
-      if w is not None: w.destroy()
-
-      logging.info('readBoatList()   FLEETS/' + self.fl + '/BoatList.txt')
-      try : 
-         with open('FLEETS/' + self.fl + '/BoatList.txt') as f: bl = f.read().splitlines()
-         bl = [b.strip() for b in bl]
-      except :
-         bl = None   
-
-      logging.info('self.BoatList = bl is ' + str(bl))
-      self.BoatList = bl
 
 
    def writeRaceFile(self, w=None, filename = None):
@@ -374,6 +367,10 @@ class RCmanager():
       if filename is "":  return   # i.e. cancel clicked in dialog
 
       with open(filename) as f:  RF = json.load(f)   
+
+      if (RF['fl'] is None  or  RF['fl'] not in self.fleetList):
+         RF['fl'] = 'no fleet'
+         logging.info(filename + ' file non-existing fleet converted to "no fleet".')
 
       try : 
          self.setparms(RF)        # only uses RC parms
@@ -644,11 +641,15 @@ def extraMoreWindow(w, RCobj, dr):
      print('Zone parms:')
      print(RCobj.ZTobj.parms())
      print('zoneObj')
-     dr.prt()
+     #dr.prt()
      #print('threads')
      #print(str(threading.enumerate()))
+     print('fleet')
+     print(RCobj.parms()['fl'])
+     print('dr.BoatList()')
+     print(dr.BoatList(RCobj.parms()['fl']))
      print('dr.distributionRecvd()')
-     print(dr.distributionRecvd())
+     print(dr.distributionRecvd(RCobj.parms()['fl']))
 
    t = tkinter.Toplevel()
    t.wm_title("More Extra Options")
