@@ -129,15 +129,15 @@ class RCmanager():
          i += 1
       self.ents = entries
      
-      But(w,  text='get RC GPS',                       command=self.getRCgps)
-      But(w,  text='distribute',     command=(lambda : dr.distribute(self.makezoneObj())))
+      But(w,  text='get RC GPS',     command=self.getRCgps)
+      But(w,  text='distribute',    
+                   command=(lambda : dr.distribute(self.makezoneObj())))
       But(w,  text='update\nStatus', command=(lambda : self.updateStatus(w, dr)))
       But(w, text='extra',           command=(lambda : extraWindow(self, dr)))
 
       self.writeRCWindow()
 
       self.readgpsList()  # this could be in an extra object
-      #self.readBoatList() # only current fleet
 
 
    def parms(self):  
@@ -296,7 +296,14 @@ class RCmanager():
 
    def updateStatus(self, w, dr):
       # if w is not None: w.destroy()  Do not destroy when button is on main window
-     
+      
+      def ROW(t, text):
+         row = tkinter.Frame(t)
+         lab = tkinter.Label(row, width=30, text=text, anchor='w')
+         row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=2)
+         lab.pack(side=tkinter.LEFT)
+
+      
       BoatList =  dr.BoatList(self.fl)
       revd     =  dr.distributionRecvd(self.fl)
 
@@ -304,30 +311,20 @@ class RCmanager():
       t.wm_title("Update Status")
       logging.debug('revd:')
       logging.debug(str(revd))
+      ROW(t, text= dr.cid(self.fl))
 
-      for f in revd :
-         row = tkinter.Frame(t)
-         lab = tkinter.Label(row, width=30, text=f + ' ' + str(revd[f]), anchor='w')
-         row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
-         lab.pack(side=tkinter.LEFT)
+      for f in revd :  ROW(t, text=f + ' ' + str(revd[f]))
 
       if  BoatList is None : 
          bl = 'boat list not available.'
       else :
          bl = ''
       
-      row = tkinter.Frame(t)
-      lab = tkinter.Label(row, width=30, text=' Not Updated: ' + bl, anchor='w')
-      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=2)
-      lab.pack(side=tkinter.LEFT)
+      ROW(t, text=' Not Updated: ' + bl)
 
       if (BoatList is not None) : 
          for f in BoatList :
-            if f not in  revd :
-               row = tkinter.Frame(t)
-               lab = tkinter.Label(row, width=30, text='*** ' + f , anchor='w')
-               row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=0)
-               lab.pack(side=tkinter.LEFT)
+            if f not in  revd : ROW(t, text='*** ' + f )
 
 
 

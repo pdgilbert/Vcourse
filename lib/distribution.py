@@ -148,7 +148,15 @@ for d in fleets['fleetList']:
    if not os.path.exists('FLEETS/' + d + '/DISTRIBUTEDZONES'):
              os.makedirs('FLEETS/' + d + '/DISTRIBUTEDZONES')
 
+####### utility ####### 
 
+def VorNone(k, d):
+   # return value from a dist, or None if the key does not exist.
+   if k in d: v = d[k]
+   else :     v = None
+   return v
+
+#######################
 
 class distributer(threading.Thread):
    """
@@ -189,25 +197,19 @@ class distributer(threading.Thread):
       self.fleets=fleets
 
       for d in self.fleets['fleetList']:
-        self.fleets.update({d:{'BoatList':(), 'zoneObj':None, 'cid': None, 'distRecvd': None}})
-        self.readBoatList(d) #also set it in self.fleets
-        self.fleets[d]['distRecvd'] = {}
-        self.fleets[d]['zoneObj'] = None
-        self.fleets[d]['cid'] = None
+         self.fleets.update({d:{'BoatList':(), 'zoneObj':None, 'cid': None, 'distRecvd': None}})
+         self.readBoatList(d) 
+         self.setdistributionRecvd(d, {})
 
-
-      # This loads an active zoneObj if it exists for the fleet, to be a bit
-      # robust when restarted
-      
-      global cid 
-      try :
-         with open('FLEETS' + self.fl + '/activeBTzoneObj.json','r') as f:  self.zoneObj = json.load(f)
-         cid = self.zoneObj['cid']
-         logging.info("distributer loaded existing active zoneObj.")
-      except :
-         self.zoneObj = None
-         cid =  None
-      
+         #Load active zoneObj's if they exists, to be a bit robust when restarted.
+         try :
+            with open('FLEETS/' + d + '/activeBTzoneObj.json','r') as f:
+                  self.setzoneObj(d, json.load(f))
+            logging.info("distributer loaded existing active zoneObj for " + d)
+            logging.info("cid is " + self.cid(d))
+         except :
+            self.setzoneObj(d, None)
+            
       logging.info('distributer initialized.')
       logging.debug('    using '+ config['RC_IP'] + ':' + str(config['RC_PORT']))
 
@@ -219,7 +221,8 @@ class distributer(threading.Thread):
             self.tcpsock.listen(5)  
             (sock, (ip,port)) = self.tcpsock.accept()
             #next only takes a second, so no need to pass shutdown signal.
-            BThandlerThread(ip, port, sock, self.zoneObj).start()
+            #this only uses fleets (for cid and zoneObj) but self passes access methods
+            BThandlerThread(ip, port, sock, self).start()
          except Exception: 
             pass
 
@@ -234,16 +237,29 @@ class distributer(threading.Thread):
       return self.fleets['fleetList']
 
    def cid(self, fl):
-      return self.fleets[fl]['zoneObj']
+      return VorNone('cid', self.fleets[fl])
+
+   def setzoneObj(self, fl, zobj):
+      self.fleets[fl]['zoneObj'] = zobj
+      if zobj is None: self.fleets[fl]['cid'] = None
+      else           : self.fleets[fl]['cid']  = zobj['cid']
 
    def zoneObj(self, fl):
-      return self.fleets[fl]['zoneObj']
+      return VorNone('zoneObj', self.fleets[fl])
+
+
+   def setdistributionRecvd(self, fl, obj):
+      self.fleets[fl]['distRecvd'] = obj
+
+   def updatedistributionRecvd(self, fl, b):
+      return VorNone('distRecvd', self.fleets[fl])
+      self.fleets[fl]['distRecvd'].update(b)
 
    def distributionRecvd(self, fl):
-      return self.fleets[fl]['distRecvd']
+      return VorNone('distRecvd', self.fleets[fl])
   
    def BoatList(self, fl):
-      return self.fleets[fl]['BoatList']
+      return VorNone('BoatList', self.fleets[fl])
       
    def readBoatList(self, fl, w=None):
       if w is not None: w.destroy()
@@ -259,31 +275,33 @@ class distributer(threading.Thread):
 
 
    def distribute(self, zoneObj):
-      #  IT might BE BETTER IF THE ARG WAS raceObj and makezoneObj was done
-      #    here or in a stadium module. But probably want raceObj class 
-      #    with methods in stadiumRC first, and stop using globals.
+      """
+        IT might BE BETTER IF THE ARG WAS raceObj and makezoneObj was done
+         here or in a stadium module. But probably want raceObj class 
+         with methods in stadiumRC first, and stop using globals.
 
-      # This works by creating a new version of zoneObj, the BThandlerThread
-      # compares the cid of this with that sent by BTs when they connect.
-      # There is no other "signal" to BThandlerThread or to BTs. 
-      # It depends on BTs checking in.
-      #logging.debug('in distributer.distribute(), zoneObj:')
-      #logging.debug(str(zoneObj))
+      This works by creating a new version of zoneObj and cid for the fleet. 
+      The BThandlerThread compares this cid with that sent by BTs when they connect.
+      There is no other "signal" to BThandlerThread or to BTs, 
+      it depends on BTs checking in.
+      """
+
+      logging.debug('in distributer.distribute(). zoneObj:')
+      logging.debug('zoneObj')
 
       if zoneObj is not None:
-          self.zoneObj = zoneObj   
-          global distRecvd
-          distRecvd = {}    # clear dict of boats that have update
+          fl = zoneObj['fleet'] 
+          self.setzoneObj(fl, zoneObj)  
+          self.setdistributionRecvd(fl, {}) # clear dict of boats that have update
 
-          #  distribute is done with zoneObj but write zoneObj to 
-          #  activeBTzoneObj.json file for restart or on switching fleets.
-          fleet = 'FLEETS/' + zoneObj['fleet'] 
-          with open(fleet + '/activeBTzoneObj.json', 'w') as f:  
-             json.dump(self.zoneObj, f, indent=4)
+          #  distribute is done with zoneObj but write to 
+          #  files for restart and for the record.
+          with open('FLEETS/' + fl + '/activeBTzoneObj.json', 'w') as f:  
+             json.dump(zoneObj, f, indent=4)
 
           # also write zoneObj to a file, for the record.
-          with open(fleet + '/DISTRIBUTEDZONES/' + self.zoneObj['cid'] + '.json',"w")  as f:
-             json.dump(self.zoneObj, f, indent=4)
+          with open('FLEETS/' + fl + '/DISTRIBUTEDZONES/' + zoneObj['cid'] + '.json',"w")  as f:
+             json.dump(zoneObj, f, indent=4)
       
       else:
          raise RuntimeError("zoneObj is None. Refusing to distribute.")
@@ -295,57 +313,43 @@ class BThandlerThread(threading.Thread):
    Check if BT is current and update with new zoneObj information if not.
    Update global distRecvd when a BT has been updated.
    """
-
-   def __init__(self, ip, port, sock, zoneObj):
+   
+   def __init__(self, ip, port, sock, distributer):
        threading.Thread.__init__(self)
        self.name='BThandler'
        self.ip = ip
        self.port = port
        self.sock = sock
-       self.zoneObj = zoneObj
+       #self.fleets = fleets
    def run(self):        
        #logging.debug('in BThandlerThread.run()')
        #logging.debug(str(self.zoneObj))
-
-       #course (zone) id that RC has
-       if self.zoneObj is None :
-                RCcid = None
-       else :   RCcid = self.zoneObj['cid']
-
-       #  eventually remove this check for empty cid
-       if RCcid is None: 
-          raise Exception('BThandlerThread intercepted old RCcid is None')
        
        #None is not transmitted, so this could be "none", but that should work below
-       BTcid = smp.rcv(self.sock)  #course id that BT has
+       BTcid = smp.rcv(self.sock)  #zone id that BT has
+       
+       fl = BTcid.split('-')[0]
+
+       RCcid= distributer.cid(fl) #zone id that RC has, possible None
        
        #logging.debug(" BTcid " + str(BTcid))
        #logging.debug(" RCcid " + str(RCcid))
 
-       if self.zoneObj is None : 
+       if RCcid is None : 
              smp.snd(self.sock, 'none')
              #logging.debug('sent none.')
-             if RCcid is not None :
-                raise Exception('something is wrong. zoneObj is None and RCcid is not.')
   
-       # this should be redundant, if zoneObj is None then cid should be too.
-       elif RCcid is None :
-             smp.snd(self.sock, 'none') # note this is not {"cid": "none"}
-
        elif (BTcid == RCcid) :
              smp.snd(self.sock, 'ok')
              #logging.debug('sent ok.')
              
        else :
              #logging.debug('sending new zoneObj to BT')
-             smp.snd(self.sock, json.dumps(self.zoneObj, indent=4))
+             smp.snd(self.sock, json.dumps(distributer.zoneObj(fl), indent=4))
              #logging.debug('new zoneObj sent:')
              bt = smp.rcv(self.sock) 
-             # This uses module global variable since distributer() needs
-             # to write (clear) it and it needs to persist after this thread.
              # Possibly need to lock or use semaphore to avoid conflicts?
-             global distRecvd
-             distRecvd.update({bt : time.strftime('%Y-%m-%d %H:%M:%S %Z')})
+             distributer.updatedistributionRecvd(fl, {bt : time.strftime('%Y-%m-%d %H:%M:%S %Z')})
 
        self.sock.close()
        #logging.debug('closed socket and exiting thread ' + self.name)
