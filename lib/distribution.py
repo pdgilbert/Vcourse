@@ -1,4 +1,4 @@
-# License GPL 2. Copyright Paul D. Gilbert, 2017
+# License GPL 2. Copyright Paul D. Gilbert, 2017, 2018
 """Object for distributing and receiving zone infomation to set LEDs.
 
 BT sends RC the cid (cousreID and distritution time) that BT has.
@@ -24,18 +24,22 @@ import smp
 ####### this class is used only by BT #######
 #######      (see below for RC)       #######
 
-# Read config variable RC_IP, RC_PORT, BT_ID  from file BTconfig
-# in the working directory. 
-#    IF THE FILE IS NOT AVAILABLE THE PROGRAM WILL FAIL.
-#The file is json and can be generated in python by 
-# import json
-#  (edit next line example as required)
-# config = {'BT_ID' : 'boat 1', 'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001}
-# json.dump(config, open('BTconfig', 'w'))
-# The file can also be editted by hand with care to preserve the dict structure.
-
 class distributionCheck(threading.Thread):
-   """Threading object used by BT to check for and load new zone information objects."""
+   """
+   Threading object used by BT to check for and load new zone information objects.
+
+   Read config variables  RC_IP, RC_PORT, BT_ID  FLEET from file BTconfig
+   in the working directory. 
+      IF THE FILE IS NOT AVAILABLE THE PROGRAM WILL FAIL.
+
+   The file is json and can be generated in python by 
+      import json
+      (edit next line example as required)
+      config = {'BT_ID' : 'boat 1', 'FLEET': 'fleet 1', 'RC_IP' : '192.168.1.1', 'RC_PORT' : 9001}
+      json.dump(config, open('BTconfig', 'w'))
+
+   The file can also be editted by hand with care to preserve the dict structure.
+   """
    
    def __init__(self, update, shutdown):
       threading.Thread.__init__(self)
@@ -78,7 +82,7 @@ class distributionCheck(threading.Thread):
               s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
               s.connect((self.RC_IP, self.RC_PORT))
               
-              if cid is None : l = smp.snd(s, 'none')
+              if cid is None : l = smp.snd(s, self.FLEET + '-none')
               else :           l = smp.snd(s, cid)
 
               #logging.debug("BT cid " + str(cid))
@@ -118,40 +122,10 @@ class distributionCheck(threading.Thread):
 
 ####### following classes and variables are used only by RC #######
 
-# RCmanagement.RCmanager uses fleetList, distRecvd and BoatList through dr object.
-# distributer manages and uses zoneObj and cid 
-# (BUT currently RCmanager creates zoneObj PROBABLY SHOULD CHANGE THIS)
-
-# fleets will have a sub-dict for each fleet, eg: 
-#fleets = {'fleetList' : ('FX',), 'FX': {'BoatList':('FX 1',), 'zoneObj':None, 'cid': None, 'distRecvd':('FX 1',)}}
-
-
-try : 
-   with open("FleetList.txt") as f:  FLEETS =  f.read().splitlines()
-   FLEETS = [b.strip() for b in FLEETS]
-except :
-   FLEETS = ('No fleet',)  
-
-if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
-if not os.path.exists('RACEPARMS'):  os.makedirs('RACEPARMS')
-
-# fleets is global to the module is so that BThandler 
-# threads can append to distRecvd, and distributer thread can clear it.
-# THIS COULD BE CHANGED IF distRecvd  PASSED BThandler THE OBJECT.
-# RC status button accesses it through dr object.
-
-fleets = {'fleetList' : FLEETS}
-
-for d in fleets['fleetList']:
-   if not os.path.exists('FLEETS/' + d):
-             os.makedirs('FLEETS/' + d)
-   if not os.path.exists('FLEETS/' + d + '/DISTRIBUTEDZONES'):
-             os.makedirs('FLEETS/' + d + '/DISTRIBUTEDZONES')
-
 ####### utility ####### 
 
 def VorNone(k, d):
-   # return value from a dist, or None if the key does not exist.
+   # return value from a dict d, or None if the key k does not exist.
    if k in d: v = d[k]
    else :     v = None
    return v
@@ -163,8 +137,14 @@ class distributer(threading.Thread):
    Threading object used by RC to listen for BTs checking in.
    
    This thread waits for connections from BTs and pass each to a BThandlerThread.
-   It keeps the current zoneObj to distribute.
+
+   It keeps the current zoneObj for each fleet to distribute and should create it
+   (BUT currently RCmanager creates zoneObj PROBABLY SHOULD CHANGE THIS).
+   It also keeps a quick lists of the cid for those objects.
+   It maintains the list BoatList of boats in each fleet.
    It maintains the list distRecvd of boats that have received a distribution.
+   RCmanagement.RCmanager uses fleetList, distRecvd and BoatList through a
+   distributer (dr) object.
 
    Config variable RC_IP, RC_PORT are read from file RCconfig in the working 
    directory.  IF THE FILE IS NOT AVAILABLE THE PROGRAM WILL FAIL.
@@ -193,8 +173,27 @@ class distributer(threading.Thread):
       self.tcpsock.settimeout(5)
       #logging.debug("Incoming socket timeout " + str(self.tcpsock.gettimeout()))
 
-      global fleets 
-      self.fleets=fleets
+      #fleets will have a sub-dict for each fleet, eg: 
+      #fleets = {'fleetList' : ('FX',), 'FX': {'BoatList':('FX 1',), 'zoneObj':None, 'cid': None, 'distRecvd':('FX 1',)}}
+      # RC distribute and status button accesses it through distributer (dr) object.
+
+      try : 
+         with open("FleetList.txt") as f:  fleets =  f.read().splitlines()
+         fleets = [b.strip() for b in fleets]
+         self.fleets = {'fleetList' : fleets}
+      except :
+         self.fleets = {'fleetList' : ('No fleet',) }
+
+      if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
+      if not os.path.exists('RACEPARMS'):  os.makedirs('RACEPARMS')
+
+      for d in self.fleets['fleetList']:
+
+         if not os.path.exists('FLEETS/' + d):
+             os.makedirs('FLEETS/' + d)
+         if not os.path.exists('FLEETS/' + d + '/DISTRIBUTEDZONES'):
+             os.makedirs('FLEETS/' + d + '/DISTRIBUTEDZONES')
+
 
       for d in self.fleets['fleetList']:
          self.fleets.update({d:{'BoatList':(), 'zoneObj':None, 'cid': None, 'distRecvd': None}})
@@ -314,6 +313,9 @@ class BThandlerThread(threading.Thread):
    Update global distRecvd when a BT has been updated.
    """
    
+# This needs updatedistributionRecvd, cid and zoneObj for each fleet, but
+#  passing the whole of  distributer is bigger than needed.
+
    def __init__(self, ip, port, sock, distributer):
        threading.Thread.__init__(self)
        self.name='BThandler'
@@ -321,16 +323,21 @@ class BThandlerThread(threading.Thread):
        self.port = port
        self.sock = sock
        #self.fleets = fleets
+       self.distributer = distributer
+
    def run(self):        
        #logging.debug('in BThandlerThread.run()')
        #logging.debug(str(self.zoneObj))
        
        #None is not transmitted, so this could be "none", but that should work below
        BTcid = smp.rcv(self.sock)  #zone id that BT has
+       logging.debug(" BTcid " + str(BTcid))
        
        fl = BTcid.split('-')[0]
+       logging.debug(" fl " + str(fl))
+       if fl == 'none' : raise RuntimeError('BT fleet is "none".')
 
-       RCcid= distributer.cid(fl) #zone id that RC has, possible None
+       RCcid= self.distributer.cid(fl) #zone id that RC has, possibly None
        
        #logging.debug(" BTcid " + str(BTcid))
        #logging.debug(" RCcid " + str(RCcid))
@@ -345,11 +352,11 @@ class BThandlerThread(threading.Thread):
              
        else :
              #logging.debug('sending new zoneObj to BT')
-             smp.snd(self.sock, json.dumps(distributer.zoneObj(fl), indent=4))
+             smp.snd(self.sock, json.dumps(self.distributer.zoneObj(fl), indent=4))
              #logging.debug('new zoneObj sent:')
              bt = smp.rcv(self.sock) 
              # Possibly need to lock or use semaphore to avoid conflicts?
-             distributer.updatedistributionRecvd(fl, {bt : time.strftime('%Y-%m-%d %H:%M:%S %Z')})
+             self.distributer.updatedistributionRecvd(fl, {bt : time.strftime('%Y-%m-%d %H:%M:%S %Z')})
 
        self.sock.close()
        #logging.debug('closed socket and exiting thread ' + self.name)
