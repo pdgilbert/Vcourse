@@ -21,8 +21,10 @@ import os  # just for mkdir
 
 import smp
 
+###################################################################
 ####### this class is used only by BT #######
 #######      (see below for RC)       #######
+###################################################################
 
 class distributionCheck(threading.Thread):
    """
@@ -120,7 +122,9 @@ class distributionCheck(threading.Thread):
       logging.info('exiting distributionCheck thread.')
 
 
+###################################################################
 ####### following classes and variables are used only by RC #######
+###################################################################
 
 ####### utility ####### 
 
@@ -250,9 +254,9 @@ class distributer(threading.Thread):
    def setdistributionRecvd(self, fl, obj):
       self.fleets[fl]['distRecvd'] = obj
 
-   def updatedistributionRecvd(self, fl, b):
-      return VorNone('distRecvd', self.fleets[fl])
-      self.fleets[fl]['distRecvd'].update(b)
+   def updatedistributionRecvd(self, fl, v):
+      self.fleets[fl]['distRecvd'].update(v)
+      logging.debug('updatedistributionRecvd ' + str(v))
 
    def distributionRecvd(self, fl):
       return VorNone('distRecvd', self.fleets[fl])
@@ -273,7 +277,7 @@ class distributer(threading.Thread):
       self.fleets[fl].update({'BoatList': bl})
 
 
-   def distribute(self, zoneObj):
+   def distribute(self, RC):
       """
         IT might BE BETTER IF THE ARG WAS raceObj and makezoneObj was done
          here or in a stadium module. But probably want raceObj class 
@@ -284,6 +288,8 @@ class distributer(threading.Thread):
       There is no other "signal" to BThandlerThread or to BTs, 
       it depends on BTs checking in.
       """
+
+      zoneObj = RC.makezoneObj()
 
       logging.debug('in distributer.distribute(). zoneObj:')
       logging.debug('zoneObj')
@@ -331,10 +337,10 @@ class BThandlerThread(threading.Thread):
        
        #None is not transmitted, so this could be "none", but that should work below
        BTcid = smp.rcv(self.sock)  #zone id that BT has
-       logging.debug(" BTcid " + str(BTcid))
+       #logging.debug(" BTcid " + str(BTcid))
        
        fl = BTcid.split('-')[0]
-       logging.debug(" fl " + str(fl))
+       #logging.debug(" fl " + str(fl))
        if fl == 'none' : raise RuntimeError('BT fleet is "none".')
 
        RCcid= self.distributer.cid(fl) #zone id that RC has, possibly None
@@ -353,10 +359,12 @@ class BThandlerThread(threading.Thread):
        else :
              #logging.debug('sending new zoneObj to BT')
              smp.snd(self.sock, json.dumps(self.distributer.zoneObj(fl), indent=4))
-             #logging.debug('new zoneObj sent:')
+             logging.debug('new zoneObj sent:')
              bt = smp.rcv(self.sock) 
+             logging.debug('  bt:' + str(bt))
              # Possibly need to lock or use semaphore to avoid conflicts?
              self.distributer.updatedistributionRecvd(fl, {bt : time.strftime('%Y-%m-%d %H:%M:%S %Z')})
+             logging.debug(' distributionRecvd:' + str(self.distributer.distributionRecvd(fl)))
 
        self.sock.close()
        #logging.debug('closed socket and exiting thread ' + self.name)

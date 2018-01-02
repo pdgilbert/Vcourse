@@ -40,11 +40,32 @@ def Drop(w, options=['zero', 'one', 'two'], default=0, command=None) :
    b.pack(side=tkinter.LEFT)
    return v
 
+def ROW(t, text, width=30, ebg=None):
+   #ebg None means no entry field, otherwise color of entry field bg.
+   row = tkinter.Frame(t)
+   lab = tkinter.Label(row, width=width, text=text, anchor='w')
+   if ebg is not None :
+       e = tkinter.Entry(row, bg = ebg)
+       e.pack(side=tkinter.RIGHT, expand=tkinter.YES, fill=tkinter.X)
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5) # 2,2
+   lab.pack(side=tkinter.LEFT)
+   return e
+
 
 # foo is only used for option 2 step in plotWindow() but unfortunately must
 # be global or it cannot be pickled for parallel operation.
 
 def foo(n,h,p): return((n, gpsConnection(h,p).getGPS()))
+
+
+def tkWarning(text, w= None):
+   if w is not None : w.destroy()
+   logging.info('**** WARNING ***' + str(text))
+   t = tkinter.Toplevel()
+   t.wm_title("**** WARNING ***")
+   row = tkinter.Frame(t)
+   tkinter.Label(row, width=40, text=str(text), anchor='w').pack(side=tkinter.LEFT)
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
 #########################  RCmanager class and  Main  Window     ######################### 
 
@@ -88,17 +109,17 @@ class RCmanager():
       # NB writeRCWindow and readRCWindow MUST be with this co-ordinated if fields are changed!!!
 
       row = tkinter.Frame(w)
+      tkinter.Label(row, width=10, text="fleet", anchor='w').pack(side=tkinter.LEFT)
+      self.fleetChoice = Drop(row, options=self.fleetList, default = 0,
+                 command= (lambda event : self.changeFleet(dr)))
+      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+      row = tkinter.Frame(w)
       tkinter.Label(row, width=10, text="Zone Type", anchor='w').pack(side=tkinter.LEFT)
       self.zoneChoice = Drop(row, options=['stadium', 'stadium2', 'NoCourse'], default = 0,
                 command= (lambda event : self.readRCWindow()))
       But(row,  text='calc   \n  using',           command=self.calc)
       self.calcChoice = Drop(row, options=['RC & axis', 'RC & mark', 'start center\n& mark'])
-      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
-
-      row = tkinter.Frame(w)
-      tkinter.Label(row, width=10, text="fleet", anchor='w').pack(side=tkinter.LEFT)
-      self.fleetChoice = Drop(row, options=self.fleetList, default = 0,
-                 command= (lambda event : self.readRCWindow()))
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
       fldLabels = [
@@ -113,25 +134,13 @@ class RCmanager():
                        'axis (degrees)',   
                        'start line length (m)',
                        'Target start time']
-      entries = []
-      i = 0
+      self.ents = []
       for f in fldLabels:
-         row = tkinter.Frame(w)
-         lab = tkinter.Label(row, width=15, text=f, anchor='w')
-         #if calculated[i]:
-         e = tkinter.Entry(row, bg = "white")
-         #else:
-         #   e = tkinter.Entry(row, bg = "grey")
-         row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
-         lab.pack(side=tkinter.LEFT)
-         e.pack(side=tkinter.RIGHT, expand=tkinter.YES, fill=tkinter.X)
-         entries.append((e))
-         i += 1
-      self.ents = entries
+         self.ents.append(ROW(w, text=f, width=15, ebg="white"))
      
       But(w,  text='get RC GPS',     command=self.getRCgps)
       But(w,  text='distribute',    
-                   command=(lambda : dr.distribute(self.makezoneObj())))
+                   command=(lambda : dr.distribute(self)))
       But(w,  text='update\nStatus', command=(lambda : self.updateStatus(w, dr)))
       But(w, text='extra',           command=(lambda : extraWindow(self, dr)))
 
@@ -191,11 +200,35 @@ class RCmanager():
       for i in range (0, len(self.ents)): refresh(i, 10, str(prms[i+2]))
 
 
+   def changeFleet(self, dr):
+      self.fl = self.fleetChoice.get()
+      obj = dr.zoneObj(self.fl)
+      logging.debug('in changeFleet, zoneObj:')
+      logging.debug(str(obj))
+      if obj is not None :
+         self.ty = obj['ty']
+
+         self.dc = obj['dc'] 
+         self.RC.lat = obj['RC.lat']
+         self.RC.lon = obj['RC.lon']
+         self.S.lat  = obj['S.lat'] 
+         self.S.lon  = obj['S.lon'] 
+         self.M.lat  = obj['M.lat'] 
+         self.M.lon  = obj['M.lon'] 
+         self.cl = obj['cl'] 
+         self.ax = obj['ax'] 
+         self.ll = obj['ll'] 
+         self.tt = obj['tt']
+         # AND ZONE PARMS        
+         self.writeRCWindow()
+      logging.debug('in changeFleet, new parms set:')
+      logging.debug(str(self.parms()))
+
    def readRCWindow(self):
       """Update current parameters from screen."""
       
-      self.ty = self.zoneChoice.get()
       self.fl = self.fleetChoice.get()
+      self.ty = self.zoneChoice.get()
 
       self.dc = str(self.ents[0].get())
       self.RC = gpsPos(float(self.ents[1].get()),  float(self.ents[2].get()))
@@ -205,8 +238,8 @@ class RCmanager():
       self.ax = float(self.ents[8].get()) 
       self.ll = float(self.ents[9].get()) 
       self.tt = float(self.ents[10].get()) 
-      logging.info('in readRCWindow, new parms set:')
-      logging.info(str(self.parms()))
+      logging.debug('in readRCWindow, new parms set:')
+      logging.debug(str(self.parms()))
 
    def getRCgps(self):
       """Update RC position from gps and write to screen."""
@@ -296,13 +329,6 @@ class RCmanager():
 
    def updateStatus(self, w, dr):
       # if w is not None: w.destroy()  Do not destroy when button is on main window
-      
-      def ROW(t, text):
-         row = tkinter.Frame(t)
-         lab = tkinter.Label(row, width=30, text=text, anchor='w')
-         row.pack(side=tkinter.TOP, fill=tkinter.X, padx=2, pady=2)
-         lab.pack(side=tkinter.LEFT)
-
       
       BoatList =  dr.BoatList(self.fl)
       revd     =  dr.distributionRecvd(self.fl)
@@ -551,6 +577,9 @@ class RCmanager():
       Part of the final zoneObj passed to boats is calculated by RCmanager.makezoneObj()
       and part by ZTobj.makezoneObj().
       """ 
+      if self.fl not in self.fleetList :
+         tkWarning("Attempting to distribute to non-existing fleet.\nFirst select fleet.")
+         return None
 
 
       # Ensure parameters  correspond to current screen values.
@@ -597,6 +626,8 @@ class RCmanager():
 
       r = self.ZTobj.makezoneObj(rRC)  # this adds zone specific parts and returns complete r
 
+      r.update(self.parms())
+
       if not self.ZTobj.verifyzoneObj(r) :
          raise Exception('error verifying zoneObj.')
          return None
@@ -623,6 +654,7 @@ def extraWindow(RCobj, dr):
 
 ######################### Extra Options  'More...'  Window ######################### 
 ######################### (possibly be an object too?)   ######################### 
+
 
 def extraMoreWindow(w, RCobj, dr):
    w.destroy()
