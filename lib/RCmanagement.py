@@ -692,7 +692,9 @@ def extraWindow(RCobj, dr):
    t = tkinter.Toplevel()
    t.wm_title("Extra Options")
 
-   But(t, text='Set Zone\nType Parms',   command=(lambda : RCobj.ZTobj.edit(t)))
+   #readRCWindow in next is just to provoke saving zone change info. 
+   # BUT IT DOES NOT WORK
+   But(t, text='Set Zone\nType Parms',   command=(lambda : (RCobj.ZTobj.edit(t) , RCobj.readRCWindow())))
    But(t, text='Save\nRace Parms',       command=(lambda : RCobj.writeRaceFile(t)))
    But(t, text='Load Saved\nRace Parms', command=(lambda : RCobj.readRace(t)))
    But(t, text='Re-read\n BoatList',     command=(lambda : RCobj.readBoatList(t)))
