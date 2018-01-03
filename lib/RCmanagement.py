@@ -73,34 +73,44 @@ def tkWarning(text, w= None):
 
 class RCmanager():
    def __init__(self, w, dr):
-      """RC Management main control window and parameters."""
+      """RC Management main control window and race parameters for all fleets."""
 
       # fleetList sets options in drop down menu. To change the menu it seems 
       # to be necessary to restart, so a re-read fleetList button is not usable.
+
       self.fleetList   = dr.fleets['fleetList']  
 
-      logging.info('dr.fleetList')
-      logging.info(dr.fleetList())
-      self.fl   = dr.fleetList()[0]          # default active fleet
+      # self.fleets is similar to dr.fleets but has raceParms as curently edited
+      # rather than 'fleetList', 'zoneObj, 'cid', 'distRecvd' as last distributed.
+      self.fleets = {}  
 
-      self.ty   = 'stadium2'    # zone type
-      self.dc   = 'race 1'     # description
+      logging.info('fleetList')
+      logging.info(self.fleetList)
 
-      #         position below means a gpsPos object.
-      self.RC   = gpsPos(44.210171667,-76.51047667) # RC position (default Pen. shoal)
-      self.S    = gpsPos(0,0)  # start line center position
-      self.M    = gpsPos(0,0)  # windward mark position 
+      self.fl   = self.fleetList[0]      # default active fleet
+      self.ty   = 'stadium'              # default zone type
 
-      self.cl   = 1.0          # course length (nm)
-      self.ax   = 240          # course bearing (degrees)
-      self.ll   = 100          # start line length (m)
-      self.tt   = 0            # target start time
-      
+      for d in self.fleetList:
+         #Load active.raceParms if they exists, to be a bit robust when restarted.
+         try :
+            RF = self.readRaceFile(filename = 'FLEETS/' + d + '/active.raceParms')
+            self.fleets.update({d: RF})
+            logging.info("RCmanager loaded existing active raceParms for " + d)
+         except :
+            logging.info("RCmanager loaded zero raceParms for " + d)
+            self.fleets.update({d: self.parmsDefault(d)})
+
+      logging.info('Zone Type: '+ self.ty)
+    
       #Zone Type Obj
       if   self.ty == 'stadium'  :  self.ZTobj = stadium.stadium() 
       elif self.ty == 'stadium2' :  self.ZTobj = stadium2.stadium2()      
-      elif self.ty == 'NoCourse' :  self.ZTobj =    NoCourse()      
       else                       :  self.ZTobj =    NoCourse()      
+        
+      #sets raceParms of current selection (but cannot yet writeRCwindow)
+      self.setFleet(self.fl) 
+
+      ##################  RCmanager  Main  GUI     ################
 
       w.wm_title("RC Management")
       #w.bind('<Return>', (lambda event, e=ents: readRaceWindow(e)))   
@@ -109,9 +119,10 @@ class RCmanager():
       # NB writeRCWindow and readRCWindow MUST be with this co-ordinated if fields are changed!!!
 
       row = tkinter.Frame(w)
-      tkinter.Label(row, width=10, text="fleet", anchor='w').pack(side=tkinter.LEFT)
+      tkinter.Label(row, width=15, text="fleet", anchor='w',
+              font=("Helvetica", 16)).pack(side=tkinter.LEFT)
       self.fleetChoice = Drop(row, options=self.fleetList, default = 0,
-                 command= (lambda event : self.changeFleet(dr)))
+                 command= (lambda event : self.changeFleet()))
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
       row = tkinter.Frame(w)
@@ -146,18 +157,26 @@ class RCmanager():
 
       self.writeRCWindow()
 
+      ###############  end RCmanager  Main  GUI     ###############
+
       self.readgpsList()  # this could be in an extra object
 
 
    def parms(self):  
       # self.readRCWindow() # Ensure using current screen values SHOULD NOT BE NEEDED
 
-      return {'ty':self.ty, 'fl':self.fl, 'dc':self.dc, 
+      return {'fl':self.fl, 'ty':self.ty, 'dc':self.dc, 
           'RC.lat' : self.RC.lat, 'RC.lon' : self.RC.lon, 
            'S.lat' : self.S.lat,   'S.lon' : self.S.lon,
            'M.lat' : self.M.lat,   'M.lon' : self.M.lon,
           'cl':self.cl, 'ax':self.ax, 'll':self.ll, 'tt':self.tt}
 
+   def parmsAll(self): 
+      r  = self.parms()
+      r.update(self.ZTobj.parms()) # add zone parms 
+      logging.debug('in parmsAll, r:')
+      logging.debug(str(r))
+      return r
 
    def parmsTuple(self):  
       return (self.ty, self.fl, self.dc, self.RC.lat,  self.RC.lon, self.S.lat,  self.S.lon, 
@@ -166,8 +185,8 @@ class RCmanager():
    #def ty(self):     return self.ty
 
    def setparms(self, nw):
-      self.ty   = nw['ty']  
       self.fl   = nw['fl']        
+      self.ty   = nw['ty']  
       self.dc   = nw['dc']        
 
       self.RC   = gpsPos(nw['RC.lat'],  nw['RC.lon'])
@@ -178,6 +197,17 @@ class RCmanager():
       self.ax   = nw['ax']
       self.ll   = nw['ll']
       self.tt   = nw['tt']
+
+   def setparmsDefault(self, fl):
+      self.setparms(self.parmsDefault(fl))
+      self.ZTobj.setparmsDefault(fl)
+
+   def parmsDefault(self,fl):
+      return {'fl': fl,  'ty': 'stadium', 'dc': '',
+          'RC.lat':  0, 'RC.lon':  0, 
+          'S.lat' :  0, 'S.lon' :  0, 
+          'M.lat' :  0, 'M.lon' :  0, 
+          'cl': 0, 'ax': 0, 'll': 0, 'tt': 0}
 
 
    def writeRCWindow(self):
@@ -198,23 +228,35 @@ class RCmanager():
          self.ents[e].insert(l, v)
      
       for i in range (0, len(self.ents)): refresh(i, 10, str(prms[i+2]))
+      
+      # ensure active fleets[raceParms] updated
+      self.fleets.update({self.fl: self.parmsAll()})
+
+      # and save file copy for reload when restarted
+      try :
+         with open('FLEETS/' +  self.fl + '/active.raceParms', 'w') as f:  
+             json.dump(self.parmsAll(), f, indent=4)
+         logging.debug("RCmanager saved raceParms for " + self.fl)
+      except :
+         logging.info("RCmanager failed saving raceParms for " + self.fl)
 
 
-   def changeFleet(self, dr):
-      self.fl = self.fleetChoice.get()
-      obj = dr.zoneObj(self.fl)
-      logging.debug('in changeFleet, zoneObj:')
+   def changeFleet(self):
+      self.setFleet(self.fleetChoice.get())
+      self.writeRCWindow()
+
+   def setFleet(self, fl):
+      self.fl = fl
+      obj = self.fleets[fl]
+      logging.debug('in setFleet, raceParms:')
       logging.debug(str(obj))
       if obj is None :
-         self.setparms({'fl': self.fl,  'ty': self.ty,  'dc': '', 
-          'RC.lat':0, 'RC.lon':0,  'S.lat':0, 'S.lon':0,  'M.lat':0, 'M.lon':0,
-               'cl':0, 'ax':0, 'll':0, 'tt':0})
+         self.setparmsDefault(fl) # also set ZTobj defaults
       else :
-         self.setparms(obj)
-         # AND ZONE PARMS        
+         self.setparms(obj)        # only uses  RC  parms from obj
+         self.ZTobj.setparms(obj)  # only uses zone parms from obj
       
-      self.writeRCWindow()
-      logging.debug('in changeFleet, new parms set:')
+      logging.debug('in setFleet, new parms set:')
       logging.debug(str(self.parms()))
 
    def readRCWindow(self):
@@ -233,6 +275,9 @@ class RCmanager():
       self.tt = float(self.ents[10].get()) 
       logging.debug('in readRCWindow, new parms set:')
       logging.debug(str(self.parms()))
+      
+      # ensure active fleets[raceParms] updated
+      self.fleets.update({self.fl: self.parmsAll()})
 
    def getRCgps(self):
       """Update RC position from gps and write to screen."""
@@ -373,24 +418,27 @@ class RCmanager():
 
 
 
-   def readRaceFile(self, w=None, filename = None):
+   def readRace(self, w=None, fleet=None, filename = None):
       if w is not None: w.destroy()
 
-      if filename is None : 
-         filename =  filedialog.askopenfilename(initialdir = "RACEPARMS/",
-                            title = "choose file",
-                        filetypes = (("race parameters","*.raceParms"),("all files","*.*")))
+      filename =  filedialog.askopenfilename(initialdir = "RACEPARMS/",
+                  title = "choose file",
+              filetypes = (("race parameters","*.raceParms"),("all files","*.*")))
 
       if filename is "":  return   # i.e. cancel clicked in dialog
 
-      with open(filename) as f:  RF = json.load(f)   
+      RF = self.readRaceFile(filename)
 
       #if (RF['fl'] is None  or  RF['fl'] not in self.fleetList):
       #   RF['fl'] = 'no fleet'
       #   logging.info(filename + ' file non-existing fleet converted to "no fleet".')
 
-      # the fleet needs to be the current fleet, otherwise there is no way to import
-      # parms from another race. (Change fleet resets that fleet's values.)
+      # The fleet needs to be the active fleet, otherwise there is no way to import
+      # parms from another race. (changeFleet resets that fleet's values.)
+      # So first change the active fleet is fl is specified.
+      
+      if fleet is not None :  self.fl = fleet
+
       if 'fl' not in RF or RF['fl'] != self.fl :
          RF['fl'] = self.fl 
          tkWarning('fleet changed from imported file to current ' + self.fl )
@@ -403,6 +451,9 @@ class RCmanager():
 
       self.writeRCWindow() #sync screen with new parameters
 
+   def readRaceFile(self, filename):
+      with open(filename) as f:  RF = json.load(f)
+      return RF   
 
 
    def gpsWindow(self, w=None):   
@@ -643,7 +694,7 @@ def extraWindow(RCobj, dr):
 
    But(t, text='Set Zone\nType Parms',   command=(lambda : RCobj.ZTobj.edit(t)))
    But(t, text='Save\nRace Parms',       command=(lambda : RCobj.writeRaceFile(t)))
-   But(t, text='Load Saved\nRace Parms', command=(lambda : RCobj.readRaceFile(t)))
+   But(t, text='Load Saved\nRace Parms', command=(lambda : RCobj.readRace(t)))
    But(t, text='Re-read\n BoatList',     command=(lambda : RCobj.readBoatList(t)))
    But(t, text='plot',                   command=(lambda : RCobj.plotWindow(t)))
    But(t, text='plot with\n boats',      command=(lambda : RCobj.plotWindow(t, 2)))
@@ -666,6 +717,12 @@ def extraMoreWindow(w, RCobj, dr):
      print('RCobj.parms')
      #for f in (RCobj.cl, RCobj.ax, RCobj.ll, RCobj.RC, RCobj.S, RCobj.M, RCobj.tt): print(f)
      print(RCobj.parms())
+     print()
+     print('Race parmsAll:')
+     print(RCobj.parmsAll())
+     print()
+     print('Race (all) fleets:')
+     print(RCobj.fleets)
      print()
      print('Zone parms:')
      print(RCobj.ZTobj.parms())

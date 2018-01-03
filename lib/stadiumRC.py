@@ -7,10 +7,8 @@ from gpsPos import gpsPos
 class stadium():
    def __init__(self):
 
-      # Initial default parameters. Could save last on exit and reload ?
-      self.sw   = 200          # stadium width (m)
-      self.wn   = 20           # distance (m) from boundary at which warning is indicated
-      self.cc   = 20           # width (m) around center axis where center is  indicated 
+      # Initial default parameters. 
+      self.setparmsDefault()
 
       self.fldLabels = [
                        'stadium width (m)',                     
@@ -23,10 +21,16 @@ class stadium():
    def cc(self):     return self.cc
 
    def setparms(self, nw):
-      self.sw   = nw['sw']  
-      self.wn   = nw['wn']        
-      self.cc   = nw['cc']        
-  
+      # reset only if provided
+      if 'sw' in nw : self.sw = nw['sw']  
+      if 'wn' in nw : self.wn = nw['wn']        
+      if 'cc' in nw : self.cc = nw['cc']        
+
+   def setparmsDefault(self):
+      self.sw   = 200   # stadium width (m)
+      self.wn   = 20    # distance (m) from boundary at which warning is indicated
+      self.cc   = 20    # width (m) around center axis where center is  indicated 
+
 
    def edit(self, w=None):
       if w is not None : w.destroy() # to destroy calling menu window
