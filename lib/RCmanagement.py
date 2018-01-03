@@ -205,22 +205,15 @@ class RCmanager():
       obj = dr.zoneObj(self.fl)
       logging.debug('in changeFleet, zoneObj:')
       logging.debug(str(obj))
-      if obj is not None :
-         self.ty = obj['ty']
-
-         self.dc = obj['dc'] 
-         self.RC.lat = obj['RC.lat']
-         self.RC.lon = obj['RC.lon']
-         self.S.lat  = obj['S.lat'] 
-         self.S.lon  = obj['S.lon'] 
-         self.M.lat  = obj['M.lat'] 
-         self.M.lon  = obj['M.lon'] 
-         self.cl = obj['cl'] 
-         self.ax = obj['ax'] 
-         self.ll = obj['ll'] 
-         self.tt = obj['tt']
+      if obj is None :
+         self.setparms({'fl': self.fl,  'ty': self.ty,  'dc': '', 
+          'RC.lat':0, 'RC.lon':0,  'S.lat':0, 'S.lon':0,  'M.lat':0, 'M.lon':0,
+               'cl':0, 'ax':0, 'll':0, 'tt':0})
+      else :
+         self.setparms(obj)
          # AND ZONE PARMS        
-         self.writeRCWindow()
+      
+      self.writeRCWindow()
       logging.debug('in changeFleet, new parms set:')
       logging.debug(str(self.parms()))
 
@@ -247,6 +240,7 @@ class RCmanager():
       self.RC = gpsConnection(GPS_HOST, GPS_PORT).getGPS()
       if self.RC == None :
          self.RC   = gpsPos(90.0, 0.0)  # this is really an error condition
+         tkWarning('gpsd connection failed.\nNo RC automatic position available.')
          logging.info('attempted gpsd connection '   + str(GPS_HOST) + ':' +  str(GPS_PORT))
          logging.info('gpsd connection failed. No RC automatic position available.')
       self.writeRCWindow()
@@ -391,9 +385,15 @@ class RCmanager():
 
       with open(filename) as f:  RF = json.load(f)   
 
-      if (RF['fl'] is None  or  RF['fl'] not in self.fleetList):
-         RF['fl'] = 'no fleet'
-         logging.info(filename + ' file non-existing fleet converted to "no fleet".')
+      #if (RF['fl'] is None  or  RF['fl'] not in self.fleetList):
+      #   RF['fl'] = 'no fleet'
+      #   logging.info(filename + ' file non-existing fleet converted to "no fleet".')
+
+      # the fleet needs to be the current fleet, otherwise there is no way to import
+      # parms from another race. (Change fleet resets that fleet's values.)
+      if 'fl' not in RF or RF['fl'] != self.fl :
+         RF['fl'] = self.fl 
+         tkWarning('fleet changed from imported file to current ' + self.fl )
 
       try : 
          self.setparms(RF)        # only uses RC parms
