@@ -92,7 +92,12 @@ class distributionCheck(threading.Thread):
               r = smp.rcv(s) 
               #logging.debug('r ' + str(r))
 
-              if r not in ('ok', 'none') :
+              if r in ('error') :
+                  logging.info('cid / fleet error')
+                  l = smp.snd(s, self.BT_ID)
+                  raise RuntimeError("failure. RC not recognizing cid / fleet.")
+              
+              elif r not in ('ok', 'none') :
                   logging.info('got new zoneObj. Writing to file activeBTzoneObj.json')
                   # note r is just a serialized string (stream) not an object.
                   #logging.debug('r ' + str(r))
@@ -287,7 +292,7 @@ class distributer(threading.Thread):
       #parms = self.parmsAll()
       #ZTobj = self.ZTobj
 
-      if parms['fl']  not in self.fleets['fleetList'] :
+      if parms['fl']  not in self.fleetList() :
          raise Exception('Attempting to distribute to non-existing fleet.\nFirst select fleet.')
          #tkWarning("Attempting to distribute to non-existing fleet.\nFirst select fleet.")
          return None
@@ -409,7 +414,13 @@ class BThandlerThread(threading.Thread):
        
        fl = BTcid.split('-')[0]
        #logging.debug(" fl " + str(fl))
-       if fl == 'none' : raise RuntimeError('BT fleet is "none".')
+       if  fl  not in self.distributer.fleetList() :
+          smp.snd(self.sock, 'error')
+          bt = smp.rcv(self.sock) 
+          raise RuntimeError('BT ' + str(bt) + ' fleet is ' + str(fl))
+       
+       
+       #if fl == 'none' : raise RuntimeError('BT fleet is "none".')
 
        RCcid= self.distributer.cid(fl) #zone id that RC has, possibly None
        

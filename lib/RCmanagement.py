@@ -174,8 +174,8 @@ class RCmanager():
    def parmsAll(self): 
       r  = self.parms()
       r.update(self.ZTobj.parms()) # add zone parms 
-      logging.debug('in parmsAll, r:')
-      logging.debug(str(r))
+      #logging.debug('in parmsAll, r:')
+      #logging.debug(str(r))
       return r
 
    def parmsTuple(self):  
@@ -248,16 +248,15 @@ class RCmanager():
    def setFleet(self, fl):
       self.fl = fl
       obj = self.fleets[fl]
-      logging.debug('in setFleet, raceParms:')
-      logging.debug(str(obj))
+
       if obj is None :
-         self.setparmsDefault(fl) # also set ZTobj defaults
+         self.setparmsDefault(fl) # also sets ZTobj defaults
       else :
          self.setparms(obj)        # only uses  RC  parms from obj
          self.ZTobj.setparms(obj)  # only uses zone parms from obj
       
-      logging.debug('in setFleet, new parms set:')
-      logging.debug(str(self.parms()))
+      #logging.debug('in setFleet, new parms set:')
+      #logging.debug(str(self.parms()))
 
    def readRCWindow(self):
       """Update current parameters from screen."""
