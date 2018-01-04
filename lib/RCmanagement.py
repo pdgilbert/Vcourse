@@ -151,7 +151,7 @@ class RCmanager():
      
       But(w,  text='get RC GPS',     command=self.getRCgps)
       But(w,  text='distribute',    
-                   command=(lambda : dr.distribute(self)))
+                   command=(lambda : dr.distribute(self.parmsAll(), self.ZTobj)))
       But(w,  text='update\nStatus', command=(lambda : self.updateStatus(w, dr)))
       But(w, text='extra',           command=(lambda : extraWindow(self, dr)))
 
@@ -619,71 +619,6 @@ class RCmanager():
          #      y = y0 - ((p[1].lat - Shift.lat) * latScale * scale) 
          #      w.create_text(x, y, text='<' +p[0] +'>') # put gps position on plot
 
-
-
-   def makezoneObj(self):
-      """
-      Generate the zoneObj for distribution to boats for calculating LED signals.
-      
-      Part of the final zoneObj passed to boats is calculated by RCmanager.makezoneObj()
-      and part by ZTobj.makezoneObj().
-      """ 
-      if self.fl not in self.fleetList :
-         tkWarning("Attempting to distribute to non-existing fleet.\nFirst select fleet.")
-         return None
-
-
-      # Ensure parameters  correspond to current screen values.
-      self.readRCWindow() # this shoud be automatic and not needed !!!
-
-      # y = a + b * x
-      # b = (y_1 - y_2) / (x_1 - x_2)
-      # a = y_1 - b * x_1
-      
-      # 0 or 180 axis would give infinite slope is x is longitude, 
-      # so depending on the axis treat domain as longitude (dom=True)
-      # or treat domain as latitude (dom=False)
-      if        45 <= self.ax <= 135 : dom = True
-      elif     225 <= self.ax <= 315 : dom = True
-      else                      : dom = False
-
-      if dom :
-         if   45 <= self.ax <= 135  : LtoR = False
-         else                       : LtoR = True  # 225 <= self.ax <= 315 
-      else :
-         if   135 <= self.ax <= 225 : LtoR = False 
-         else                       : LtoR = True #(315 <= self.ax <= 360) | (0 <= self.ax <= 45)
-
-      # cl, M and S are not needed the for stadiumBT calculations but
-      #  are nice for debugging.
-      
-      distributionTime = time.strftime('%Y-%m-%d_%H:%M:%S_%Z')
-
-      # left and right looking up the course, from race committee (RC) to windward mark (M)
-
-      rRC = {
-         'cid'       : self.fl + '-' + self.dc + '-' +  distributionTime,
-         'courseDesc'       : self.dc,
-         'zoneType'         : self.ty,
-         'fleet'            : self.fl,
-         'distributionTime' : distributionTime,
-         'length' :  self.cl,  # course length
-         'axis'   :  self.ax,  # axis (degrees)
-         'S'      :  (self.S.lat, self.S.lon),  # position of center of start line
-         'M'      :  (self.M.lat, self.M.lon),  # position of windward mark
-         'dom'    :  dom, # domain, function of long (true) or latitude (False)
-         'LtoR'   :  LtoR, # True if bounds increase left to right
-         }
-
-      r = self.ZTobj.makezoneObj(rRC)  # this adds zone specific parts and returns complete r
-
-      r.update(self.parms())
-
-      if not self.ZTobj.verifyzoneObj(r) :
-         raise Exception('error verifying zoneObj.')
-         return None
-      else :
-         return r
 
 #########################       Extra  Window            ######################### 
 ######################### (possibly be an object too?)   ######################### 

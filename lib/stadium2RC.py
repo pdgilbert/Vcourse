@@ -65,10 +65,8 @@ class stadium2():
       """
       LtoR = r["LtoR"]
       dom  = r["dom"]
-      S    = r["S"]
-      S    = gpsPos(S[0], S[1])
-      M    = r["M"]
-      M    = gpsPos(M[0], M[1])
+      S    = gpsPos(r["S.lat"], r["S.lon"])
+      M    = gpsPos(r["M.lat"], r["M.lon"])
 
       # y = a + b * x
       # b = (y_1 - y_2) / (x_1 - x_2)

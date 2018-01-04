@@ -277,7 +277,73 @@ class distributer(threading.Thread):
       self.fleets[fl].update({'BoatList': bl})
 
 
-   def distribute(self, RC):
+   def makezoneObj(self, parms, ZTobj):
+      """
+      Generate the zoneObj for distribution to boats for calculating LED signals.
+      
+      Part of the final zoneObj passed to boats is calculated by RCmanager.makezoneObj()
+      and part by ZTobj.makezoneObj().
+      """ 
+      #parms = self.parmsAll()
+      #ZTobj = self.ZTobj
+
+      if parms['fl']  not in self.fleets['fleetList'] :
+         raise Exception('Attempting to distribute to non-existing fleet.\nFirst select fleet.')
+         #tkWarning("Attempting to distribute to non-existing fleet.\nFirst select fleet.")
+         return None
+
+      ax = parms['ax']
+
+      # Ensure parameters  correspond to current screen values.
+      # readRCWindow() # this shoud be automatic and not needed !!!
+
+      # y = a + b * x
+      # b = (y_1 - y_2) / (x_1 - x_2)
+      # a = y_1 - b * x_1
+      
+      # 0 or 180 axis would give infinite slope is x is longitude, 
+      # so depending on the axis treat domain as longitude (dom=True)
+      # or treat domain as latitude (dom=False)
+      if        45 <= ax <= 135 : dom = True
+      elif     225 <= ax <= 315 : dom = True
+      else                               : dom = False
+
+      if dom :
+         if   45 <= ax <= 135  : LtoR = False
+         else                       : LtoR = True  # 225 <= ax <= 315 
+      else :
+         if   135 <= ax <= 225 : LtoR = False 
+         else                       : LtoR = True #(315 <= ax <= 360) | (0 <= ax <= 45)
+
+      
+      distributionTime = time.strftime('%Y-%m-%d_%H:%M:%S_%Z')
+
+      # left and right looking up the course, from race committee (RC) to windward mark (M)
+
+      rRC = parms
+      rRC.update({
+         'cid'       : parms['fl'] + '-' + parms['dc'] + '-' +  distributionTime,
+         'courseDesc'       : parms['dc'],
+         'zoneType'         : parms['ty'],
+         'fleet'            : parms['fl'],
+         'distributionTime' : distributionTime,
+         'axis'   :  ax,  # axis (degrees)
+         'dom'    :  dom, # domain, function of long (true) or latitude (False)
+         'LtoR'   :  LtoR, # True if bounds increase left to right
+         })
+
+      r = ZTobj.makezoneObj(rRC)  # this adds zone specific parts and returns complete r
+
+
+      if not ZTobj.verifyzoneObj(r) :
+         raise Exception('error verifying zoneObj.')
+         return None
+      else :
+         return r
+
+
+
+   def distribute(self, parms, ZTobj):
       """
         IT might BE BETTER IF THE ARG WAS raceObj and makezoneObj was done
          here or in a stadium module. But probably want raceObj class 
@@ -289,7 +355,7 @@ class distributer(threading.Thread):
       it depends on BTs checking in.
       """
 
-      zoneObj = RC.makezoneObj()
+      zoneObj = self.makezoneObj(parms, ZTobj)
 
       logging.debug('in distributer.distribute(). zoneObj:')
       logging.debug('zoneObj')
@@ -310,6 +376,8 @@ class distributer(threading.Thread):
       
       else:
          raise RuntimeError("zoneObj is None. Refusing to distribute.")
+
+
 
 class BThandlerThread(threading.Thread):
    """
