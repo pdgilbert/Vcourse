@@ -1,118 +1,125 @@
 ########## General and user notes are in this file.                  ##########
+########## Code development notes are in DevelopmentNotes.txt.       ##########
 ########## Common OS setup (development) notes are in OSsetup.txt    ##########
 ########## Raspbian and Raspberry Pi setup notes are in Raspbian.txt ##########
 ########## Armbian and Orange Pi setup notes are in Armbian.txt      ##########
 ########## GPS notes are in gpsNotes.txt                             ##########
 ########## Venue specific details are in venue files (not on github) ##########
 
-RC refers to Race Committee. The program stadiumRC runs on a computer (laptop)
-which can also run a wifi hotspot for boats to connect. (There are other options
+RC refers to Race Committee. The program RC runs on a computer (laptop)
+which can also run a wifi hotspot for boats to connect. (There are better options
 for the wifi.) It has a graphical interface.
 
-BT refers to a boat. The program stadiumBT runs on a Raspberry Pi Zero 
-"computer on a chip" which has LEDs for signalling sailors. It needs to be
+BT refers to a boat. The program BT runs on a "computer on a chip" (e.g. Raspberry 
+Pi Zero W) which has LEDs for signalling sailors. It needs to be
 configured to connect to the wifi hotspot and contact the RC. The only
 interface used by the sailors is the LEDs.
 
-########## To Do notes  ##########
--clean up these notes
+Both BT and RC programs need a path to the program lib:
+   export PYTHONPATH=/path/to/Vcourse/lib
 
--check BT is robust against starting up with no fix (ie inside)
-
--running more than one course at a time needs more thought. Might start by adding fleet to zoneObj and distributed course file name.
-
--mounting mechanism for cases
--check cases are waterproof
-
--starting  stadiomRC seems to distribute a course (gizmos signal new course)
-
--stadiumRC does not shutdown gracefully if no BTs connect
-
--make stadiumBT more robust against GPS failure (so it keeps 
-going if GPS returns).
-
--is occassional segfault fixed? 
--segfault if GPS is disconnected? 
-
--automation of boat id on all gizmos would be nice (and RC IP and port).
-
--unit testing
-
--transfer tracks back to RC
--tracks in local time (optional?) rather than UTC, but this seems to be a
- problem since time comes from GPS not computer clock.
- 
--reorganize raceparms as a class
-
--consider whether a local DNS would simplify configuration. (The IP address
-  for RC now needs to be configured in each BT, and changes if wifi changes.)
-
--need course change distribution from pin and from M1, as well as RC
--consider setting up AP on a router
--consider ad hoc / mesh network
--consider hardware and case alternatives
-
-########## BT User notes ##########
+############################ BT User notes ############################
 
 For the sailor, the BT (boat gizmo) should be completely automated. Power-up 
 and it works. However, some configuration will be necessary before the sailor
 gets the gizmo:
- -the battery needs to be charged (every night).
- -(at the start of the regatta) the /home/bt/BTconfig file needs a setting 
-    to identify each boat 
-    eg, "BT_ID": "boat 1"
-    where "boat 1" could be replaced by a sail number
 
- -(at the start of the regatta) the BTconfig  must be set to match RCconfig 
+-The battery needs to be charged (every night).
+
+-At the start of the regatta the /home/bt/BTconfig  file needs adjustment to
+
+    o identify each boat 
+
+    o the boat's fleet 
+
+    o the RC host IP address and port
+    
+ For example
+
+   {"RC_IP": "10.42.0.254", "RC_PORT": "9001", "FLEET": "fleet 1", "BT_ID": "boat1"}
+
+ where the boat identifier string "boat 1" could be replaced by a sail number and 
+ "fleet 1" by a class name. The fleet string must correspond to the fleet name as 
+ specified in the RC configuration file FleetList.txt. The boat identifier string 
+ should be as specified in the RC configuration file BoatList.txt.
+ The RC IP address and port need to correspond to those set in RCconfig and the wifi.
+
+-At the start of the regatta the BTconfig  must be set to match RCconfig 
     for RC host IP and port.
 
- -the file /etc/wpa_supplicant/wpa_supplicant.conf needs the proper wifi ssid
-   and psk (password). This will need to be fixed if the wifi details change.
+-The gizmo configuration needs the proper wifi ssid  and psk (password). This will 
+   need to be fixed if the wifi details change.
 
-See PiZeroWnotes.txt for details on building the gizmo and wpa_supplicant file.
+See OSsetup.txt, Raspian.txt/Armbian.txt  for details on building gizmos.
 
-########## RC User notes ##########
 
--RC configuration for GPS and host:port are in file RCconfig (in the stadiumRC
-  startup directory). Note that RCconfig must match BTconfig for RC host IP 
-  and port. The host IP address will be affected by wifi settings.
 
--RC default course settings are in file defaultRace (in the stadiumRC 
-  startup directory)
+############################ RC User notes ############################
 
--If a file BoatList exists (in the stadiumRC startup directory) it should have
-  a line for each boat identifier, exactly as indicated in the BTconfig "BT_ID".
-  "Update Status" in the RC panel will then use this list to indicate boats 
-  which have not received course updates.
+-RC will look for various configuration files (some json dict) in the RC 
+  startup directory:
 
--If a file gpsList exists (in the stadiumRC startup directory) it should have
-  lines of 3-tuples for each GPS that might be accessed on the network.
-  "extra > other GPS" in the RC panel will then use this list to try to obtain 
-  gps fixes over the network. The lines in the file have a name, hostID, and
-  port, separated by spaces, for example
-    RC    127.0.0.1    2948
-    pin   10.42.0.250  2947
-    M1    10.42.0.251  2947
-  (gdps can be used to contact remote devices and serve them from a local 
-   deamon. I have had better luck with that appoach. See gpsNotes.txt.)
+    o FleetList.txt for the list of fleet names. (text, one fleet name per line)
+
+    o RCconfig for RC host IP address and port. The host IP address should be the 
+      one available to BTa by wifi. RCconfig must match BTconfig for RC host IP 
+      and port. Example:
+         {"RC_IP": "10.42.0.254", "RC_PORT": 9001}
+
+    o GPSconfig (optional) for GPS host and port .  Example:
+         {"GPS_HOST": "127.0.0.1",  "GPS_PORT": 2947}
+      If the GPS is not accessible then automatic GPS position of RC will not 
+      be available.
+
+    o gpsList.txt (optional) with lines of 3-tuples for each GPS that might be 
+      accessed on the network. "extra > other GPS" in the RC panel will then use
+      this list to try to obtain GPS positions over the network. The lines in the 
+      file have lines with an arbitrary name, hostID, and port, separated by 
+      spaces, for example
+           RC    127.0.0.1    2948
+           pin   10.42.0.250  2947
+           M1    10.42.0.251  2947
+      (gdps can be used to contact remote devices and serve them from a local 
+      deamon. I have had better luck with that appoach. See gpsNotes.txt.)
+
+
+ If it does not already exist, a directory FLEETS/ will be created with 
+ subdirectories for each fleet listed in FleetList.txt. These directories will be
+ checked for files:
+
+    o BoatList.txt a text file with one boat identifier per line (i.e. sail number).
+      Each boat identifier should be exactly as indicated in the BTconfig "BT_ID". 
+      "Update Status" in the RC panel uses this list to indicate boats which have 
+      not received course updates, so if the file does not exist then it will only be
+      possible to see what boats have received a zoneObj update (new course / change 
+      of course) but it will be impossible to know which ones do not have the update.
+
+    o activeBTzoneObj.json with the zoneObj which was last active. This is primarily 
+        for the case of recovery when the RC program is restarted for some reason.
+        (The BTs check against this to know if they need a new course.)
+
+    o active.raceParms  with the last active race parameters (on the RC management
+      screen) for each fleet. These may not have been distributed and this is only
+      for convenience in the case the RC program is restarted for some reason.
+
+The directory FLEETS/ also contains a subdirectory DISTRIBUTEDZONES/ with the historical
+record of distributed zoneObj.json files.
+    
 
 -My USB GPS dongle seems to be relatively "plug and play" for getting 
    RC GPS. If there are problems, considerations are the same as for BT. See
-   PiZeroWnotes.txt for more details on that.
+   gpsNotes.txt and OSsetup.txt for more details on that.
    
 -See gpsNotes.txt regarding using GPS2Net on a phone to provide GPS for RC.
-  (The phone needs to have real GPS and I have only tested on Android.)
+  (The phone needs to have real GPS. I have only tested on Android.)
 
 -If RC is mobile (not anchored) the "get RC GPS" button can be used and the 
   RC position copy and pasted. This could be useful, for example, to find the
   actual start line center, rather than that calculated using assumed RC
   position at the starboard end of the line.
 
--distributed zoneObj are recorded in distributedCourses/
 
--ADD SOME NOTES ABOUT SETTING AND DISTRIBUTING THE RACE INFO.
-
--Fleet, description, and target start time are purely descriptive, but parts are used in saved files of distributed courses. Course type might be used sometime.
+-Fleet, description, and target start time are purely descriptive, but parts are used in saved files of distributed courses. 
 
 -The start line length, stadium width, , warning width, and center width must
 all be specified.
@@ -143,68 +150,5 @@ A boat moving at 10 knots => 5.1 m/s.  Reading gps about 8 times/s => almost a
 0.00001 degrees latitude is approximately a meter.
 
 
-########## development Notes ##########
-
-########## Race Committee control program - stadiumRC ##########
-
-stadiumRC startup tries to connect to gpsd. No auto RC position is available
-if it does not (lat=90, lon=0 is reported if gpsd is not connected.) So
-
-1/ start gpsd (-n don't wait for device)
-   With gps puck in laptop usb:
-     sudo gpsd -n -S 2947 /dev/ttyACM0 # default port
-     sudo gpsd -n -S 2948 /dev/ttyACM0 # Note NOT default port
-    (Note that gpsd startup is problematic.)
-     and set RCconfig
-    test with eg 
-    gpsmon 127.0.0.1:2947
-
-   Alternatively, start something like gps2net on phone and set RCconfig 
-    (Note that I have not yet got stadiumRC to connect)
-
-    test with eg 
-    gpsmon 192.168.2.180:6000
-
-
-2/ edit RCconfig in startup dir if necessary
-3/ possibly edit defaultRace  in RC startup dir
-
-4/ start stadiumRC (in some directory (eg RC)
-      /path/to/stadiumRC 
-   eg
-      ../stadiumRC   
-
-
-
-########## Individual boat gizmo LED control program - stadiumBT ##########
-
-#####
-stadiumBT can be simulated on a laptop with gps. LEDs are not used but
-colour status is reported in the console. This needs gpsd started as
-above for stadiumRC and then, eg:
-    cd boat
-   ../stadiumBT   
-
-  (stop with ^c in console)
-
-#####
-stadiumBT on a gizmo (raspberryPi) with LEDs:
-
-configure and "burn" micro SD as in PiZeroWnotes.txt
-
-plug in micro SD
-plug in gps puck
-power up
-
-When working, this should start up software, poll gps,  and begin 
-checking with RC for course info.
-
-
-## debugging ##
-(discover Pi IP by connecting to monitor or looking at wifi hub)
-Connect from laptop to Pi. user/password as set in PiZeroWnotes.txt
-(May not be needed if keys are set.)
-Vcourse/ from github is useful for development, but may need lots of pulling.
-
-Look at file ~/runAtBoot  for current version of startup instructions.
+-ADD MORE NOTES ABOUT SETTING AND DISTRIBUTING THE RACE ZONE INFO.
 

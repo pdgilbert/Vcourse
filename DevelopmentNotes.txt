@@ -1,0 +1,126 @@
+##########      Code development notes are in this file.       ##########
+### General user notes and a list of other notes are in NOTES.txt  ######
+
+
+########## To Do notes  ##########
+-clean up  notes
+
+-check BT is robust against starting up with no fix (ie inside)
+
+-mounting mechanism for cases
+-check cases are waterproof
+
+-check BT robust against GPS failure (so it keeps when GPS returns).
+
+-is occassional segfault fixed? 
+-segfault if GPS is disconnected? 
+
+-unit testing
+
+-transfer tracks back to RC
+-tracks in local time (optional?) rather than UTC, but this seems to be a
+ problem since time comes from GPS not computer clock.
+ 
+-consider whether a local DNS would simplify configuration. (The IP address
+  for RC now needs to be configured in each BT, and changes if wifi changes.)
+
+-need course change distribution from pin and from M1, as well as RC
+-consider ad hoc / mesh network
+-consider hardware and case alternatives
+
+
+########## Race Committee control program - RC ##########
+
+RC startup tries to connect to gpsd. No auto RC position is available
+if it does not (lat=90, lon=0 is reported if gpsd is not connected.) So
+
+1/ start gpsd (-n don't wait for device)
+   With gps puck in laptop usb:
+     sudo gpsd -n -S 2947 /dev/ttyACM0 # default port
+     sudo gpsd -n -S 2948 /dev/ttyACM0 # Note NOT default port
+    (Note that gpsd startup is problematic.)
+     and set RCconfig
+    test with eg 
+    gpsmon 127.0.0.1:2947
+
+   Alternatively, start something like gps2net on phone and set RCconfig 
+    (Note that I have not yet got RC to connect)
+
+    test with eg 
+    gpsmon 192.168.2.180:6000
+
+
+2/ edit RCconfig, GPSconfig,  FleetList.txt, and FLEETS/*/BoatList in startup 
+  directory (eg RCtest) if necessary.
+
+3/ start RC (in some directory (eg RCtest)
+      /path/to/RC 
+   eg
+      ../RC   
+
+########## Individual boat gizmo LED control program - BT ##########
+
+BT can be simulated on a laptop with gps. LEDs are not used but
+colour status is reported in the console. This needs gpsd started as
+above for RC and then, eg:
+    cd boat
+   ../BT   
+
+  (stop with ^c in console)
+
+
+##### BT on a gizmo ( eg Raspberry Pi) with LEDs #####
+
+configure and "burn" micro SD as in OSsetup.txt Raspian.txt, and Armbian.txt
+
+plug in micro SD
+plug in gps puck
+power up
+
+When working, this should start up BT software, poll gps,  and begin 
+checking with RC for course info.
+
+
+## debugging ##
+(discover BT  IP address by connecting a monitor or looking at wifi hub)
+Connect from laptop to BT. user/password as set when burned.
+(May not be needed if keys are set.)
+
+Vcourse/ from github is useful for development, but may need lots of fetch/pull.
+
+Look at file ~/runAtBoot  for current version of startup instructions.
+
+
+########## Notes about code general structure ########## 
+
+RC is a top level wrapper for starting the race management software threads. Most of the
+code is in RCmanagement.py and distribution.py. The race parameters for each fleet are 
+kept in RCmanagement's self.fleets, which is a dict with sub-dicts for each fleet's race 
+parameters. These populate the GUI when the fleet is changed. They are regularly saved to 
+files (FLEETS/fleetname/active.raceParms) that are reloaded if RC is stopped and restarted. 
+Saving to file is mainly for convenience. 
+
+Things specific to a stadium type of zone are in stadiumRC.py. 
+This offers the possiblity that there may be different types of zones, but currently 
+stadium2 is only to be sure the mechanism works, it is identical to stadium.
+
+The race and zone parameters are used to generate a zoneObj which is communicate to 
+the BTs for controlling their LEDs. The BT code file is a bit more than a wrapper, it
+contains the main supervisor code. The parts specific to a stadium type of zone are in 
+stadiumBT.py. The parts specific to different BT hardware are also in separate files.
+
+Both RC and BT start threads to manage communications. This code is in distribution.py. 
+BT checks regularly with RC (when wifi is available) to see if a new zone object needs 
+to be loaded. RC's distribution thread maintains an object self.fleets, which is a dict 
+with sub-dicts for each fleet's zone and distribution information. (This is similar in 
+structure to RC's RCmanagement self.fleets, but has different information.) When BT's
+check in, they send the course id (cid) for the zoneObj they have and RC's distribution
+thread compares that with the cid it has in self.fleets to determine if the BT needs a 
+new zoneObj, and send it if needed.
+
+When a zoneObj is distributed RC's distribution thread also saves it in a file 
+(FLEETS/fleetname/activeBTzoneObj.json) that is reloaded if RC is stopped and restarted.
+Saving and reloading from file is important in the case RC is stopped in the middle of 
+a race, since it has the information to determine if BTs need a new zoneObj.
+
+
