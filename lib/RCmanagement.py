@@ -1,4 +1,4 @@
-# License GPL 2. Copyright Paul D. Gilbert, 2017
+# License GPL 2. Copyright Paul D. Gilbert, 2017, 2018
 """Object for overall race management, not specific to a zoneType."""
 
 import logging

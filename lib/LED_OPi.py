@@ -1,4 +1,4 @@
-# License GPL 2. Copyright Paul D. Gilbert, 2017
+# License GPL 2. Copyright Paul D. Gilbert, 2017, 2018
 """Arbian / Orange Pi Zero LED signal hardware control."""
 
 #see Armbian.txt on how to do this without being root

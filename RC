@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# License GPL 2. Copyright Paul D. Gilbert, 2017
+# License GPL 2. Copyright Paul D. Gilbert, 2017, 2018
 """
 Run by race committee to set the course and distribute to racing boats.
 

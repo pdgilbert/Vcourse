@@ -1,4 +1,4 @@
-# License GPL 2. Copyright Paul D. Gilbert, 2017
+# License GPL 2. Copyright Paul D. Gilbert, 2017, 2018
 """Raspbian / Raspberry Pi Zero W LED signal hardware control."""
 
 #https://sourceforge.net/p/raspberry-gpio-python/wiki/BasicUsage/

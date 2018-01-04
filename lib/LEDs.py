@@ -1,4 +1,4 @@
-# License GPL 2. Copyright Paul D. Gilbert, 2017
+# License GPL 2. Copyright Paul D. Gilbert, 2017, 2018
 """Generic part of LED control.
 
 Turn LEDs off, on solid, or flashing corresponding to a specified state. 
