@@ -120,6 +120,7 @@ class RCmanager():
       w.wm_title("RC Management")
       #w.bind('<Return>', (lambda event, e=ents: readRaceWindow(e)))   
       w.bind('<Return>', (lambda event : self.readRCWindow()))   
+      w.bind('<FocusOut>', (lambda event : self.readRCWindow()))   
       
       # NB writeRCWindow and readRCWindow MUST be with this co-ordinated if fields are changed!!!
 
