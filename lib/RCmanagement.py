@@ -30,24 +30,29 @@ def But(w, text='x', command='') :
    b.pack(side=tkinter.LEFT, padx=5, pady=5)
    return(b)
 
-def Drop(w, options=['zero', 'one', 'two'], default=0, command=None) :
+def Drop(w, options=['zero', 'one', 'two'], default=0, command=None, font=("Helvetica", 10)) :
    #command below needs to accept the selection, which is passed to it,
    # eg,  self.readRCWindow() will be passes (self, 'FX')
    v = tkinter.StringVar(w)
    v.set(options[default]) 
+
    if command is None : b = tkinter.OptionMenu(w, v, *options)
    else :               b = tkinter.OptionMenu(w, v, *options,  command=command)
+   b.config(font=font)
    b.pack(side=tkinter.LEFT)
+   #b.config(font=("Helvetica", 10)) does not reset, default on next call does the reset
    return v
 
-def ROW(t, text, width=30, ebg=None):
+def ROW(t, text, width=30, ebg=None, pad=5):
    #ebg None means no entry field, otherwise color of entry field bg.
    row = tkinter.Frame(t)
    lab = tkinter.Label(row, width=width, text=text, anchor='w')
-   if ebg is not None :
-       e = tkinter.Entry(row, bg = ebg)
-       e.pack(side=tkinter.RIGHT, expand=tkinter.YES, fill=tkinter.X)
-   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5) # 2,2
+   if ebg is None :
+      e = None
+   else :
+      e = tkinter.Entry(row, bg = ebg)
+      e.pack(side=tkinter.RIGHT, expand=tkinter.YES, fill=tkinter.X)
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=pad, pady=pad)
    lab.pack(side=tkinter.LEFT)
    return e
 
@@ -119,10 +124,9 @@ class RCmanager():
       # NB writeRCWindow and readRCWindow MUST be with this co-ordinated if fields are changed!!!
 
       row = tkinter.Frame(w)
-      tkinter.Label(row, width=15, text="fleet", anchor='w',
-              font=("Helvetica", 16)).pack(side=tkinter.LEFT)
+      tkinter.Label(row, width=15, text="fleet", anchor='w').pack(side=tkinter.LEFT)
       self.fleetChoice = Drop(row, options=self.fleetList, default = 0,
-                 command= (lambda event : self.changeFleet()))
+                 command= (lambda event : self.changeFleet()), font=("Helvetica", 16))
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
       row = tkinter.Frame(w)
@@ -375,7 +379,7 @@ class RCmanager():
       t.wm_title("Update Status")
       logging.debug('revd:')
       logging.debug(str(revd))
-      ROW(t, text= dr.cid(self.fl))
+      ROW(t, text= dr.cid(self.fl), pad=2)
 
       for f in revd :  ROW(t, text=f + ' ' + str(revd[f]))
 
@@ -388,7 +392,7 @@ class RCmanager():
 
       if (BoatList is not None) : 
          for f in BoatList :
-            if f not in  revd : ROW(t, text='*** ' + f )
+            if f not in  revd : ROW(t, text='*** ' + f, pad=2)
 
 
 
