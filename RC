@@ -23,8 +23,8 @@ import distribution
 import RCmanagement
 
 logFormat ='(%(threadName)-9s) %(message)s'
-logging.basicConfig(level=logging.DEBUG, format=logFormat,)
-#logging.basicConfig(level=logging.INFO, format=logFormat,)
+#logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 
 if __name__ == '__main__':

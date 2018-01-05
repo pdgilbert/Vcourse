@@ -266,17 +266,26 @@ class RCmanager():
    def readRCWindow(self):
       """Update current parameters from screen."""
       
+      def flt(x):
+         try:
+            r = float(x)
+            return r
+         except :
+            tkWarning('entry is not a number!.\nReplaced with previous value.')
+            self.writeRCWindow()
+            return None
+ 
       self.fl = self.fleetChoice.get()
       self.ty = self.zoneChoice.get()
 
       self.dc = str(self.ents[0].get())
-      self.RC = gpsPos(float(self.ents[1].get()),  float(self.ents[2].get()))
-      self.S  = gpsPos(float(self.ents[3].get()),  float(self.ents[4].get()))
-      self.M  = gpsPos(float(self.ents[5].get()),  float(self.ents[6].get()))
-      self.cl = float(self.ents[7].get()) 
-      self.ax = float(self.ents[8].get()) 
-      self.ll = float(self.ents[9].get()) 
-      self.tt = float(self.ents[10].get()) 
+      self.RC = gpsPos(flt(self.ents[1].get()),  flt(self.ents[2].get()))
+      self.S  = gpsPos(flt(self.ents[3].get()),  flt(self.ents[4].get()))
+      self.M  = gpsPos(flt(self.ents[5].get()),  flt(self.ents[6].get()))
+      self.cl = flt(self.ents[7].get()) 
+      self.ax = flt(self.ents[8].get()) 
+      self.ll = flt(self.ents[9].get()) 
+      self.tt = flt(self.ents[10].get()) 
       logging.debug('in readRCWindow, new parms set:')
       logging.debug(str(self.parms()))
       
