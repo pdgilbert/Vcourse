@@ -1,4 +1,5 @@
 import tkinter
+import logging
 
 #########################    Utility  Functions     ######################### 
 
@@ -40,12 +41,12 @@ def ROW(t, text, width=30, ebg=None, pad=5):
 def foo(n,h,p): return((n, gpsConnection(h,p).getGPS()))
 
 
-def tkWarning(text, w= None):
+def tkWarning(text, w= None, width=40):
    if w is not None : w.destroy()
    logging.info('**** WARNING ***' + str(text))
    t = tkinter.Toplevel()
    t.wm_title("**** WARNING ***")
    row = tkinter.Frame(t)
-   tkinter.Label(row, width=40, text=str(text), anchor='w').pack(side=tkinter.LEFT)
+   tkinter.Label(row, width=width, text=str(text), anchor='w').pack(side=tkinter.LEFT)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 

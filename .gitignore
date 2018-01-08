@@ -1,11 +1,7 @@
 __pycache__/
-raceObj.json
-BTraceObj.json
 RCconfig
 BTconfig
 zot*
 RCtest/
 boat*/
-defaultRace*
-stadiumBT.log
-distributedCourses/
+RegistrationTest/

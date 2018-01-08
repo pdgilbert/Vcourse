@@ -1,0 +1,243 @@
+#!/usr/bin/python3
+# License GPL 2. Copyright Paul D. Gilbert, 2018
+"""
+Run at registration desk to find gizmo (flash LEDs), load BTconfig, and distribute.
+
+This program needs a setting to find other modules, e.g.
+   export PYTHONPATH=/path/to/Vcourse/lib
+
+Other configuration can also be done with this utility, but might typically be
+done before registration. It does
+
+  -Boat specific configuration for the gizmo ("FLEET" and "BT_ID" ).
+  -RC specific configuration ("RC_PORT" and "RC_IP").
+  -GPS harware specific configuration  is written to GPSconfig.
+"""
+import tkinter
+import signal
+import logging
+import json
+import sys # just for exit
+import os  # just for mkdir
+
+from GUIutils import *
+from CallOut import CallOut
+
+logFormat ='(%(threadName)-9s) %(message)s'
+logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+#logging.basicConfig(level=logging.INFO, format=logFormat,)
+
+
+if __name__ == '__main__':
+   
+   # This uses the same files and file structure as RC for FLEETS/*/BoatList.txt
+   #  but fleetList.txt is different. It has fleet RC_IP and RC_PORT info.
+   # There is a comparable dict structure (there is boatLists and checkedOut for each fleet).
+   #  fleets will have a sub-dict for each fleet with boatList and checkedOut, 
+   #  eg: fleets = {'FX': {'BoatList': ('FX 1',), 'checkedOut': None}}
+
+   def checkedOutList(): 
+      fl = fleetChoice.get()
+      return fleets[fl]['checkedOut']
+       
+   def readBoatList(fl, w=None):
+      global fleets
+      if w is not None: w.destroy()
+      
+      try : 
+         with open('FLEETS/' +fl + '/BoatList.txt') as f: bl = f.read().splitlines()
+         bl = [b.strip() for b in bl]
+      except :
+         bl = None   
+      
+      logging.debug('BoatList = bl is ' + str(bl))
+      fleets[fl].update({'BoatList':bl})
+
+   def readWindow(w=None):
+      global fl, bt, RC_IP, RC_PORT, host
+      if w is not None: w.destroy()
+      
+      fl   = fleetChoice.get()
+      bt   = str(ents[0].get())
+      chg  = str(ents[1].get()) 
+      new  = str(ents[2].get()) 
+      host = gizmoChoice.get()
+
+   def writeFleet(w=None):
+      if w is not None: w.destroy() 
+      
+      # THIS SHOULD ALSO INDICATE CHECKOUT STATUS
+      
+      fl      = fleetChoice.get()
+      
+      BoatList =  fleets[fl]['BoatList']
+      
+      # checkedOut   = 
+      
+      t = tkinter.Toplevel(w)
+      t.wm_title(fl + "Checked Out Status")
+      
+      if  BoatList is None : 
+         bl = 'boat list not available.'
+      else :
+         bl = ''
+      
+      if (BoatList is not None) : 
+         for f in BoatList :
+            #if f not in  revd : ROW(t, text='*** ' + f, pad=2)
+            ROW(t, text='*** ' + f, pad=2)
+
+ 
+   def setBTconfig(callout, request): 
+      #callout can be gizmone hostname (BT-#)  or boat ID (sail #)
+      global bt, btADDR
+      (bt, btADDR, conf) = CallOut(callout, request)
+      
+      fl = conf['FLEET']
+      fleetChoice.set(fl)
+
+   def showRC(t=None): 
+      if t is not None: t.destroy()
+
+      w = tkinter.Toplevel()
+      w.wm_title(fl + "Fleet Types & RC settings")
+      for d in fleetList:
+         rc = str({x: fleets[d][x] for x in ('RC_IP', 'RC_PORT')})
+         ROW(w, text=d + '  ' + str(rc), pad=2, width=40)
+   
+   def setRC(): 
+      # This is to all by UDP !!
+      # global bt, btADDR
+
+      fl =  fleetChoice.get()
+      rc = str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
+      request = "setRC::" + fl + "::" + rc
+      logging.debug(request)
+      (bt, btADDR, conf) = CallOut("all", request, timeout=20)
+
+ 
+   def callForHost(callout, request): 
+      #callout can be gizmone hostname (BT-#)  or boat ID (sail #)
+      global bt, btADDR
+      bt = ents[0].get()
+      (bt, btADDR, conf) = CallOut(callout, request)
+      
+      fl = conf['FLEET']
+      fleetChoice.set(fl)
+
+      ents[0].delete(0, tkinter.END)
+      ents[0].insert(15, bt)
+      
+      #logging.debug('fleets')
+      #logging.debug(fleets)
+       
+      fIP = fleets[fl]['RC_IP']
+      fPT = fleets[fl]['RC_PORT']
+      bIP = conf['RC_IP']
+      bPT = conf['RC_PORT']
+
+      if fIP != bIP  or  fPT != bPT :
+         tkWarning("Boat's IP/PORT not set to fleet values! It with be reset.\n" +
+                   "fleet: " + fIP + ":" + fPT + ". boat: " + bIP + ":" + bPT + ".\n" +
+                   "If the boat values are correct then reset the fleet values.", width=45)
+
+      # hn is not a standard part of BTconfig, it was added by CallOutRespond()
+      gizmoChoice.set(conf['hn']) 
+
+   ##################  initiat from files    ################
+
+   try :
+      with open('FleetList.txt','r') as f: fleets =  json.load(f)
+   except :
+      fleets = {'No fleet': None}
+   
+   fleetList = tuple(fleets.keys())  # POSSIBLY SORT FOR CONSISTENT ORDER
+   
+   logging.debug('fleetList:')
+   logging.debug(fleetList)
+   
+   if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
+
+   try : 
+      with open("gizmoList.txt") as f:  gizmoList =  f.read().splitlines()
+      gizmoList = [b.strip() for b in gizmoList]
+   except :
+      gizmoList = ('No gizmos',) 
+   
+   #logging.debug('gizmoList:')
+   #logging.debug(gizmoList)
+
+
+   for d in fleetList:
+      #ZEROING CHECKEDOUT MAY BE A PROBLEM
+      fleets[d].update({'BoatList':(), 'checkedOut':None})
+      readBoatList(d) 
+
+   logging.debug('fleets:')
+   logging.debug(fleets)
+
+   #logging.debug('fleets[FX][RC_IP]')
+   #logging.debug(fleets['FX']['RC_IP'])
+
+   # should write BoatList file if there are changes
+   
+   ##################  Registration  Main  GUI     ################
+   w = tkinter.Tk()
+
+   w.wm_title("Gizmo Registration")
+   w.bind('<Return>', (lambda event : readWindow()))   
+   w.bind('<FocusOut>', (lambda event : readWindow()))   
+
+
+   fldLabels = [    'Boat Sail #', 
+                    'Change Sail #',
+                    'New Boat Sail #']
+
+   ents = []
+   for f in fldLabels: ents.append(ROW(w, text=f, width=15, ebg="white"))
+   
+   row = tkinter.Frame(w)
+   tkinter.Label(row, width=5, text="fleet", anchor='w').pack(side=tkinter.LEFT)
+   fleetChoice = Drop(row, options=fleetList, default = 0,
+              command= (lambda event : changeFleet()))
+
+   tkinter.Label(row, width=15, text="       Gizmo ID", anchor='w').pack(side=tkinter.LEFT)
+   gizmoChoice = Drop(row, options=gizmoList, default = 0) #, command= (lambda event : changeGizmo()))
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+   
+   But(w,  text='Call Out\nBoat',      command=(lambda : callForHost(ents[0].get(), "flash, send address and BTconfig")))
+   But(w,  text='Call Out\nGizmo',     command=(lambda : callForHost(gizmoChoice.get(), "flash, send address and BTconfig")))
+   But(w,  text="Set boat's\nconfig",  command=(lambda : setBTconfig(ents[0].get(), "set BTconfig and flash")))
+   But(w,  text='Check Out\nGizmo',    command=(lambda : CallOut(ents[0].get(), "flash and send address")))
+   But(w,  text='Check In\nGizmo',     command=(lambda : CallOut(ents[0].get(), "flash and send address")))
+   But(w, text='fleet\nboat list',     command=(lambda : writeFleet()))
+   But(w, text='extra',                command=(lambda : extraWindow()))
+
+   #writeRCWindow()
+
+   ##########   Registration Extra  Window   ########### 
+
+   def extraWindow():
+      t = tkinter.Toplevel()
+      t.wm_title("Extra Options")
+
+      But(t,  text="Show fleet's\nRC settings",   command=(lambda : showRC(t)) )
+      But(t,  text="Propogate\nfleet's RC",       command=setRC )
+      #But(t,  text='Re-read\nlist of fleets', command=CallOut(ents[0].get(), "flash and send address")
+      #But(t,  text='Re-read\nBoatList', command=CallOut(ents[0].get(), "flash and send address")
+
+   ###############  end  Registration  Main  GUI     ###############
+
+
+   def abortHandler(signum, frame):
+       logging.info('main thread exit via abortHandler.')
+       sys.exit("RC process killed.")
+
+   # ^C works if process is not deamonized with &
+   signal.signal(signal.SIGINT,  abortHandler) # ^C, kill -2
+   signal.signal(signal.SIGTERM, abortHandler) # kill -15 (default)
+
+   w.mainloop()
+
+   logging.info('main thread exit via end.')

@@ -1,0 +1,122 @@
+#!/usr/bin/python3
+# License GPL 2. Copyright Paul D. Gilbert, 2018
+"""
+Run on BTs gizmo to find gizmo at registration distribution and load BTconfig.
+
+This progam should be set up to start automatically when the LED control
+gizmo's system is booted. It needs a setting to find other modules, e.g.
+
+export PYTHONPATH=/path/to/Vcourse/lib
+
+Other configuration can also be done with this utility, but might typically be
+done before registration.
+
+Boat specific configuration for the gizmo ("FLEET" and "BT_ID" ) is written to BTconfig.
+RC specific configuration ("RC_PORT" and "RC_IP") is also written to BTconfig.
+GPS harware specific configuration  is written to GPSconfig.
+"""
+
+import socket
+import time
+import json
+
+import LEDs 
+
+def sendBTconfig(btADDR, conf) :
+   try :
+       sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
+       sockTCP.connect((btADDR[0], btADDR[1])) #IP, port
+       
+       l = smp.snd(sockTCP, 'BTconfig-' + str(conf)) # json serialize
+       
+       #r = smp.rcv(sockTCP) 
+       #logging.debug('r ' + str(r))
+   except :
+      raise Exception('error in recvBTconfig')
+      
+   sockTCP.close()
+
+def recvBTconfig(btADDR, conf) :
+   try :
+       sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
+       sockTCP.connect((btADDR[0], btADDR[1])) #IP, port
+       
+       l = smp.snd(sockTCP, 'BTconfig-' + str(conf)) # json serialize
+       
+       #r = smp.rcv(sockTCP) 
+       #logging.debug('r ' + str(r))
+   except :
+      raise Exception('error in recvBTconfig')
+   
+   sockTCP.close()
+
+
+LEDs.off('lights out')
+
+shutdown = False
+
+sockUDP = socket.socket(socket.AF_INET,   socket.SOCK_DGRAM) # UDP
+sockUDP.bind(('', 5005))  #UDP_IP, PORT
+
+try:
+   BTconfig = json.load(open('BTconfig'))  
+except :
+   BTconfig = {}  
+
+bt = BTconfig['BT_ID']
+
+hn = socket.gethostname()
+
+try:
+   GPSconfig = json.load(open('GPSconfig'))  # typically "127.0.0.1", 2947 is default port
+except :
+   GPSconfig = {}  
+   raise Exception('error GPSconfig is empty!')
+
+
+while not shutdown:
+    # time.sleep(5) misses udp?
+    data, addr = sockUDP.recvfrom(1024) # buffer size is 1024 bytes
+    data = data.decode()    
+    
+    data = data.split("::")
+    called = data.pop(0)
+    request = data[0]
+    # in some cases there will be more sections in data
+    
+    print(called)
+    print(request)
+    
+    if bt in called or hn in called or 'all' in called :
+       
+       if "send address" in request : 
+          BTconfig.update({"hn": hn})
+          send = bt + "::" + str(BTconfig)            # always return BTconfig + hostname
+          sockUDP.sendto(send.encode('utf-8'), addr)
+          print('sent "' + send +'"')
+       
+       if "flash" in request :
+          LEDs.update('blink red and green for 20 sec')         
+          LEDs.systemProblem('test solid blue')
+          time.sleep(2)
+          LEDs.off('lights out')
+       
+       if "setRC" in request :
+          fl =  data[1]
+          if fl ==BTconfig['FLEET'] :
+             BTconfig.update(eval(data[2]))
+             print(BTconfig)
+             with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
+
+
+
+    #TCP LISTEN
+       if "whatIsBTconfig" in request : sendBTconfig(addr, conf) 
+
+       if "hereIsBTconfig" in request : recvBTconfig(addr, conf)
+
+
+# never get here unless shutdown mechanism is activated
+sockUDP.close()
+
+LEDs.cleanup('clean up for shutdown')
