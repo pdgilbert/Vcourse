@@ -60,7 +60,6 @@ if __name__ == '__main__':
       fl   = fleetChoice.get()
       bt   = str(ents[0].get())
       chg  = str(ents[1].get()) 
-      new  = str(ents[2].get()) 
       host = gizmoChoice.get()
 
    def writeFleet(w=None):
@@ -87,15 +86,6 @@ if __name__ == '__main__':
             #if f not in  revd : ROW(t, text='*** ' + f, pad=2)
             ROW(t, text='*** ' + f, pad=2)
 
- 
-   def setBTconfig(callout, request): 
-      #callout can be gizmone hostname (BT-#)  or boat ID (sail #)
-      global bt, btADDR
-      (bt, btADDR, conf) = CallOut(callout, request)
-      
-      fl = conf['FLEET']
-      fleetChoice.set(fl)
-
    def showRC(t=None): 
       if t is not None: t.destroy()
 
@@ -105,9 +95,9 @@ if __name__ == '__main__':
          rc = str({x: fleets[d][x] for x in ('RC_IP', 'RC_PORT')})
          ROW(w, text=d + '  ' + str(rc), pad=2, width=40)
    
-   def setRC(): 
+   def setRC(t=None): 
       # This is to all by UDP !!
-      # global bt, btADDR
+      if t is not None: t.destroy()
 
       fl =  fleetChoice.get()
       rc = str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
@@ -115,6 +105,47 @@ if __name__ == '__main__':
       logging.debug(request)
       (bt, btADDR, conf) = CallOut("all", request, timeout=20)
 
+   def setBTconfig(t=None): 
+      # This is a complete reset of a gizmo by UDP !!
+      # callout will be to a gizmo hostname (BT-#)
+      # Could allow boat ID (sail #) but that may get changed by the BTconfig,
+      # which would get confusing. Gizmo hostname will not change
+
+      if t is not None: t.destroy()
+
+      fl =  fleetChoice.get()
+      hn =  gizmoChoice.get()
+
+      rc = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
+      request = "setBTconfig::" + str(rc)
+      logging.debug(request)
+      
+      (bt, btADDR, conf) = CallOut(hn, request, timeout=20)
+      # ALSO NEED TO CHANGE fleets[] BoatList ...
+
+      fl = conf['FLEET']
+      fleetChoice.set(conf['FLEET'])
+
+      ents[0].delete(0, tkinter.END)
+      ents[0].insert(15, conf['BT_ID'])
+
+      gizmoChoice.set(conf['hn']) 
+
+   def newBoatSetBTconfig(bt, fl, t=None):
+      if t is not None: t.destroy()
+
+      ents[0].insert(15, bt)
+      fleetChoice.set(fl)
+
+      hn =  'BT-xx'                 # AUTO SELECT FROM UNASSIGNED LIST
+      gizmoChoice.set(hn)
+      # NEED TO DO DATA MANAGEMENT OF fleets...
+
+   def callForHostG(callout, request, t=None):
+      if t is not None: t.destroy()
+      ents[0].delete(0, tkinter.END)  #unset sail# and fleet for case nothing is returned
+      fleetChoice.set('unknown')
+      callForHost(callout, request) 
  
    def callForHost(callout, request): 
       #callout can be gizmone hostname (BT-#)  or boat ID (sail #)
@@ -144,7 +175,10 @@ if __name__ == '__main__':
       # hn is not a standard part of BTconfig, it was added by CallOutRespond()
       gizmoChoice.set(conf['hn']) 
 
-   ##################  initiat from files    ################
+   def selectGizmo(): 
+      hn = gizmoChoice.set(selectGizmoChoice.get())
+
+   ##################  initiate from files    ################
 
    try :
       with open('FleetList.txt','r') as f: fleets =  json.load(f)
@@ -187,34 +221,49 @@ if __name__ == '__main__':
    w.wm_title("Gizmo Registration")
    w.bind('<Return>', (lambda event : readWindow()))   
    w.bind('<FocusOut>', (lambda event : readWindow()))   
-
-
-   fldLabels = [    'Boat Sail #', 
-                    'Change Sail #',
-                    'New Boat Sail #']
-
-   ents = []
-   for f in fldLabels: ents.append(ROW(w, text=f, width=15, ebg="white"))
    
-   row = tkinter.Frame(w)
-   tkinter.Label(row, width=5, text="fleet", anchor='w').pack(side=tkinter.LEFT)
-   fleetChoice = Drop(row, options=fleetList, default = 0,
-              command= (lambda event : changeFleet()))
+   ents = []
 
-   tkinter.Label(row, width=15, text="       Gizmo ID", anchor='w').pack(side=tkinter.LEFT)
-   gizmoChoice = Drop(row, options=gizmoList, default = 0) #, command= (lambda event : changeGizmo()))
+   row = tkinter.Frame(w)
+   ents.append(ENTRY(row, text=  'Sail #'))
+   fleetChoice = DROP(row, text= ' fleet:',  options=fleetList, default = 0) #, command = changeFleet)
+   But(row, text='fleet\nboat list',     command=(lambda : writeFleet()))
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+ 
+   row = tkinter.Frame(w)
+   But(row,  text='Call Out\nBoat',      command=(lambda : callForHost(ents[0].get(), "flash, send address and BTconfig")))
+   But(row,  text='Check Out\nGizmo',    command=(lambda : CallOut(ents[0].get(), "flash and send address")))
+   But(row,  text='Check In\nGizmo',     command=(lambda : CallOut(ents[0].get(), "flash and send address")))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
-   
-   But(w,  text='Call Out\nBoat',      command=(lambda : callForHost(ents[0].get(), "flash, send address and BTconfig")))
-   But(w,  text='Call Out\nGizmo',     command=(lambda : callForHost(gizmoChoice.get(), "flash, send address and BTconfig")))
-   But(w,  text="Set boat's\nconfig",  command=(lambda : setBTconfig(ents[0].get(), "set BTconfig and flash")))
-   But(w,  text='Check Out\nGizmo',    command=(lambda : CallOut(ents[0].get(), "flash and send address")))
-   But(w,  text='Check In\nGizmo',     command=(lambda : CallOut(ents[0].get(), "flash and send address")))
-   But(w, text='fleet\nboat list',     command=(lambda : writeFleet()))
-   But(w, text='extra',                command=(lambda : extraWindow()))
+   row = tkinter.Frame(w)
+   ents.append(ENTRY(row, text=  'Change Sail #'))
+   gizmoChoice       = DROP(row, text='Gizmo ID:',       options=gizmoList,     default = 0) #, command= (lambda event : changeGizmo()))
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
-   #writeRCWindow()
+   row = tkinter.Frame(w)
+   But(row,  text="Commit changes\nto Gizmo",  command=(lambda : setBTconfig()))
+   But(row, text='New Boat',          command=(lambda : newBoatWindow()))
+   But(row, text='extra',                command=(lambda : extraWindow()))
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+   ##########   Registration New Boat  Window   ########### 
+
+   def newBoatWindow():
+      global Nents
+      t = tkinter.Toplevel()
+      t.wm_title("New Boat")
+
+      Nents = []
+      row = tkinter.Frame(t)
+      Nents.append(ENTRY(row, text=  'New Boat Sail #'))
+      NfleetChoice = DROP(row, text= ' fleet:',  options=fleetList, default = 0) #, command = changeFleet)
+      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+      row = tkinter.Frame(t)
+      But(row,  text="Commit changes\nto Gizmo",  
+                     command=(lambda : newBoatSetBTconfig(Nents[0].get(), NfleetChoice.get(), t)))
+      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    ##########   Registration Extra  Window   ########### 
 
@@ -222,10 +271,15 @@ if __name__ == '__main__':
       t = tkinter.Toplevel()
       t.wm_title("Extra Options")
 
-      But(t,  text="Show fleet's\nRC settings",   command=(lambda : showRC(t)) )
-      But(t,  text="Propogate\nfleet's RC",       command=setRC )
-      #But(t,  text='Re-read\nlist of fleets', command=CallOut(ents[0].get(), "flash and send address")
-      #But(t,  text='Re-read\nBoatList', command=CallOut(ents[0].get(), "flash and send address")
+      row = tkinter.Frame(t)
+      But(row,  text="Show fleets'\nRC settings",   command=(lambda : showRC(t)) )
+      But(row,  text="Propogate\nfleet's RC",       command=(lambda : setRC(t)) )
+      #But(row,  text='Re-read\nlist of fleets') NEED DYNAMIC DROP MENU FOR THIS
+      But(row,  text='Re-read\nBoatList')
+      selectGizmoChoice = DROP(row, text='unassigned\nGizmos:', options=('None yet',), default = 0, command= (lambda event : selectGizmo()))
+      But(row,  text='Call Out\nGizmo',  command=(lambda : callForHostG(gizmoChoice.get(),
+                                               "flash, send address and BTconfig", t)))
+      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    ###############  end  Registration  Main  GUI     ###############
 

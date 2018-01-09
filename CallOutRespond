@@ -96,9 +96,7 @@ while not shutdown:
           print('sent "' + send +'"')
        
        if "flash" in request :
-          LEDs.update('blink red and green for 20 sec')         
-          LEDs.systemProblem('test solid blue')
-          time.sleep(2)
+          LEDs.checkout('blue red green checkout sequence.')         
           LEDs.off('lights out')
        
        if "setRC" in request :
@@ -107,10 +105,19 @@ while not shutdown:
              BTconfig.update(eval(data[2]))
              print(BTconfig)
              with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
+       
+       if (bt in called or hn in called )  and  "setBTconfig" in request :
+          # This is a complete reset of the BTconfig
+          BTconfig.update(eval(data[2]))
+          print(BTconfig)
+          with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
+          BTconfig.update({"hn": hn})
+          send = bt + "::" + str(BTconfig)            # always return BTconfig + hostname
+          sockUDP.sendto(send.encode('utf-8'), addr)
+          print('sent "' + send +'"')
 
 
-
-    #TCP LISTEN
+    #TCP LISTEN ??
        if "whatIsBTconfig" in request : sendBTconfig(addr, conf) 
 
        if "hereIsBTconfig" in request : recvBTconfig(addr, conf)

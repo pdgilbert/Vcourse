@@ -134,6 +134,26 @@ def  systemProblem(x ='')  :
    leds.off()  
    leds.on(BLUE)
 
+def  checkout(x ='') : 
+   print('blue, red, green, all, green ' + str(x))
+   leds.off()  
+   leds.on(BLUE)   
+   time.sleep(1)
+   leds.off()  
+   leds.on(RED)
+   time.sleep(1)
+   leds.off()  
+   leds.on(GREEN)
+   time.sleep(1)
+   leds.off()  
+   leds.on(BLUE)   
+   leds.on(RED)
+   leds.on(GREEN)
+   time.sleep(1)
+   leds.off()  
+   leds.on(GREEN)
+   time.sleep(3)
+   leds.off()  
 
 # Old status is needed because PWM flickers too fast if constantly 
 # reset, so set only on change
@@ -149,7 +169,7 @@ def  setLEDs(nw, x ='')  :
    Set state of LEDs and return None.
 
    Possible state settings are 'off', 'bound', 'warn', 'center', 'update', 
-   'noGPSfix',  or 'systemProblem'.
+   'noGPSfix',  'systemProblem', or 'checkout'.
    """
    
    global status
@@ -161,6 +181,7 @@ def  setLEDs(nw, x ='')  :
       elif nw == 'update'        : update(x)
       elif nw == 'noGPSfix'      : noGPSfix(x)
       elif nw == 'systemProblem' : systemProblem(x)
+      elif nw == 'checkout'      : checkout(x)    # for Registration
       else :
          raise ValueError(
          "LED now status ('" +nw+ "') incorrect value.\nOld status is '" +status+ "'. x is'" +x+ "'.")

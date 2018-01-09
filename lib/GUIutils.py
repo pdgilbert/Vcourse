@@ -3,9 +3,9 @@ import logging
 
 #########################    Utility  Functions     ######################### 
 
-def But(w, text='x', command='') :
+def But(w, text='x', command='', side=tkinter.LEFT) :
    b = tkinter.Button(w, text=text,  command=command)
-   b.pack(side=tkinter.LEFT, padx=5, pady=5)
+   b.pack(side=side, padx=5, pady=5)
    return(b)
 
 def Drop(w, options=['zero', 'one', 'two'], default=0, command=None, font=("Helvetica", 10)) :
@@ -20,6 +20,26 @@ def Drop(w, options=['zero', 'one', 'two'], default=0, command=None, font=("Helv
    b.pack(side=tkinter.LEFT)
    #b.config(font=("Helvetica", 10)) does not reset, default on next call does the reset
    return v
+
+def DROP(row, text, options=['zero', 'one', 'two'], default=0, command=None, font=("Helvetica", 10)) :
+   #command below needs to accept the selection, which is passed to it,
+   # eg,  self.readRCWindow() will be passes (self, 'FX')
+   tkinter.Label(row, text= text,   anchor='w').pack(side=tkinter.LEFT)
+   v = tkinter.StringVar(row)
+   v.set(options[default]) 
+
+   if command is None : b = tkinter.OptionMenu(row, v, *options)
+   else :               b = tkinter.OptionMenu(row, v, *options,  command=command)
+   b.config(font=font)
+   b.pack(side=tkinter.LEFT)
+   #b.config(font=("Helvetica", 10)) does not reset, default on next call does the reset
+   return v
+
+def ENTRY(row, text, bg="white", width=10):
+   tkinter.Label(row, text= text,   anchor='w').pack(side=tkinter.LEFT)
+   e = tkinter.Entry(row, bg = "white", width=width)
+   e.pack(side=tkinter.LEFT)#,expand=tkinter.YES)#, fill=tkinter.X)
+   return e
 
 def ROW(t, text, width=30, ebg=None, pad=5):
    #ebg None means no entry field, otherwise color of entry field bg.
