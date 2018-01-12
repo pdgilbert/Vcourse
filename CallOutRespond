@@ -14,42 +14,64 @@ done before registration.
 Boat specific configuration for the gizmo ("FLEET" and "BT_ID" ) is written to BTconfig.
 RC specific configuration ("RC_PORT" and "RC_IP") is also written to BTconfig.
 GPS harware specific configuration  is written to GPSconfig.
+
+See CallOut for other details.
 """
 
 import socket
 import time
 import json
+#import logging
 
+import smp
 import LEDs 
 
-def sendBTconfig(btADDR, conf) :
-   try :
-       sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
-       sockTCP.connect((btADDR[0], btADDR[1])) #IP, port
-       
-       l = smp.snd(sockTCP, 'BTconfig-' + str(conf)) # json serialize
-       
-       #r = smp.rcv(sockTCP) 
-       #logging.debug('r ' + str(r))
-   except :
-      raise Exception('error in recvBTconfig')
-      
-   sockTCP.close()
+#logFormat ='(%(threadName)-9s) %(message)s'
+#logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+#logging.basicConfig(level=logging.INFO, format=logFormat,)
 
-def recvBTconfig(btADDR, conf) :
+def reportBTconfig() :
+   """response to Registation udp broadcast 'report config' """
+   BTconfig.update({"hn": hn})
+   send = bt + "::" + str(BTconfig)            # config + hostname
+   print('sending "' + send +'" to Regist')     
+   try :
+       time.sleep(5)
+       sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
+       sockTCP.connect(("10.42.0.254", 9005)) #Registration IP, port       
+       l = smp.snd(sockTCP, send)    
+   except :
+      raise Exception('error in reportBTconfig')
+   finally :
+      sockTCP.close()
+
+
+def requestBTconfig() :
+   """
+   This is in response to Registation udp broadcast 'requestBTconfig' which means BT should
+   request a new BTconfig from Registation. This is a bit round-about, 
+   but otherwise BT needs a TCP listening process.
+   """
+   BTconfig.update({"hn": hn})
+   send = hn + "::" + str(BTconfig)            # config + hostname
+   print('sending "' + send +'" to Regist')     
    try :
        sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
-       sockTCP.connect((btADDR[0], btADDR[1])) #IP, port
-       
-       l = smp.snd(sockTCP, 'BTconfig-' + str(conf)) # json serialize
-       
-       #r = smp.rcv(sockTCP) 
-       #logging.debug('r ' + str(r))
+       sockTCP.connect(("10.42.0.254", 9005)) #Registration IP, port
+       l  = smp.snd(sockTCP, send)        
+       cf = smp.rcv(sockTCP) 
+       cf.update({"hn": hn})
+       echo = bt + "::" + str(cf)
+       print('echo ' + str(echo))
+       l  = smp.snd(sockTCP, echo)        
    except :
-      raise Exception('error in recvBTconfig')
+      raise Exception('error in requestBTconfig')
+   finally :
+      sockTCP.close()
    
-   sockTCP.close()
+   return cf
 
+################################################################################
 
 LEDs.off('lights out')
 
@@ -84,43 +106,43 @@ while not shutdown:
     request = data[0]
     # in some cases there will be more sections in data
     
+    print(addr)
     print(called)
     print(request)
-    
+    print(bt)
+    print(hn)
+    print(bt in called)
+    print(hn in called)
+    print('all' in called)
+
+    if (bt in called or hn in called ) : 
+       # Gizmo specific, not 'all'
+
+       if "report config" in request : 
+          print('doing reportBTconfig')
+          reportBTconfig()
+              
+       if "requestBTconfig" in request :
+          #This is a complete reset of the BTconfig.
+          cf = requestBTconfig()
+          BTconfig.update(eval(cf))
+          print(BTconfig)
+          with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
+   
     if bt in called or hn in called or 'all' in called :
-       
-       if "send address" in request : 
-          BTconfig.update({"hn": hn})
-          send = bt + "::" + str(BTconfig)            # always return BTconfig + hostname
-          sockUDP.sendto(send.encode('utf-8'), addr)
-          print('sent "' + send +'"')
        
        if "flash" in request :
           LEDs.checkout('blue red green checkout sequence.')         
           LEDs.off('lights out')
+          print('doing flash')
        
        if "setRC" in request :
-          fl =  data[1]
-          if fl ==BTconfig['FLEET'] :
+          fl =  data[1]          # from UDP broadcast, not TCP connection
+          if fl == BTconfig['FLEET'] :
              BTconfig.update(eval(data[2]))
              print(BTconfig)
              with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
        
-       if (bt in called or hn in called )  and  "setBTconfig" in request :
-          # This is a complete reset of the BTconfig
-          BTconfig.update(eval(data[2]))
-          print(BTconfig)
-          with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
-          BTconfig.update({"hn": hn})
-          send = bt + "::" + str(BTconfig)            # always return BTconfig + hostname
-          sockUDP.sendto(send.encode('utf-8'), addr)
-          print('sent "' + send +'"')
-
-
-    #TCP LISTEN ??
-       if "whatIsBTconfig" in request : sendBTconfig(addr, conf) 
-
-       if "hereIsBTconfig" in request : recvBTconfig(addr, conf)
 
 
 # never get here unless shutdown mechanism is activated

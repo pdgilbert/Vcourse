@@ -36,10 +36,6 @@ if __name__ == '__main__':
    #  fleets will have a sub-dict for each fleet with boatList and checkedOut, 
    #  eg: fleets = {'FX': {'BoatList': ('FX 1',), 'checkedOut': None}}
 
-   def checkedOutList(): 
-      fl = fleetChoice.get()
-      return fleets[fl]['checkedOut']
-       
    def readBoatList(fl, w=None):
       global fleets
       if w is not None: w.destroy()
@@ -58,33 +54,9 @@ if __name__ == '__main__':
       if w is not None: w.destroy()
       
       fl   = fleetChoice.get()
-      bt   = str(ents[0].get())
+      bt   = getbt()
       chg  = str(ents[1].get()) 
       host = gizmoChoice.get()
-
-   def writeFleet(w=None):
-      if w is not None: w.destroy() 
-      
-      # THIS SHOULD ALSO INDICATE CHECKOUT STATUS
-      
-      fl      = fleetChoice.get()
-      
-      BoatList =  fleets[fl]['BoatList']
-      
-      # checkedOut   = 
-      
-      t = tkinter.Toplevel(w)
-      t.wm_title(fl + "Checked Out Status")
-      
-      if  BoatList is None : 
-         bl = 'boat list not available.'
-      else :
-         bl = ''
-      
-      if (BoatList is not None) : 
-         for f in BoatList :
-            #if f not in  revd : ROW(t, text='*** ' + f, pad=2)
-            ROW(t, text='*** ' + f, pad=2)
 
    def showRC(t=None): 
       if t is not None: t.destroy()
@@ -95,7 +67,7 @@ if __name__ == '__main__':
          rc = str({x: fleets[d][x] for x in ('RC_IP', 'RC_PORT')})
          ROW(w, text=d + '  ' + str(rc), pad=2, width=40)
    
-   def setRC(t=None): 
+   def setRC(bt, t=None): 
       # This is to all by UDP !!
       if t is not None: t.destroy()
 
@@ -103,61 +75,119 @@ if __name__ == '__main__':
       rc = str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
       request = "setRC::" + fl + "::" + rc
       logging.debug(request)
-      (bt, btADDR, conf) = CallOut("all", request, timeout=20)
+      (bt, conf) = CallOut(bt,  request, timeout=20)
+      return (bt, conf)
 
-   def setBTconfig(t=None): 
-      # This is a complete reset of a gizmo by UDP !!
-      # callout will be to a gizmo hostname (BT-#)
+   def setBTconfig(t=None):   
+      # This does "requetBTconfig" so BT calls back 
+      # This is a complete reset of a gizmo to values from Registration GUI
+      #  and the record of RC values for the fleet!
+      # The callout will be to a gizmo hostname (BT-#)
       # Could allow boat ID (sail #) but that may get changed by the BTconfig,
       # which would get confusing. Gizmo hostname will not change
 
       if t is not None: t.destroy()
 
+      bt =  getbt()
       fl =  fleetChoice.get()
       hn =  gizmoChoice.get()
 
-      rc = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
-      request = "setBTconfig::" + str(rc)
-      logging.debug(request)
+      cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
       
-      (bt, btADDR, conf) = CallOut(hn, request, timeout=20)
+      (bt, conf) = CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
+      
+
+      # This is really just a confirmation. If screen values change then something is wrong.
+      fleetChoice.set(conf['FLEET'])
+      setbt(conf['BT_ID'])
+      gizmoChoice.set(conf['hn']) 
       # ALSO NEED TO CHANGE fleets[] BoatList ...
 
-      fl = conf['FLEET']
-      fleetChoice.set(conf['FLEET'])
-
-      ents[0].delete(0, tkinter.END)
-      ents[0].insert(15, conf['BT_ID'])
-
-      gizmoChoice.set(conf['hn']) 
-
-   def newBoatSetBTconfig(bt, fl, t=None):
+   def newBoatSetup(bt, fl, t=None):
+      # set BTconfig on gizmo  and update various files
+      # Note args bt, fl come from the new boat dialog, so they need to
+      # be set in main window.
       if t is not None: t.destroy()
 
-      ents[0].insert(15, bt)
+      setbt(bt)
       fleetChoice.set(fl)
 
-      hn =  'BT-xx'                 # AUTO SELECT FROM UNASSIGNED LIST
-      gizmoChoice.set(hn)
-      # NEED TO DO DATA MANAGEMENT OF fleets...
+      BoatList =  fleets[fl]['BoatList']
+      logging.debug(bt)
+      logging.debug(fl)
+      logging.debug(BoatList)
+
+      if bt in BoatList: 
+         tkWarning(bt + " is already in fleet " + fl + "\nConfiguring new gizmo.")
+      else:
+         fleets[fl]['BoatList'] = BoatList + (bt,)
+      
+      (un, conf) = CallOut('unassigned', 'flash, report config')
+      logging.debug(un)
+
+      #MAY NEED TO FIND DUPLICATE GIZMOS FOR A BOAT?
+
+      logging.debug(conf)
+      gizmoChoice.set(conf['hn']) 
+      setBTconfig() # uses choices as set above     
+      writeBoatList()
+      
+
+   def writeBoatList():
+      """
+      Save file copy for reload when restarted.
+      Used when BoatList is changed (by newBoatSetup, fleet change or Sail # change)
+      """
+
+      fl =fleetChoice.get()
+      BoatList =  fleets[fl]['BoatList']
+
+      try : 
+         with open('FLEETS/' +fl + '/BoatList.txt', 'w') as f: 
+                  for bt in BoatList : f.write(str(bt) + "\n")  # txt lines not json
+      except :
+         logging.info("Registration failed saving BoatList.txt for " + fl)
+
+
+   def writeCheckedOutList(fl):
+      """
+      Save file copy for reload when restarted.
+      Used when a gizmo is checked in or out
+      """
+
+      checkedOut   =  fleets[fl]['checkedOut']
+      checkedOutHN =  fleets[fl]['checkedOutHN']
+
+      if len(checkedOut) != len(checkedOutHN) : 
+         raise Exception('Something is wrong.\ncheckedOut and checkedOutHN are not same length.')
+
+      try : 
+         with open('FLEETS/' +fl + '/checkedOut.txt', 'w') as f: 
+                  for bt in checkedOut : f.write(str(bt) + "\n")   # txt lines not json
+         with open('FLEETS/' +fl + '/checkedOutHN.txt', 'w') as f: 
+                  for bt in checkedOutHN : f.write(str(bt) + "\n") # txt lines not json
+      except :
+         logging.info("Registration failed saving checkedOut.txt for " + fl)
+
 
    def callForHostG(callout, request, t=None):
       if t is not None: t.destroy()
-      ents[0].delete(0, tkinter.END)  #unset sail# and fleet for case nothing is returned
+      
+      #ents[0].delete(0, tkinter.END)  #unset sail# and fleet for case nothing is returned
+      setbt('')
       fleetChoice.set('unknown')
       callForHost(callout, request) 
  
    def callForHost(callout, request): 
       #callout can be gizmone hostname (BT-#)  or boat ID (sail #)
-      global bt, btADDR
-      bt = ents[0].get()
-      (bt, btADDR, conf) = CallOut(callout, request)
+      global bt
+      bt = getbt()
+      (bt, conf) = CallOut(callout, request)
       
       fl = conf['FLEET']
       fleetChoice.set(fl)
 
-      ents[0].delete(0, tkinter.END)
-      ents[0].insert(15, bt)
+      setbt(bt)
       
       #logging.debug('fleets')
       #logging.debug(fleets)
@@ -168,15 +198,73 @@ if __name__ == '__main__':
       bPT = conf['RC_PORT']
 
       if fIP != bIP  or  fPT != bPT :
-         tkWarning("Boat's IP/PORT not set to fleet values! It with be reset.\n" +
-                   "fleet: " + fIP + ":" + fPT + ". boat: " + bIP + ":" + bPT + ".\n" +
-                   "If the boat values are correct then reset the fleet values.", width=45)
+         tkWarning("Boat's IP/PORT was not set to fleet values!\n" +
+                   "boat:  " + bIP + ":" + bPT + "\n" +
+                   "fleet: " + fIP + ":" + fPT + "\n" +
+                   "It is being reset. If the boat values were correct\n" +
+                   "then reset the fleet values and propogate.", width=45)
+         (bt, conf) = setRC(bt)
 
       # hn is not a standard part of BTconfig, it was added by CallOutRespond()
       gizmoChoice.set(conf['hn']) 
 
    def selectGizmo(): 
       hn = gizmoChoice.set(selectGizmoChoice.get())
+
+
+   def getbt(): return ents[0].get()
+
+   def setbt(bt): 
+      ents[0].delete(0, tkinter.END)
+      ents[0].insert(15, bt)
+
+   def checkOut(): 
+      global fleets
+      bt = getbt()
+      fl = fleetChoice.get()
+      hn = gizmoChoice.get()
+      logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
+
+      if bt not in fleets[fl]['checkedOut'] :
+         fleets[fl]['checkedOut'  ] = fleets[fl]['checkedOut']   + (bt,)
+         fleets[fl]['checkedOutHN'] = fleets[fl]['checkedOutHN'] + (hn,)
+      
+      logging.debug('checkedOut:' +  str(fleets[fl]['checkedOut']))
+      logging.debug('checkedOutHN:' +  str(fleets[fl]['checkedOutHN']))
+      writeCheckedOutList(fl)
+
+   def checkIn(): 
+      global fleets
+      bt = getbt()
+      fl = fleetChoice.get()
+      logging.debug(bt + " " + fl)
+      checkedOut = fleets[fl]['checkedOut']
+      logging.debug(str(checkedOut))
+      if bt not in checkedOut: tkWarning(bt + " is not checkedOut in fleet " + fl)
+
+      fleets[fl]['checkedOut'] = tuple(x for x in checkedOut if x != bt)
+      logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
+      writeCheckedOutList(fl)
+ 
+   def showBoatList(w=None):
+      if w is not None: w.destroy() 
+      
+      fl      = fleetChoice.get()
+      BoatList =  fleets[fl]['BoatList']
+      checkedOut   = fleets[fl]['checkedOut']
+      
+      t = tkinter.Toplevel(w)
+      t.wm_title(fl + " Checked Out Status")
+      
+      if  BoatList is None : 
+          ROW(t, text='boat list not available.' + f, pad=2)
+      
+      if (BoatList is not None) : 
+         for f in BoatList :
+            if f  in  checkedOut : out = ' out '
+            else                 : out = '     '
+            #hn =
+            ROW(t, text=f + '  ' + out + 'gizmo hn ', pad=2)
 
    ##################  initiate from files    ################
 
@@ -204,7 +292,7 @@ if __name__ == '__main__':
 
    for d in fleetList:
       #ZEROING CHECKEDOUT MAY BE A PROBLEM
-      fleets[d].update({'BoatList':(), 'checkedOut':None})
+      fleets[d].update({'BoatList':(), 'checkedOut':()})
       readBoatList(d) 
 
    logging.debug('fleets:')
@@ -213,7 +301,6 @@ if __name__ == '__main__':
    #logging.debug('fleets[FX][RC_IP]')
    #logging.debug(fleets['FX']['RC_IP'])
 
-   # should write BoatList file if there are changes
    
    ##################  Registration  Main  GUI     ################
    w = tkinter.Tk()
@@ -227,18 +314,18 @@ if __name__ == '__main__':
    row = tkinter.Frame(w)
    ents.append(ENTRY(row, text=  'Sail #'))
    fleetChoice = DROP(row, text= ' fleet:',  options=fleetList, default = 0) #, command = changeFleet)
-   But(row, text='fleet\nboat list',     command=(lambda : writeFleet()))
+   But(row, text='fleet\nboat list',     command=(lambda : showBoatList()))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
  
    row = tkinter.Frame(w)
-   But(row,  text='Call Out\nBoat',      command=(lambda : callForHost(ents[0].get(), "flash, send address and BTconfig")))
-   But(row,  text='Check Out\nGizmo',    command=(lambda : CallOut(ents[0].get(), "flash and send address")))
-   But(row,  text='Check In\nGizmo',     command=(lambda : CallOut(ents[0].get(), "flash and send address")))
+   But(row,  text='Call Out\nBoat',      command=(lambda : callForHost(getbt(), "flash, report config")))
+   But(row,  text='Check Out\nGizmo',    command=checkOut)
+   But(row,  text='Check In\nGizmo',     command=checkIn)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(w)
    ents.append(ENTRY(row, text=  'Change Sail #'))
-   gizmoChoice       = DROP(row, text='Gizmo ID:',       options=gizmoList,     default = 0) #, command= (lambda event : changeGizmo()))
+   gizmoChoice = DROP(row, text='Gizmo ID:',       options=gizmoList,     default = 0) #, command= (lambda event : changeGizmo()))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(w)
@@ -262,7 +349,7 @@ if __name__ == '__main__':
 
       row = tkinter.Frame(t)
       But(row,  text="Commit changes\nto Gizmo",  
-                     command=(lambda : newBoatSetBTconfig(Nents[0].get(), NfleetChoice.get(), t)))
+                     command=(lambda : newBoatSetup(Nents[0].get(), NfleetChoice.get(), t)))
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    ##########   Registration Extra  Window   ########### 
@@ -273,12 +360,12 @@ if __name__ == '__main__':
 
       row = tkinter.Frame(t)
       But(row,  text="Show fleets'\nRC settings",   command=(lambda : showRC(t)) )
-      But(row,  text="Propogate\nfleet's RC",       command=(lambda : setRC(t)) )
+      But(row,  text="Propogate\nfleet's RC",       command=(lambda : setRC('all', t)) )
       #But(row,  text='Re-read\nlist of fleets') NEED DYNAMIC DROP MENU FOR THIS
       But(row,  text='Re-read\nBoatList')
-      selectGizmoChoice = DROP(row, text='unassigned\nGizmos:', options=('None yet',), default = 0, command= (lambda event : selectGizmo()))
+      selectGizmoChoice = DROP(row, text='re-assigned\nGizmo:', options=('None yet',), default = 0, command= (lambda event : selectGizmo()))
       But(row,  text='Call Out\nGizmo',  command=(lambda : callForHostG(gizmoChoice.get(),
-                                               "flash, send address and BTconfig", t)))
+                                               "flash, report config", t)))
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    ###############  end  Registration  Main  GUI     ###############
