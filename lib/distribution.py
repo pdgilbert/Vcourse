@@ -230,7 +230,7 @@ class distributer(threading.Thread):
             (sock, (ip,port)) = self.tcpsock.accept()
             #next only takes a second, so no need to pass shutdown signal.
             #this only uses fleets (for cid and zoneObj) but self passes access methods
-            BThandlerThread(ip, port, sock, self).start()
+            BThandlerThread(sock, self).start()
          except Exception: 
             pass
 
@@ -395,11 +395,9 @@ class BThandlerThread(threading.Thread):
 # This needs updatedistributionRecvd, cid and zoneObj for each fleet, but
 #  passing the whole of  distributer is bigger than needed.
 
-   def __init__(self, ip, port, sock, distributer):
+   def __init__(self, sock, distributer):
        threading.Thread.__init__(self)
        self.name='BThandler'
-       self.ip = ip
-       self.port = port
        self.sock = sock
        #self.fleets = fleets
        self.distributer = distributer
