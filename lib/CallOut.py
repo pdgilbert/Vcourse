@@ -11,6 +11,9 @@ convoluted sometimes: when Registration needs to send a whole new configuration 
 sends a "requestBTconfig" telling the BT to request a new configuration. The alternative would
 require BT to run a process listening for TCP connections.
 
+UDP broadcasts are prepended with bt or hn :: so BTs can determine if it is intended for them.
+This is not needed on individual TCP connections.
+
    callout = "BT-1"  # hostname
    callout = "FX-1"  # boat id
 
@@ -33,6 +36,12 @@ import smp
 import logging
 
 
+def splitConf(mes):
+   z = mes.split('::')
+   bt = z.pop(0)   
+   conf = eval(z[0]) # str to dict
+   return (bt, conf)
+
 def CallOut(callout, request, conf=None, timeout=5) :
 
    if request not in ("flash", "report config", "flash, report config", "requestBTconfig"):
@@ -48,10 +57,11 @@ def CallOut(callout, request, conf=None, timeout=5) :
    sockUDP.close()
 
    if   request == "flash" :                   return None
-   elif request == "report config" :           (bt, conf) = ReportBTconfig(callout)
-   elif request == "flash, report config" :    (bt, conf) = ReportBTconfig(callout)
-   elif request == "requestBTconfig" :         (bt, conf) = requestBTconfig(callout, str(conf))
+   elif request == "report config" :           conf = ReportBTconfig(callout)
+   elif request == "flash, report config" :    conf = ReportBTconfig(callout)
+   elif request == "requestBTconfig" :         conf = requestBTconfig(callout, str(conf))
 
+   bt = conf['BT_ID']
    print (bt)   
    print (str(conf) ) 
 
@@ -61,15 +71,9 @@ def Listen() :
    socketTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
    socketTCP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
    socketTCP.bind(("10.42.0.254", 9005) ) #Registration IP, port
-   #socketTCP.settimeout(10)
+   socketTCP.settimeout(10)
    socketTCP.listen(5)  
    return socketTCP
-
-def splitConf(mes):
-   z = mes.split('::')
-   bt = z.pop(0)   
-   conf = eval(z[0]) # str to dict
-   return (bt, conf)
 
 
 def ReportBTconfig(callout) :
@@ -85,15 +89,12 @@ def ReportBTconfig(callout) :
       sock.close()
       socketTCP.close()
 
-   (bt, cf) = splitConf(mes)
-
-   if bt != cf['BT_ID']  :
-       raise Exception('Code error, reporting is messed up. Config "BT_ID" is not bt!')
+   cf = eval(mes) # str to dict
 
    if not (callout == cf['BT_ID'] or callout == cf['hn'] ) :
        raise Exception('incorrect gizmo. Not reporting.')
 
-   return (bt, cf)
+   return cf
 
 def requestBTconfig(hn, conf) :
    # listen for request and confirm it is from correct hostname
@@ -101,14 +102,13 @@ def requestBTconfig(hn, conf) :
       socketTCP = Listen()
       (sock, (ip,port)) = socketTCP.accept()        
       mes = smp.rcv(sock) 
-      (bt, cf) = splitConf(mes)
+      cf = eval(mes) # str to dict
       print('cf is ' + str(cf))
       if hn != cf['hn'] :
          raise Exception('incorrect gizmo. Not resetting.')
-      #logging.debug('mes ' + str(mes))
       l   = smp.snd(sock, str(conf))  
       echo = smp.rcv(sock) 
-      (bt, cf) = splitConf(echo)
+      cf = eval(echo) # str to dict
    except :
       raise Exception('no TCP connection from' + str(hn))
    finally :
@@ -119,7 +119,4 @@ def requestBTconfig(hn, conf) :
    if hn != cf['hn'] :
       raise Exception('Code error, resetting is messed up. Config "hn" is not hn!')
 
-   if bt != cf['BT_ID'] :
-      raise Exception('Code error, resetting is messed up. Config "BT_ID" is not bt!')
-
-   return (bt, cf)
+   return cf

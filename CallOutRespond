@@ -32,14 +32,13 @@ import LEDs
 
 def reportBTconfig() :
    """response to Registation udp broadcast 'report config' """
-   BTconfig.update({"hn": hn})
-   send = bt + "::" + str(BTconfig)            # config + hostname
-   print('sending "' + send +'" to Regist')     
+   BTconfig.update({"hn": hn})   # config + hostname
+
    try :
-       time.sleep(5)
+       #time.sleep(5)
        sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
        sockTCP.connect(("10.42.0.254", 9005)) #Registration IP, port       
-       l = smp.snd(sockTCP, send)    
+       l = smp.snd(sockTCP,  str(BTconfig))    
    except :
       raise Exception('error in reportBTconfig')
    finally :
@@ -52,18 +51,15 @@ def requestBTconfig() :
    request a new BTconfig from Registation. This is a bit round-about, 
    but otherwise BT needs a TCP listening process.
    """
-   BTconfig.update({"hn": hn})
-   send = hn + "::" + str(BTconfig)            # config + hostname
-   print('sending "' + send +'" to Regist')     
+   BTconfig.update({"hn": hn})  # config + hostname
+
    try :
        sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
        sockTCP.connect(("10.42.0.254", 9005)) #Registration IP, port
-       l  = smp.snd(sockTCP, send)        
-       cf = smp.rcv(sockTCP) 
+       l  = smp.snd(sockTCP, str(BTconfig))        
+       cf = eval(smp.rcv(sockTCP) ) # str to dict
        cf.update({"hn": hn})
-       echo = bt + "::" + str(cf)
-       print('echo ' + str(echo))
-       l  = smp.snd(sockTCP, echo)        
+       l  = smp.snd(sockTCP, str(cf))   # echo      
    except :
       raise Exception('error in requestBTconfig')
    finally :
@@ -125,7 +121,7 @@ while not shutdown:
        if "requestBTconfig" in request :
           #This is a complete reset of the BTconfig.
           cf = requestBTconfig()
-          BTconfig.update(eval(cf))
+          BTconfig.update(cf)
           print(BTconfig)
           with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
    
