@@ -243,7 +243,7 @@ if __name__ == '__main__':
       logging.debug('checkedOut:' +  str(fleets[fl]['checkedOut']))
       logging.debug('BoatHostMap' +  str(fleets['BoatHostMap']))
       writeCheckedOutList(fl)
-      CallOut(bt, "flash")
+      CallOut(bt, "checout")
 
    def checkIn(): 
       global fleets
@@ -257,14 +257,15 @@ if __name__ == '__main__':
       fleets[fl]['checkedOut'] = tuple(x for x in checkedOut if x != bt)
       logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
       writeCheckedOutList(fl)
-      CallOut(bt, "flash")
+      CallOut(bt, "checkin")
 
    def showBoatList(w=None):
       if w is not None: w.destroy() 
       
       fl      = fleetChoice.get()
-      BoatList =  fleets[fl]['BoatList']
+      BoatList =  sorted(fleets[fl]['BoatList'])
       checkedOut   = fleets[fl]['checkedOut']
+      BoatHostMap  = fleets['BoatHostMap']
       
       t = tkinter.Toplevel(w)
       t.wm_title(fl + " Checked Out Status")
@@ -276,16 +277,19 @@ if __name__ == '__main__':
          for f in BoatList :
             if f  in  checkedOut : out = ' out '
             else                 : out = '     '
-            ROW(t, text=f + '  ' + out + 'gizmo hn ', pad=2)
+            gizmo = str([h for h,b in BoatHostMap.items() if b == f])
+            ROW(t, text=f + '  ' + out + ' ' + gizmo, pad=2)
+
 
    ##################  initiate from files    ################
 
    try :
+      # This also has RC_IP and port info
       with open('FleetList.txt','r') as f: fleets =  json.load(f)
    except :
       fleets = {'No fleet': None}
    
-   fleetList = tuple(fleets.keys())  # POSSIBLY SORT FOR CONSISTENT ORDER
+   fleetList = sorted(fleets.keys())  
    
    logging.debug('fleetList:')
    logging.debug(fleetList)

@@ -57,6 +57,8 @@ def CallOut(callout, request, conf=None, timeout=5) :
    sockUDP.close()
 
    if   request == "flash" :                   return None
+   elif request == "checkout" :                return None
+   elif request == "checkin" :                 return None
    elif request == "report config" :           conf = ReportBTconfig(callout)
    elif request == "flash, report config" :    conf = ReportBTconfig(callout)
    elif request == "requestBTconfig" :         conf = requestBTconfig(callout, str(conf))

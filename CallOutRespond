@@ -114,11 +114,21 @@ while not shutdown:
     if (bt in called or hn in called ) : 
        # Gizmo specific, not 'all'
 
-       if "report config" in request : 
+       if "checkout" in request :
+          LEDs.checkout('blue red green checkout sequence.')         
+          LEDs.off('lights out')
+          print('doing checkout flash sequence')
+       
+       elif "checkin" in request :
+          LEDs.checkin('red flash.')         
+          LEDs.off('lights out')
+          print('doing checkin flash')
+       
+       elif "report config" in request : 
           print('doing reportBTconfig')
           reportBTconfig()
               
-       if "requestBTconfig" in request :
+       elif "requestBTconfig" in request :
           #This is a complete reset of the BTconfig.
           cf = requestBTconfig()
           BTconfig.update(cf)
@@ -128,11 +138,12 @@ while not shutdown:
     if bt in called or hn in called or 'all' in called :
        
        if "flash" in request :
+          # this is checkout flash sequence, but not called by checkout. It could be different
           LEDs.checkout('blue red green checkout sequence.')         
           LEDs.off('lights out')
           print('doing flash')
        
-       if "setRC" in request :
+       elif "setRC" in request :
           fl =  data[1]          # from UDP broadcast, not TCP connection
           if fl == BTconfig['FLEET'] :
              BTconfig.update(eval(data[2]))

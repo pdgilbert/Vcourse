@@ -3,7 +3,8 @@
 
 Turn LEDs off, on solid, or flashing corresponding to a specified state. 
 The states are those determined by zones on the course, that is 'off', 
-'bound', 'warn', 'center', 'update', 'noGPSfix',  or 'systemProblem' 
+'bound', 'warn', 'center', 'update', 'noGPSfix',  or 'systemProblem'.
+There is a also 'checkout' and 'checkin' used for Registration
 
 The primary function call is to setLEDs(nw, x =''), where nw is 
 the state and x is a (mainly debugging) string written to stdout.
@@ -138,21 +139,28 @@ def  checkout(x ='') :
    print('blue, red, green, all, green ' + str(x))
    leds.off()  
    leds.on(BLUE)   
-   time.sleep(1)
+   time.sleep(0.5)
    leds.off()  
    leds.on(RED)
-   time.sleep(1)
+   time.sleep(0.5)
    leds.off()  
    leds.on(GREEN)
-   time.sleep(1)
+   time.sleep(0.5)
    leds.off()  
    leds.on(BLUE)   
    leds.on(RED)
    leds.on(GREEN)
-   time.sleep(1)
+   time.sleep(0.5)
    leds.off()  
    leds.on(GREEN)
-   time.sleep(3)
+   time.sleep(1)
+   leds.off()  
+
+def  checkin(x ='') : 
+   print('red 1 sec flash ' + str(x))
+   leds.off()  
+   leds.on(RED)   
+   time.sleep(1)
    leds.off()  
 
 # Old status is needed because PWM flickers too fast if constantly 
@@ -182,6 +190,7 @@ def  setLEDs(nw, x ='')  :
       elif nw == 'noGPSfix'      : noGPSfix(x)
       elif nw == 'systemProblem' : systemProblem(x)
       elif nw == 'checkout'      : checkout(x)    # for Registration
+      elif nw == 'checkin'       : checkin(x)     # for Registration
       else :
          raise ValueError(
          "LED now status ('" +nw+ "') incorrect value.\nOld status is '" +status+ "'. x is'" +x+ "'.")
