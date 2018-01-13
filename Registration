@@ -103,6 +103,16 @@ if __name__ == '__main__':
       gizmoChoice.set(conf['hn']) 
       # ALSO NEED TO CHANGE fleets[] BoatList ...
 
+   def updateBoatHostMap(bt, hn):
+      #This is an overall dict, not by fleet, of {hn : bt} which get updated whenever there is a
+      #checkout or change. There is little attempt to insure accuracy as it is not really needed,
+      #but it may be useful if a gizmo  goes missing. Entries are not deleted, only updated, so it
+      #will remain reasonably accurate even when gizmos are checked in.
+      #The map should be  a bijection, but there is a small risk of duplicate sail numbers in
+      #different fleets, so hn is used as the key. 
+      global fleets
+      fleets['BoatHostMap'].update({hn:bt})
+
    def newBoatSetup(bt, fl, t=None):
       # set BTconfig on gizmo  and update various files
       # Note args bt, fl come from the new boat dialog, so they need to
@@ -156,18 +166,18 @@ if __name__ == '__main__':
       """
 
       checkedOut   =  fleets[fl]['checkedOut']
-      checkedOutHN =  fleets[fl]['checkedOutHN']
-
-      if len(checkedOut) != len(checkedOutHN) : 
-         raise Exception('Something is wrong.\ncheckedOut and checkedOutHN are not same length.')
+      BoatHostMap  =  fleets['BoatHostMap']
 
       try : 
          with open('FLEETS/' +fl + '/checkedOut.txt', 'w') as f: 
                   for bt in checkedOut : f.write(str(bt) + "\n")   # txt lines not json
-         with open('FLEETS/' +fl + '/checkedOutHN.txt', 'w') as f: 
-                  for bt in checkedOutHN : f.write(str(bt) + "\n") # txt lines not json
       except :
          logging.info("Registration failed saving checkedOut.txt for " + fl)
+
+      try : 
+         with open('BoatHostMap.json', 'w') as f: json.dump(BoatHostMap, f, indent=4)
+      except :
+         logging.info("Registration failed saving BoatHostMap.json." )
 
 
    def callForHostG(callout, request, t=None):
@@ -227,10 +237,11 @@ if __name__ == '__main__':
 
       if bt not in fleets[fl]['checkedOut'] :
          fleets[fl]['checkedOut'  ] = fleets[fl]['checkedOut']   + (bt,)
-         fleets[fl]['checkedOutHN'] = fleets[fl]['checkedOutHN'] + (hn,)
+       
+      updateBoatHostMap(bt,hn)
       
       logging.debug('checkedOut:' +  str(fleets[fl]['checkedOut']))
-      logging.debug('checkedOutHN:' +  str(fleets[fl]['checkedOutHN']))
+      logging.debug('BoatHostMap' +  str(fleets['BoatHostMap']))
       writeCheckedOutList(fl)
       CallOut(bt, "flash")
 
@@ -265,7 +276,6 @@ if __name__ == '__main__':
          for f in BoatList :
             if f  in  checkedOut : out = ' out '
             else                 : out = '     '
-            #hn =
             ROW(t, text=f + '  ' + out + 'gizmo hn ', pad=2)
 
    ##################  initiate from files    ################
@@ -293,9 +303,21 @@ if __name__ == '__main__':
 
 
    for d in fleetList:
-      #ZEROING CHECKEDOUT MAY BE A PROBLEM
-      fleets[d].update({'BoatList':(), 'checkedOut':(), 'checkedOutHN':()})
+      fleets[d].update({'BoatList':()})
       readBoatList(d) 
+
+   for d in fleetList:
+      try : 
+         with open("checkedOut.txt") as f: bl = f.read().splitlines()
+         fleets[d]['checkedOut'] =  [b.strip() for b in bl]
+      except :
+         fleets[d]['checkedOut']  = ()
+
+
+   try :
+      with open('BoatHostMap.json') as f:  fleets['BoatHostMap'] = json.load(f)
+   except :
+      fleets['BoatHostMap'] = {}
 
    logging.debug('fleets:')
    logging.debug(fleets)
