@@ -6,17 +6,27 @@
 ########## GPS notes are in gpsNotes.txt                             ##########
 ########## Venue specific details are in venue files (not on github) ##########
 
-RC refers to Race Committee. The program RC runs on a computer (laptop)
-which can also run a wifi hotspot for boats to connect. (There are better options
-for the wifi.) It has a graphical interface.
+############################ Overview ############################
+
+RC refers to Race Committee. The program RC runs on a computer (laptop) on the race
+committee (signal) boat. This computer could also run a wifi hotspot for boats to connect,
+but here are better options for the wifi. The RC program has a graphical interface.
 
 BT refers to a boat. The program BT runs on a "computer on a chip" (e.g. Raspberry 
 Pi Zero W) which has LEDs for signalling sailors. It needs to be
 configured to connect to the wifi hotspot and contact the RC. The only
-interface used by the sailors is the LEDs.
+interface used by the sailors is the LEDs. For lack of a better name, this
+device is sometimes refered to as a gizmo. The gizmo has a hostname associated with
+it, typically BT-# with "#" replaced by a number. When configured it also has
+a boat identifier (sail number) associated with it.
 
-Both BT and RC programs need a path to the program lib:
+Registration refers to the process of configuring gizmos, assigning them to boats,
+and checking them out and in each day. The program Registration runs on a computer at 
+the regatta registration desk. It has a graphical interface.
+
+BT, RC  and Registration programs need a path to the program lib:
    export PYTHONPATH=/path/to/Vcourse/lib
+
 
 ############################ BT User notes ############################
 
@@ -151,4 +161,41 @@ A boat moving at 10 knots => 5.1 m/s.  Reading gps about 8 times/s => almost a
 
 
 -ADD MORE NOTES ABOUT SETTING AND DISTRIBUTING THE RACE ZONE INFO.
+
+
+##################### Registration User notes #########################
+
+-ADD MORE NOTES ABOUT TYPICAL REGISTRATION STEPS.
+
+-The Registration program will look for various configuration files (some json)
+ in the Registration startup directory:
+
+    o FleetListRC.json for the list of fleet names with associated RC IP and port
+      information for each fleet. This is a different structure from the RC file 
+      fleetList.txt, but it is important that the fleet names are the same in 
+      both files. DOES THIS NEED TO BE MANUALLY CREATED?
+
+    o A directory FLEETS/ with a subdirectories for each fleet. These directories 
+      should each have a file BoatList.txt as described above for RC. These files
+      should be created using pre-registration information if that exists.
+      Registration uses the same file structure as RC for FLEETS/*/BoatList.txt. 
+      The Registration program will modify the files if new boats are added, 
+      sail numbers changed, or boats moved between fleets. 
+      These files should be used by RC when registration is complete.
+
+    o The file gizmoList.txt with one gizmo hostname per line. This file will not
+      change unless hardware gizmos are added or removed.
+
+    o The Registration program will record check out/in information in a file 
+      checkedOut.txt in each fleet directory. This is created and used 
+      internally by the program.
+      
+-Configuration of gizmos is done with this utility, but much might typically be
+done before registration begins, using pre-registration information. 
+The program does
+
+  -Boat specific configuration for the gizmo ("FLEET" and "BT_ID" ).
+  -RC specific configuration ("RC_PORT" and "RC_IP").
+  -GPS hardware specific configuration.
+
 

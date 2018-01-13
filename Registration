@@ -1,17 +1,19 @@
 #!/usr/bin/python3
 # License GPL 2. Copyright Paul D. Gilbert, 2018
 """
-Run at registration desk to find gizmo (flash LEDs), load BTconfig, and distribute.
+Registration is run at the registration desk to find gizmo (by flashing LEDs), (re) load BTconfig, 
+and distribute fleet info, etc. See the file NOTES.txt for general user documentation.
 
 This program needs a setting to find other modules, e.g.
    export PYTHONPATH=/path/to/Vcourse/lib
 
-Other configuration can also be done with this utility, but might typically be
-done before registration. It does
+Registration uses the same files and file structure as RC for FLEETS/*/BoatList.txt.
+Those files should be used by RC when registration is complete.
 
-  -Boat specific configuration for the gizmo ("FLEET" and "BT_ID" ).
-  -RC specific configuration ("RC_PORT" and "RC_IP").
-  -GPS harware specific configuration  is written to GPSconfig.
+Internally in the program there is a comparable dict structure (there is boatLists and 
+checkedOut for each fleet). fleets will have a sub-dict for each fleet with boatList 
+and checkedOut, 
+ eg: fleets = {'FX': {'BoatList': ('FX 1',), 'checkedOut': None}}
 """
 import tkinter
 import signal
@@ -30,11 +32,6 @@ logging.basicConfig(level=logging.DEBUG, format=logFormat,)
 
 if __name__ == '__main__':
    
-   # This uses the same files and file structure as RC for FLEETS/*/BoatList.txt
-   #  but fleetList.txt is different. It has fleet RC_IP and RC_PORT info.
-   # There is a comparable dict structure (there is boatLists and checkedOut for each fleet).
-   #  fleets will have a sub-dict for each fleet with boatList and checkedOut, 
-   #  eg: fleets = {'FX': {'BoatList': ('FX 1',), 'checkedOut': None}}
 
    def readBoatList(fl, w=None):
       global fleets
@@ -43,6 +40,7 @@ if __name__ == '__main__':
       try : 
          with open('FLEETS/' +fl + '/BoatList.txt') as f: bl = f.read().splitlines()
          bl = [b.strip() for b in bl]
+         bl = sorted(bl)
       except :
          bl = None   
       
@@ -262,19 +260,19 @@ if __name__ == '__main__':
    def showBoatList(w=None):
       if w is not None: w.destroy() 
       
-      fl      = fleetChoice.get()
-      BoatList =  sorted(fleets[fl]['BoatList'])
+      fl           = fleetChoice.get()
+      BoatList     = fleets[fl]['BoatList']
       checkedOut   = fleets[fl]['checkedOut']
       BoatHostMap  = fleets['BoatHostMap']
       
       t = tkinter.Toplevel(w)
-      t.wm_title(fl + " Checked Out Status")
+      t.wm_title(fl)
       
       if  BoatList is None : 
-          ROW(t, text='boat list not available.' + f, pad=2)
+          ROW(t, text='boat list not available for ' + fl, pad=2)
       
       if (BoatList is not None) : 
-         for f in BoatList :
+         for f in sorted(BoatList) :
             if f  in  checkedOut : out = ' out '
             else                 : out = '     '
             gizmo = str([h for h,b in BoatHostMap.items() if b == f])
@@ -285,7 +283,7 @@ if __name__ == '__main__':
 
    try :
       # This also has RC_IP and port info
-      with open('FleetList.txt','r') as f: fleets =  json.load(f)
+      with open('FleetListRC.json','r') as f: fleets =  json.load(f)
    except :
       fleets = {'No fleet': None}
    
