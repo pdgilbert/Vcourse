@@ -26,8 +26,8 @@ from GUIutils import *
 from CallOut import CallOut
 
 logFormat ='(%(threadName)-9s) %(message)s'
-logging.basicConfig(level=logging.DEBUG, format=logFormat,)
-#logging.basicConfig(level=logging.INFO, format=logFormat,)
+#logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 
 if __name__ == '__main__':
@@ -70,11 +70,14 @@ if __name__ == '__main__':
       if t is not None: t.destroy()
 
       fl =  fleetChoice.get()
-      rc = str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
-      request = "setRC::" + fl + "::" + rc
-      logging.debug(request)
-      (bt, conf) = CallOut(bt,  request, timeout=20)
-      return (bt, conf)
+      rc =  fl + "::" + str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
+
+      logging.debug(bt)
+      logging.debug(rc)
+      #(bt, conf) = 
+      CallOut(bt, "setRC", conf=rc, timeout=20)
+      # return (bt, conf) does not work when bt is 'all'
+      return None
 
    def setBTconfig(t=None):   
       # This does "requetBTconfig" so BT calls back 
@@ -234,14 +237,14 @@ if __name__ == '__main__':
       logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
 
       if bt not in fleets[fl]['checkedOut'] :
-         fleets[fl]['checkedOut'  ] = fleets[fl]['checkedOut']   + (bt,)
+         fleets[fl]['checkedOut'  ] = fleets[fl]['checkedOut']   + [bt,]
        
       updateBoatHostMap(bt,hn)
       
       logging.debug('checkedOut:' +  str(fleets[fl]['checkedOut']))
       logging.debug('BoatHostMap' +  str(fleets['BoatHostMap']))
       writeCheckedOutList(fl)
-      CallOut(bt, "checout")
+      CallOut(bt, "checkout")
 
    def checkIn(): 
       global fleets
@@ -252,7 +255,7 @@ if __name__ == '__main__':
       logging.debug(str(checkedOut))
       if bt not in checkedOut: tkWarning(bt + " is not checkedOut in fleet " + fl)
 
-      fleets[fl]['checkedOut'] = tuple(x for x in checkedOut if x != bt)
+      fleets[fl]['checkedOut'] = [x for x in checkedOut if x != bt]
       logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
       writeCheckedOutList(fl)
       CallOut(bt, "checkin")
@@ -276,7 +279,7 @@ if __name__ == '__main__':
             if f  in  checkedOut : out = ' out '
             else                 : out = '     '
             gizmo = str([h for h,b in BoatHostMap.items() if b == f])
-            ROW(t, text=f + '  ' + out + ' ' + gizmo, pad=2)
+            ROW(t, text=f + '  ' + out + '      ' + gizmo, pad=2)
 
 
    ##################  initiate from files    ################
@@ -289,8 +292,8 @@ if __name__ == '__main__':
    
    fleetList = sorted(fleets.keys())  
    
-   logging.debug('fleetList:')
-   logging.debug(fleetList)
+   #logging.debug('fleetList:')
+   #logging.debug(fleetList)
    
    if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
 
@@ -298,7 +301,7 @@ if __name__ == '__main__':
       with open("gizmoList.txt") as f:  gizmoList =  f.read().splitlines()
       gizmoList = [b.strip() for b in gizmoList]
    except :
-      gizmoList = ('No gizmos',) 
+      gizmoList = ['No gizmos',]
    
    #logging.debug('gizmoList:')
    #logging.debug(gizmoList)
@@ -313,7 +316,7 @@ if __name__ == '__main__':
          with open("checkedOut.txt") as f: bl = f.read().splitlines()
          fleets[d]['checkedOut'] =  [b.strip() for b in bl]
       except :
-         fleets[d]['checkedOut']  = ()
+         fleets[d]['checkedOut']  = []
 
 
    try :

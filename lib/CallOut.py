@@ -44,29 +44,33 @@ def splitConf(mes):
 
 def CallOut(callout, request, conf=None, timeout=5) :
 
-   if request not in ("flash", "report config", "flash, report config", "requestBTconfig"):
+   if request not in ("flash",    "report config", "flash, report config", 
+                      "checkout", "checkin",       "requestBTconfig",  "setRC"):
          raise Exception("request '" + request + "' to " + str(callout) + " not recognized.")
    
    sockUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #Internet, UDP
    sockUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
    sockUDP.settimeout(timeout)
 
-   # double colon separate callout::request
-   txt = callout +"::"+ request
+   # double colon separate callout::request[::conf]
+   txt = callout +"::" + request
+   if conf is not None : txt = txt + "::" + conf
    sockUDP.sendto(txt.encode('utf-8'), ('<broadcast>', 5005)) #UDP_IP, PORT
    sockUDP.close()
+
+   # Above did broadcast only requests like "setRC" so now just return for those.
+   # Check in/out is just a broadcast to flash LEDs. Bookkeeping about in or out
+   # is kept at registration not sent to BT.
 
    if   request == "flash" :                   return None
    elif request == "checkout" :                return None
    elif request == "checkin" :                 return None
+   elif request == "setRC" :                   return None
    elif request == "report config" :           conf = ReportBTconfig(callout)
    elif request == "flash, report config" :    conf = ReportBTconfig(callout)
    elif request == "requestBTconfig" :         conf = requestBTconfig(callout, str(conf))
 
    bt = conf['BT_ID']
-   print (bt)   
-   print (str(conf) ) 
-
    return (bt, conf)
 
 def Listen() :
@@ -84,7 +88,6 @@ def ReportBTconfig(callout) :
       socketTCP = Listen()
       (sock, (ip,port)) = socketTCP.accept()
       mes = smp.rcv(sock) 
-      print (mes)   
    except :
        raise Exception('no response from ' + str(callout))
    finally :
@@ -105,7 +108,7 @@ def requestBTconfig(hn, conf) :
       (sock, (ip,port)) = socketTCP.accept()        
       mes = smp.rcv(sock) 
       cf = eval(mes) # str to dict
-      print('cf is ' + str(cf))
+
       if hn != cf['hn'] :
          raise Exception('incorrect gizmo. Not resetting.')
       l   = smp.snd(sock, str(conf))  
@@ -117,7 +120,6 @@ def requestBTconfig(hn, conf) :
       sock.close()
       socketTCP.close()
 
-   print('cf is ' + str(cf))
    if hn != cf['hn'] :
       raise Exception('Code error, resetting is messed up. Config "hn" is not hn!')
 

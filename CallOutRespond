@@ -102,15 +102,6 @@ while not shutdown:
     request = data[0]
     # in some cases there will be more sections in data
     
-    print(addr)
-    print(called)
-    print(request)
-    print(bt)
-    print(hn)
-    print(bt in called)
-    print(hn in called)
-    print('all' in called)
-
     if (bt in called or hn in called ) : 
        # Gizmo specific, not 'all'
 
@@ -132,7 +123,7 @@ while not shutdown:
           #This is a complete reset of the BTconfig.
           cf = requestBTconfig()
           BTconfig.update(cf)
-          print(BTconfig)
+          #logging.debug(BTconfig)
           with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
    
     if bt in called or hn in called or 'all' in called :
@@ -147,7 +138,7 @@ while not shutdown:
           fl =  data[1]          # from UDP broadcast, not TCP connection
           if fl == BTconfig['FLEET'] :
              BTconfig.update(eval(data[2]))
-             print(BTconfig)
+             #logging.debug(BTconfig)
              with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
        
 
