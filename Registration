@@ -232,6 +232,7 @@ if __name__ == '__main__':
       logging.debug('checkedOut:' +  str(fleets[fl]['checkedOut']))
       logging.debug('checkedOutHN:' +  str(fleets[fl]['checkedOutHN']))
       writeCheckedOutList(fl)
+      CallOut(bt, "flash")
 
    def checkIn(): 
       global fleets
@@ -245,7 +246,8 @@ if __name__ == '__main__':
       fleets[fl]['checkedOut'] = tuple(x for x in checkedOut if x != bt)
       logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
       writeCheckedOutList(fl)
- 
+      CallOut(bt, "flash")
+
    def showBoatList(w=None):
       if w is not None: w.destroy() 
       
@@ -292,7 +294,7 @@ if __name__ == '__main__':
 
    for d in fleetList:
       #ZEROING CHECKEDOUT MAY BE A PROBLEM
-      fleets[d].update({'BoatList':(), 'checkedOut':()})
+      fleets[d].update({'BoatList':(), 'checkedOut':(), 'checkedOutHN':()})
       readBoatList(d) 
 
    logging.debug('fleets:')
