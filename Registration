@@ -93,12 +93,16 @@ if __name__ == '__main__':
    def setBTconfig(t=None):   
       """
       This does "requetBTconfig" so BT calls back. 
-      This does a complete reset of a gizmo using values from Registration GUI
+      It does a complete reset of a gizmo using values from Registration GUI
       and the record of RC values for the fleet!
+      
+      The fleet(s) BoatList is also updated, so this corrects registration files
+      and can be also for the case the gizmo is ok but the (pre-)registration
+      information is incorrect.
+      
       The callout will be to a gizmo hostname (BT-#).
       Could allow boat ID (sail #) but that may get changed by the BTconfig,
       which would get confusing. Gizmo hostname will not change.
-      The fleet(s) BoatList is also updated if there is a change.
       """
       global fleets
 
@@ -108,13 +112,18 @@ if __name__ == '__main__':
       (bt, oldConf) = CallOut(bt, "report config")
       fl = oldConf['FLEET']
 
+      # first correct case where bt is not in (pre-registration) fleet
+      if bt not in fleets[fl]['BoatList'] : 
+         fleets[fl]['BoatList'].append(bt)  
+         writeBoatList(fl)
+
       nbt = getNewbt()
-      if nbt != '' :                            # update sail #, possible old fleet
+      if nbt != '' :                          # update sail#
          fleets[fl]['BoatList'].remove(bt)    
          fleets[fl]['BoatList'].append(nbt)  
-         writeBoatList(fl)
          bt = nbt
          clearNewbt()
+         writeBoatList(fl)
 
       nfl =  fleetChoice.get()
       if nfl != fl :                           # update fleet
@@ -131,11 +140,11 @@ if __name__ == '__main__':
       
       (bt, conf) = CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
       
-
       # This is really just a confirmation. If screen values change then something is wrong.
       fleetChoice.set(conf['FLEET'])
       setbt(conf['BT_ID'])
       gizmoChoice.set(conf['hn'])
+
       updateBoatHostMap(bt, hn)
 
    def updateBoatHostMap(bt, hn):
@@ -414,7 +423,7 @@ if __name__ == '__main__':
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
       row = tkinter.Frame(t)
-      But(row,  text="Commit changes\nto Gizmo",  
+      But(row,  text="Commit\nchanges",  
                      command=(lambda : newBoatSetup(Nents[0].get(), NfleetChoice.get(), t)))
       row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 

@@ -129,9 +129,11 @@ while not shutdown:
           #This is a complete reset of the BTconfig.
           cf = resetBTconfig()
           BTconfig.update(cf)
+          bt = BTconfig['BT_ID']
           #logging.debug(BTconfig)
           with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
-          LEDs.ok('green Roger.')         
+          LEDs.ok('green Roger.')
+          #  NEED TO SIGNAL BT TO RESTART/RE-READ CONFIG        
    
     if bt in called or hn in called or 'all' in called :
        
@@ -145,12 +147,13 @@ while not shutdown:
              #logging.debug(BTconfig)
              with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
              LEDs.ok('green Roger.')         
-        
+             #  NEED TO SIGNAL BT TO RESTART/RE-READ CONFIG        
+       
        elif "setREG" in request :
           #print(str(data[1]))
           REG = eval(data[1])
           LEDs.ok('green Roger.')         
-  
+
 
 
 # never get here unless shutdown mechanism is activated
