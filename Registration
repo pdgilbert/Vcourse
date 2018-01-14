@@ -42,7 +42,7 @@ if __name__ == '__main__':
          bl = [b.strip() for b in bl]
          bl = sorted(bl)
       except :
-         bl = None   
+         bl = []   
       
       logging.debug('BoatList = bl is ' + str(bl))
       fleets[fl].update({'BoatList':bl})
@@ -91,17 +91,40 @@ if __name__ == '__main__':
       return None
 
    def setBTconfig(t=None):   
-      # This does "requetBTconfig" so BT calls back 
-      # This is a complete reset of a gizmo to values from Registration GUI
-      #  and the record of RC values for the fleet!
-      # The callout will be to a gizmo hostname (BT-#)
-      # Could allow boat ID (sail #) but that may get changed by the BTconfig,
-      # which would get confusing. Gizmo hostname will not change
+      """
+      This does "requetBTconfig" so BT calls back. 
+      This does a complete reset of a gizmo using values from Registration GUI
+      and the record of RC values for the fleet!
+      The callout will be to a gizmo hostname (BT-#).
+      Could allow boat ID (sail #) but that may get changed by the BTconfig,
+      which would get confusing. Gizmo hostname will not change.
+      The fleet(s) BoatList is also updated if there is a change.
+      """
+      global fleets
 
       if t is not None: t.destroy()
 
-      bt =  getbt()
-      fl =  fleetChoice.get()
+      bt = getbt()
+      (bt, oldConf) = CallOut(bt, "report config")
+      fl = oldConf['FLEET']
+
+      nbt = getNewbt()
+      if nbt != '' :                            # update sail #, possible old fleet
+         fleets[fl]['BoatList'].remove(bt)    
+         fleets[fl]['BoatList'].append(nbt)  
+         writeBoatList(fl)
+         bt = nbt
+         clearNewbt()
+
+      nfl =  fleetChoice.get()
+      if nfl != fl :                           # update fleet
+         fleets[fl]['BoatList'].remove(bt)    
+         fleets[nfl]['BoatList'].append(bt)
+         writeBoatList(fl)
+         writeBoatList(nfl)
+         fl = nfl  
+
+
       hn =  gizmoChoice.get()
 
       cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
@@ -112,37 +135,36 @@ if __name__ == '__main__':
       # This is really just a confirmation. If screen values change then something is wrong.
       fleetChoice.set(conf['FLEET'])
       setbt(conf['BT_ID'])
-      gizmoChoice.set(conf['hn']) 
-      # ALSO NEED TO CHANGE fleets[] BoatList ...
+      gizmoChoice.set(conf['hn'])
+      updateBoatHostMap(bt, hn)
 
    def updateBoatHostMap(bt, hn):
-      #This is an overall dict, not by fleet, of {hn : bt} which get updated whenever there is a
-      #checkout or change. There is little attempt to insure accuracy as it is not really needed,
-      #but it may be useful if a gizmo  goes missing. Entries are not deleted, only updated, so it
-      #will remain reasonably accurate even when gizmos are checked in.
-      #The map should be  a bijection, but there is a small risk of duplicate sail numbers in
-      #different fleets, so hn is used as the key. 
+      """
+      This is an overall dict, not by fleet, of {hn : bt} which get updated whenever there is a
+      checkout or change. There is little attempt to insure accuracy as the list is not really needed,
+      but it may be useful if a gizmo  goes missing. Entries are not deleted, only updated, so it
+      will remain reasonably accurate even when gizmos are checked in.
+      The map should be a bijection, but there is a small risk of duplicate sail numbers in
+      different fleets, so hn is used as the key. 
+      """
       global fleets
       fleets['BoatHostMap'].update({hn:bt})
 
    def newBoatSetup(bt, fl, t=None):
-      # set BTconfig on gizmo  and update various files
-      # Note args bt, fl come from the new boat dialog, so they need to
-      # be set in main window.
+      """
+      Set BTconfig on an unassigned gizmo  and update files.
+      Note args bt, fl come from the new boat dialog, so they need to
+      be set in main window.
+      """
       if t is not None: t.destroy()
 
       setbt(bt)
       fleetChoice.set(fl)
 
-      BoatList =  fleets[fl]['BoatList']
-      logging.debug(bt)
-      logging.debug(fl)
-      logging.debug(BoatList)
-
-      if bt in BoatList: 
-         tkWarning(bt + " is already in fleet " + fl + "\nConfiguring new gizmo.")
+      if bt in fleets[fl]['BoatList']: 
+         tkWarning("%s is already in fleet %s\nConfiguring new gizmo." % (bt, fl))
       else:
-         fleets[fl]['BoatList'] = BoatList + (bt,)
+         fleets[fl]['BoatList'].append(bt)
       
       (un, conf) = CallOut('unassigned', 'flash, report config')
       logging.debug(un)
@@ -155,13 +177,13 @@ if __name__ == '__main__':
       writeBoatList()
       
 
-   def writeBoatList():
+   def writeBoatList(fl = None):
       """
       Save file copy for reload when restarted.
       Used when BoatList is changed (by newBoatSetup, fleet change or Sail # change)
       """
 
-      fl =fleetChoice.get()
+      if fl is None : fl =fleetChoice.get()
       BoatList =  fleets[fl]['BoatList']
 
       try : 
@@ -195,7 +217,7 @@ if __name__ == '__main__':
    def callForHostG(callout, request, t=None):
       if t is not None: t.destroy()
       
-      #ents[0].delete(0, tkinter.END)  #unset sail# and fleet for case nothing is returned
+      #unset sail# and fleet for case nothing is returned
       setbt('')
       fleetChoice.set('unknown')
       callForHost(callout, request) 
@@ -240,6 +262,11 @@ if __name__ == '__main__':
       ents[0].delete(0, tkinter.END)
       ents[0].insert(15, bt)
 
+   def getNewbt(): return ents[1].get()
+
+   def clearNewbt(): 
+      ents[1].delete(0, tkinter.END)
+
    def checkOut(): 
       global fleets
       bt = getbt()
@@ -282,10 +309,9 @@ if __name__ == '__main__':
       t = tkinter.Toplevel(w)
       t.wm_title(fl)
       
-      if  BoatList is None : 
+      if  0 == len(BoatList) : 
           ROW(t, text='boat list not available for ' + fl, pad=2)
-      
-      if (BoatList is not None) : 
+      else : 
          for f in sorted(BoatList) :
             if f  in  checkedOut : out = ' out '
             else                 : out = '     '
@@ -370,8 +396,8 @@ if __name__ == '__main__':
 
    row = tkinter.Frame(w)
    But(row,  text="Commit changes\nto Gizmo",  command=(lambda : setBTconfig()))
-   But(row, text='New Boat',          command=(lambda : newBoatWindow()))
-   But(row, text='extra',                command=(lambda : extraWindow()))
+   But(row, text='New Boat',                   command=(lambda : newBoatWindow()))
+   But(row, text='extra',                      command=(lambda : extraWindow()))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    ##########   Registration New Boat  Window   ########### 
