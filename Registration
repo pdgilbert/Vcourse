@@ -253,7 +253,7 @@ if __name__ == '__main__':
       logging.debug(bt + " " + fl)
       checkedOut = fleets[fl]['checkedOut']
       logging.debug(str(checkedOut))
-      if bt not in checkedOut: tkWarning(bt + " is not checkedOut in fleet " + fl)
+      if bt not in checkedOut: tkWarning("%s was not checkedOut in fleet %s" % (bt,fl))
 
       fleets[fl]['checkedOut'] = [x for x in checkedOut if x != bt]
       logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))

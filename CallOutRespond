@@ -32,17 +32,16 @@ import LEDs
 
 def reportBTconfig() :
    """response to Registation udp broadcast 'report config' """
+
    BTconfig.update({"hn": hn})   # config + hostname
 
    try :
-       #time.sleep(5)
        sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
        sockTCP.connect(("10.42.0.254", 9006)) #Registration IP, port       
        l = smp.snd(sockTCP,  str(BTconfig))    
+       sockTCP.close()
    except :
-      raise Exception('error in reportBTconfig')
-   finally :
-      sockTCP.close()
+       raise Exception('error in reportBTconfig')
 
 
 def requestBTconfig() :
@@ -60,11 +59,11 @@ def requestBTconfig() :
        cf = eval(smp.rcv(sockTCP) ) # str to dict
        cf.update({"hn": hn})
        l  = smp.snd(sockTCP, str(cf))   # echo      
+       sockTCP.close()
    except :
-      raise Exception('error in requestBTconfig')
-   finally :
-      sockTCP.close()
+       raise Exception('error in requestBTconfig')
    
+   logging.debug(str(cf))
    return cf
 
 ################################################################################

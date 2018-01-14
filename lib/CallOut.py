@@ -63,7 +63,7 @@ def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    
    # double colon separate callout::request[::conf]
    txt = callout +"::" + request
-   if conf is not None : txt = txt + "::" + conf
+   if conf is not None : txt = txt + "::" + str(conf)
    sockUDP.sendto(txt.encode('utf-8'), ('<broadcast>', 5005)) #UDP_IP, PORT
 
    # Above did requests that broadcast only, like "setRC", so now just return for those.
@@ -109,9 +109,11 @@ def requestBTconfig(hn, conf) :
 
       if hn != cf['hn'] : raise Exception('incorrect gizmo. Not resetting.')
 
+      logging.debug(str(conf))
       l   = smp.snd(sock, str(conf))  
       echo = smp.rcv(sock) 
       cf = eval(echo) # str to dict
+      logging.debug(str(cf))
       sock.close()
    except :
       raise Exception('no TCP connection from' + str(hn))

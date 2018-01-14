@@ -164,10 +164,10 @@ def  checkin(x ='') :
    leds.off()  
 
 def  ok(x ='') : 
-   print('green 1/3 sec flash ' + str(x))
+   print('green 1/2 sec flash ' + str(x))
    leds.off()  
    leds.on(GREEN)   
-   time.sleep(0.3)
+   time.sleep(0.5)
    leds.off()  
 
 # Old status is needed because PWM flickers too fast if constantly 
