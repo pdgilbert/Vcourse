@@ -34,6 +34,19 @@ This is not needed on individual TCP connections.
 import socket
 import smp
 import logging
+import atexit
+
+sockUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #Internet, UDP
+sockUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+sockUDP.settimeout(5)
+atexit.register(sockUDP.close)
+
+sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
+sockTCP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sockTCP.bind(("10.42.0.254", 9006) ) #Registration IP, port
+sockTCP.settimeout(10)
+sockTCP.listen(5)  
+atexit.register(sockTCP.close)
 
 
 def splitConf(mes):
@@ -42,23 +55,18 @@ def splitConf(mes):
    conf = eval(z[0]) # str to dict
    return (bt, conf)
 
-def CallOut(callout, request, conf=None, timeout=5) :
-
+def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
+   global sockUDP, sockTCP
    if request not in ("flash",    "report config", "flash, report config", 
                       "checkout", "checkin",       "requestBTconfig",  "setRC"):
          raise Exception("request '" + request + "' to " + str(callout) + " not recognized.")
    
-   sockUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #Internet, UDP
-   sockUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-   sockUDP.settimeout(timeout)
-
    # double colon separate callout::request[::conf]
    txt = callout +"::" + request
    if conf is not None : txt = txt + "::" + conf
    sockUDP.sendto(txt.encode('utf-8'), ('<broadcast>', 5005)) #UDP_IP, PORT
-   sockUDP.close()
 
-   # Above did broadcast only requests like "setRC" so now just return for those.
+   # Above did requests that broadcast only, like "setRC", so now just return for those.
    # Check in/out is just a broadcast to flash LEDs. Bookkeeping about in or out
    # is kept at registration not sent to BT.
 
@@ -73,26 +81,16 @@ def CallOut(callout, request, conf=None, timeout=5) :
    bt = conf['BT_ID']
    return (bt, conf)
 
-def Listen() :
-   socketTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
-   socketTCP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-   socketTCP.bind(("10.42.0.254", 9005) ) #Registration IP, port
-   socketTCP.settimeout(10)
-   socketTCP.listen(5)  
-   return socketTCP
-
 
 def ReportBTconfig(callout) :
    # listen for response but then confirm for correct callout
+   global sockTCP
    try :
-      socketTCP = Listen()
-      (sock, (ip,port)) = socketTCP.accept()
+      (sock, (ip,port)) = sockTCP.accept()
       mes = smp.rcv(sock) 
+      sock.close()
    except :
        raise Exception('no response from ' + str(callout))
-   finally :
-      sock.close()
-      socketTCP.close()
 
    cf = eval(mes) # str to dict
 
@@ -103,22 +101,20 @@ def ReportBTconfig(callout) :
 
 def requestBTconfig(hn, conf) :
    # listen for request and confirm it is from correct hostname
+   global sockTCP
    try :
-      socketTCP = Listen()
-      (sock, (ip,port)) = socketTCP.accept()        
+      (sock, (ip,port)) = sockTCP.accept()        
       mes = smp.rcv(sock) 
       cf = eval(mes) # str to dict
 
-      if hn != cf['hn'] :
-         raise Exception('incorrect gizmo. Not resetting.')
+      if hn != cf['hn'] : raise Exception('incorrect gizmo. Not resetting.')
+
       l   = smp.snd(sock, str(conf))  
       echo = smp.rcv(sock) 
       cf = eval(echo) # str to dict
+      sock.close()
    except :
       raise Exception('no TCP connection from' + str(hn))
-   finally :
-      sock.close()
-      socketTCP.close()
 
    if hn != cf['hn'] :
       raise Exception('Code error, resetting is messed up. Config "hn" is not hn!')

@@ -163,6 +163,13 @@ def  checkin(x ='') :
    time.sleep(1)
    leds.off()  
 
+def  ok(x ='') : 
+   print('green 1/3 sec flash ' + str(x))
+   leds.off()  
+   leds.on(GREEN)   
+   time.sleep(0.3)
+   leds.off()  
+
 # Old status is needed because PWM flickers too fast if constantly 
 # reset, so set only on change
 
@@ -191,6 +198,7 @@ def  setLEDs(nw, x ='')  :
       elif nw == 'systemProblem' : systemProblem(x)
       elif nw == 'checkout'      : checkout(x)    # for Registration
       elif nw == 'checkin'       : checkin(x)     # for Registration
+      elif nw == 'ok'            : ok(x)          # for Registration
       else :
          raise ValueError(
          "LED now status ('" +nw+ "') incorrect value.\nOld status is '" +status+ "'. x is'" +x+ "'.")

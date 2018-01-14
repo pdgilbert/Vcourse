@@ -37,7 +37,7 @@ def reportBTconfig() :
    try :
        #time.sleep(5)
        sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
-       sockTCP.connect(("10.42.0.254", 9005)) #Registration IP, port       
+       sockTCP.connect(("10.42.0.254", 9006)) #Registration IP, port       
        l = smp.snd(sockTCP,  str(BTconfig))    
    except :
       raise Exception('error in reportBTconfig')
@@ -129,8 +129,7 @@ while not shutdown:
     if bt in called or hn in called or 'all' in called :
        
        if "flash" in request :
-          # this is checkout flash sequence, but not called by checkout. It could be different
-          LEDs.checkout('blue red green checkout sequence.')         
+          LEDs.ok('green quit flash.')         
           LEDs.off('lights out')
           print('doing flash')
        
@@ -140,7 +139,8 @@ while not shutdown:
              BTconfig.update(eval(data[2]))
              #logging.debug(BTconfig)
              with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
-       
+             LEDs.ok('green quit flash.')         
+   
 
 
 # never get here unless shutdown mechanism is activated

@@ -63,7 +63,7 @@ if __name__ == '__main__':
       w.wm_title(fl + "Fleet Types & RC settings")
       for d in fleetList:
          rc = str({x: fleets[d][x] for x in ('RC_IP', 'RC_PORT')})
-         ROW(w, text=d + '  ' + str(rc), pad=2, width=40)
+         ROW(w, text='%s   %s' % (d, rc), pad=2, width=40)
    
    def setRC(bt, t=None): 
       # This is to all by UDP !!
@@ -279,7 +279,7 @@ if __name__ == '__main__':
             if f  in  checkedOut : out = ' out '
             else                 : out = '     '
             gizmo = str([h for h,b in BoatHostMap.items() if b == f])
-            ROW(t, text=f + '  ' + out + '      ' + gizmo, pad=2)
+            ROW(t, text='%s   %s      %s' % (f, out, gizmo), pad=2)
 
 
    ##################  initiate from files    ################
