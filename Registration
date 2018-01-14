@@ -75,8 +75,19 @@ if __name__ == '__main__':
       logging.debug(bt)
       logging.debug(rc)
       #(bt, conf) = 
-      CallOut(bt, "setRC", conf=rc, timeout=20)
+      CallOut(bt, 'setRC', conf=rc, timeout=20)
       # return (bt, conf) does not work when bt is 'all'
+      return None
+   
+   def setREG(t=None): 
+      # This is to all by UDP !!
+      if t is not None: t.destroy()
+
+      REG = ("10.42.0.254", 9006) # Registration IP and port, should not be hard coded
+      rc =  str(REG)
+
+      logging.debug(rc)
+      CallOut('all', 'setREG', conf=rc, timeout=20)
       return None
 
    def setBTconfig(t=None):   
@@ -388,6 +399,7 @@ if __name__ == '__main__':
       t.wm_title("Extra Options")
 
       row = tkinter.Frame(t)
+      But(row,  text="Propogate\nRegist. IP",       command=(lambda : setREG(t)) )
       But(row,  text="Show fleets'\nRC settings",   command=(lambda : showRC(t)) )
       But(row,  text="Propogate\nfleet's RC",       command=(lambda : setRC('all', t)) )
       #But(row,  text='Re-read\nlist of fleets') NEED DYNAMIC DROP MENU FOR THIS

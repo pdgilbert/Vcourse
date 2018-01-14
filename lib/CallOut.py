@@ -58,7 +58,7 @@ def splitConf(mes):
 def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    global sockUDP, sockTCP
    if request not in ("flash",    "report config", "flash, report config", 
-                      "checkout", "checkin",       "requestBTconfig",  "setRC"):
+                      "checkout", "checkin",       "requestBTconfig",  "setRC",  "setREG"):
          raise Exception("request '" + request + "' to " + str(callout) + " not recognized.")
    
    # double colon separate callout::request[::conf]
@@ -74,6 +74,7 @@ def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    elif request == "checkout" :                return None
    elif request == "checkin" :                 return None
    elif request == "setRC" :                   return None
+   elif request == "setREG" :                  return None
    elif request == "report config" :           conf = ReportBTconfig(callout)
    elif request == "flash, report config" :    conf = ReportBTconfig(callout)
    elif request == "requestBTconfig" :         conf = requestBTconfig(callout, str(conf))
