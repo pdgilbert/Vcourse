@@ -30,312 +30,354 @@ logFormat ='(%(threadName)-9s) %(message)s'
 logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 
+def readBoatList(fl, w=None):
+   global fleets
+   if w is not None: w.destroy()
+   
+   try : 
+      with open('FLEETS/' +fl + '/BoatList.txt') as f: bl = f.read().splitlines()
+      bl = [b.strip() for b in bl]
+      bl = sorted(bl)
+   except :
+      bl = []   
+   
+   logging.debug('BoatList = bl is ' + str(bl))
+   fleets[fl].update({'BoatList':bl})
+
+def readWindow(w=None):
+   global fl, bt, RC_IP, RC_PORT, host
+   if w is not None: w.destroy()
+   
+   fl   = fleetChoice.get()
+   bt   = getbt()
+   chg  = str(ents[1].get()) 
+   host = gizmoChoice.get()
+
+def showRC(t=None): 
+   if t is not None: t.destroy()
+
+   w = tkinter.Toplevel()
+   w.wm_title(fl + "Fleet Types & RC settings")
+   for d in fleetList:
+      rc = str({x: fleets[d][x] for x in ('RC_IP', 'RC_PORT')})
+      ROW(w, text='%s   %s' % (d, rc), pad=2, width=40)
+
+def setRC(bt, t=None): 
+   # This is to all by UDP !!
+   if t is not None: t.destroy()
+
+   fl =  fleetChoice.get()
+   rc =  fl + "::" + str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
+
+   logging.debug(bt)
+   logging.debug(rc)
+   #(bt, conf) = 
+   CallOut(bt, 'setRC', conf=rc, timeout=20)
+   # return (bt, conf) does not work when bt is 'all'
+   return None
+
+def setREG(t=None): 
+   # This is to all by UDP !!
+   if t is not None: t.destroy()
+
+   REG = ("10.42.0.254", 9006) # Registration IP and port, should not be hard coded
+   rc =  str(REG)
+
+   logging.debug(rc)
+   CallOut('all', 'setREG', conf=rc, timeout=20)
+   return None
+
+def setBTconfig(t=None):   
+   """
+   This does "requetBTconfig" so BT calls back. 
+   It does a complete reset of a gizmo using values from Registration GUI
+   and the record of RC values for the fleet!
+   
+   The fleet(s) BoatList is also updated, so this corrects registration files
+   and can be also for the case the gizmo is ok but the (pre-)registration
+   information is incorrect.
+   
+   The callout will be to a gizmo hostname (BT-#).
+   Could allow boat ID (sail #) but that may get changed by the BTconfig,
+   which would get confusing. Gizmo hostname will not change.
+   """
+   global fleets
+
+   if t is not None: t.destroy()
+
+   bt = getbt()
+   (bt, oldConf) = CallOut(bt, "report config")
+   fl = oldConf['FLEET']
+
+   # first correct case where there are duplicates in (pre-registration) boat list
+   fleets[fl]['BoatList'] = list(set(fleets[fl]['BoatList'])) 
+
+   # next correct case where bt is not in (pre-registration) boat list
+   if bt not in fleets[fl]['BoatList'] : 
+      fleets[fl]['BoatList'].append(bt)  
+      writeBoatList(fl)
+
+   nbt = getNewbt()
+   if nbt != '' :                          # update sail#
+      if nbt in fleets[fl]['BoatList']:
+         tkWarning('%s already exists in fleet %s\n Not updating!' % (nbt, fl))
+         return None
+
+      fleets[fl]['BoatList'].remove(bt)    
+      fleets[fl]['BoatList'].append(nbt)
+      bt = nbt
+      clearNewbt()
+      writeBoatList(fl)
+
+   nfl =  fleetChoice.get()
+   if nfl != fl :                           # update fleet
+      fleets[fl]['BoatList'].remove(bt)    
+      fleets[nfl]['BoatList'].append(bt)
+      writeBoatList(fl)
+      writeBoatList(nfl)
+      fl = nfl  
+
+   #correct case where duplicate was introduced in new fleet
+   fleets[fl]['BoatList'] = list(set(fleets[fl]['BoatList']))  
+
+   hn =  gizmoChoice.get()
+
+   cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
+   
+   (bt, conf) = CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
+   
+   # This is really just a confirmation. If screen values change then something is wrong.
+   fleetChoice.set(conf['FLEET'])
+   setbt(conf['BT_ID'])
+   gizmoChoice.set(conf['hn'])
+
+   updateBoatHostMap(bt, hn)
+
+def updateBoatHostMap(bt, hn):
+   """
+   This is an overall dict, not by fleet, of {hn : bt} which get updated whenever there is a
+   checkout or change. There is little attempt to insure accuracy as the list is not really needed,
+   but it may be useful if a gizmo  goes missing. Entries are not deleted, only updated, so it
+   will remain reasonably accurate even when gizmos are checked in.
+   The map should be a bijection, but there is a small risk of duplicate sail numbers in
+   different fleets, so hn is used as the key. 
+   """
+   global fleets
+   fleets['BoatHostMap'].update({hn:bt})
+
+def newBoatSetup(bt, fl, t=None):
+   """
+   Set BTconfig on an unassigned gizmo  and update files.
+   Note args bt, fl come from the new boat dialog, so they need to
+   be set in main window.
+   """
+   if t is not None: t.destroy()
+
+   setbt(bt)
+   fleetChoice.set(fl)
+
+   if bt in fleets[fl]['BoatList']: 
+      tkWarning("%s is already in fleet %s\nConfiguring new gizmo." % (bt, fl))
+   else:
+      fleets[fl]['BoatList'].append(bt)
+   
+   (un, conf) = CallOut('unassigned', 'flash, report config')
+   logging.debug(un)
+
+   #MAY NEED TO FIND DUPLICATE GIZMOS FOR A BOAT?
+
+   logging.debug(conf)
+   gizmoChoice.set(conf['hn']) 
+   setBTconfig() # uses choices as set above     
+   writeBoatList()
+   
+
+def writeBoatList(fl = None):
+   """
+   Save file copy for reload when restarted.
+   Used when BoatList is changed (by newBoatSetup, fleet change or Sail # change)
+   """
+
+   if fl is None : fl =fleetChoice.get()
+   BoatList =  fleets[fl]['BoatList']
+
+   try : 
+      with open('FLEETS/' +fl + '/BoatList.txt', 'w') as f: 
+               for bt in BoatList : f.write(str(bt) + "\n")  # txt lines not json
+   except :
+      logging.info("Registration failed saving BoatList.txt for " + fl)
+
+
+def writeCheckedOutList(fl):
+   """
+   Save file copy for reload when restarted.
+   Used when a gizmo is checked in or out
+   """
+
+   checkedOut   =  fleets[fl]['checkedOut']
+   BoatHostMap  =  fleets['BoatHostMap']
+
+   try : 
+      with open('FLEETS/' +fl + '/checkedOut.txt', 'w') as f: 
+               for bt in checkedOut : f.write(str(bt) + "\n")   # txt lines not json
+   except :
+      logging.info("Registration failed saving checkedOut.txt for " + fl)
+
+   try : 
+      with open('BoatHostMap.json', 'w') as f: json.dump(BoatHostMap, f, indent=4)
+   except :
+      logging.info("Registration failed saving BoatHostMap.json." )
+
+
+def callForHostG(callout, request, t=None):
+   if t is not None: t.destroy()
+   
+   #unset sail# and fleet for case nothing is returned
+   setbt('')
+   fleetChoice.set('unknown')
+   callForHost(callout, request) 
+
+def callForHost(callout, request): 
+   #callout can be gizmone hostname (BT-#)  or boat ID (sail #)
+   global bt
+   bt = getbt()
+   (bt, conf) = CallOut(callout, request)
+   
+   fl = conf['FLEET']
+   fleetChoice.set(fl)
+
+   setbt(bt)
+   
+   #logging.debug('fleets')
+   #logging.debug(fleets)
+    
+   fIP = fleets[fl]['RC_IP']
+   fPT = fleets[fl]['RC_PORT']
+   bIP = conf['RC_IP']
+   bPT = conf['RC_PORT']
+
+   if fIP != bIP  or  fPT != bPT :
+      tkWarning("Boat's IP/PORT was not set to fleet values!\n" +
+                "boat:  " + bIP + ":" + bPT + "\n" +
+                "fleet: " + fIP + ":" + fPT + "\n" +
+                "It is being reset. If the boat values were correct\n" +
+                "then reset the fleet values and propogate.", width=45)
+      (bt, conf) = setRC(bt)
+
+   # hn is not a standard part of BTconfig, it was added by CallOutRespond()
+   gizmoChoice.set(conf['hn']) 
+
+def selectGizmo(): 
+   hn = gizmoChoice.set(selectGizmoChoice.get())
+
+
+def getbt(): return ents[0].get()
+
+def setbt(bt): 
+   ents[0].delete(0, tkinter.END)
+   ents[0].insert(15, bt)
+
+def getNewbt(): return ents[1].get()
+
+def clearNewbt(): 
+   ents[1].delete(0, tkinter.END)
+
+def checkOut(): 
+   global fleets
+   bt = getbt()
+   fl = fleetChoice.get()
+   hn = gizmoChoice.get()
+   logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
+
+   if bt not in fleets[fl]['checkedOut'] :
+      fleets[fl]['checkedOut'  ] = fleets[fl]['checkedOut']   + [bt,]
+    
+   updateBoatHostMap(bt,hn)
+   
+   logging.debug('checkedOut:' +  str(fleets[fl]['checkedOut']))
+   logging.debug('BoatHostMap' +  str(fleets['BoatHostMap']))
+   writeCheckedOutList(fl)
+   CallOut(bt, "checkout")
+
+def checkIn(): 
+   global fleets
+   bt = getbt()
+   fl = fleetChoice.get()
+   logging.debug(bt + " " + fl)
+   checkedOut = fleets[fl]['checkedOut']
+   logging.debug(str(checkedOut))
+   if bt not in checkedOut: tkWarning("%s was not checkedOut in fleet %s" % (bt,fl))
+
+   fleets[fl]['checkedOut'] = [x for x in checkedOut if x != bt]
+   logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
+   writeCheckedOutList(fl)
+   CallOut(bt, "checkin")
+
+def showBoatList(w=None):
+   if w is not None: w.destroy() 
+   
+   fl           = fleetChoice.get()
+   BoatList     = fleets[fl]['BoatList']
+   checkedOut   = fleets[fl]['checkedOut']
+   BoatHostMap  = fleets['BoatHostMap']
+   
+   t = tkinter.Toplevel(w)
+   t.wm_title(fl)
+   
+   if  0 == len(BoatList) : 
+       ROW(t, text='boat list not available for ' + fl, pad=2)
+   else : 
+      for f in sorted(BoatList) :
+         if f  in  checkedOut : out = ' out '
+         else                 : out = '     '
+         gizmo = str([h for h,b in BoatHostMap.items() if b == f])
+         ROW(t, text='%s   %s      %s' % (f, out, gizmo), pad=2)
+
+
+##########   Registration New Boat  Window   ########### 
+
+def newBoatWindow():
+   global Nents
+   t = tkinter.Toplevel()
+   t.wm_title("New Boat")
+
+   Nents = []
+   row = tkinter.Frame(t)
+   Nents.append(ENTRY(row, text=  'New Boat Sail #'))
+   NfleetChoice = DROP(row, text= ' fleet:',  options=fleetList, default = 0) #, command = changeFleet)
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+   row = tkinter.Frame(t)
+   But(row, text="Commit",  
+                  command=(lambda : newBoatSetup(Nents[0].get(), NfleetChoice.get(), t)))
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+##########   Registration Extra  Window   ########### 
+
+def extraWindow():
+   t = tkinter.Toplevel()
+   t.wm_title("Extra Options")
+
+   row = tkinter.Frame(t)
+   But(row,  text="Propogate\nRegist. IP",       command=(lambda : setREG(t)) )
+   But(row,  text="Show fleets'\nRC settings",   command=(lambda : showRC(t)) )
+   But(row,  text="Propogate\nfleet's RC",       command=(lambda : setRC('all', t)) )
+   #But(row,  text='Re-read\nlist of fleets') NEED DYNAMIC DROP MENU FOR THIS
+   But(row,  text='Re-read\nBoatList')
+   selectGizmoChoice = DROP(row, text='re-assigned\nGizmo:', options=('None yet',), default = 0, command= (lambda event : selectGizmo()))
+   But(row,  text='Call Out\nGizmo',  command=(lambda : callForHostG(gizmoChoice.get(),
+                                            "flash, report config", t)))
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+
+def abortHandler(signum, frame):
+    logging.info('main thread exit via abortHandler.')
+    sys.exit("RC process killed.")
+
+
+
 if __name__ == '__main__':
    
-
-   def readBoatList(fl, w=None):
-      global fleets
-      if w is not None: w.destroy()
-      
-      try : 
-         with open('FLEETS/' +fl + '/BoatList.txt') as f: bl = f.read().splitlines()
-         bl = [b.strip() for b in bl]
-         bl = sorted(bl)
-      except :
-         bl = []   
-      
-      logging.debug('BoatList = bl is ' + str(bl))
-      fleets[fl].update({'BoatList':bl})
-
-   def readWindow(w=None):
-      global fl, bt, RC_IP, RC_PORT, host
-      if w is not None: w.destroy()
-      
-      fl   = fleetChoice.get()
-      bt   = getbt()
-      chg  = str(ents[1].get()) 
-      host = gizmoChoice.get()
-
-   def showRC(t=None): 
-      if t is not None: t.destroy()
-
-      w = tkinter.Toplevel()
-      w.wm_title(fl + "Fleet Types & RC settings")
-      for d in fleetList:
-         rc = str({x: fleets[d][x] for x in ('RC_IP', 'RC_PORT')})
-         ROW(w, text='%s   %s' % (d, rc), pad=2, width=40)
-   
-   def setRC(bt, t=None): 
-      # This is to all by UDP !!
-      if t is not None: t.destroy()
-
-      fl =  fleetChoice.get()
-      rc =  fl + "::" + str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
-
-      logging.debug(bt)
-      logging.debug(rc)
-      #(bt, conf) = 
-      CallOut(bt, 'setRC', conf=rc, timeout=20)
-      # return (bt, conf) does not work when bt is 'all'
-      return None
-   
-   def setREG(t=None): 
-      # This is to all by UDP !!
-      if t is not None: t.destroy()
-
-      REG = ("10.42.0.254", 9006) # Registration IP and port, should not be hard coded
-      rc =  str(REG)
-
-      logging.debug(rc)
-      CallOut('all', 'setREG', conf=rc, timeout=20)
-      return None
-
-   def setBTconfig(t=None):   
-      """
-      This does "requetBTconfig" so BT calls back. 
-      It does a complete reset of a gizmo using values from Registration GUI
-      and the record of RC values for the fleet!
-      
-      The fleet(s) BoatList is also updated, so this corrects registration files
-      and can be also for the case the gizmo is ok but the (pre-)registration
-      information is incorrect.
-      
-      The callout will be to a gizmo hostname (BT-#).
-      Could allow boat ID (sail #) but that may get changed by the BTconfig,
-      which would get confusing. Gizmo hostname will not change.
-      """
-      global fleets
-
-      if t is not None: t.destroy()
-
-      bt = getbt()
-      (bt, oldConf) = CallOut(bt, "report config")
-      fl = oldConf['FLEET']
-
-      # first correct case where there are duplicates in (pre-registration) boat list
-      fleets[fl]['BoatList'] = list(set(fleets[fl]['BoatList'])) 
-
-      # next correct case where bt is not in (pre-registration) boat list
-      if bt not in fleets[fl]['BoatList'] : 
-         fleets[fl]['BoatList'].append(bt)  
-         writeBoatList(fl)
-
-      nbt = getNewbt()
-      if nbt != '' :                          # update sail#
-         if nbt in fleets[fl]['BoatList']:
-            tkWarning('%s already exists in fleet %s\n Not updating!' % (nbt, fl))
-            return None
-
-         fleets[fl]['BoatList'].remove(bt)    
-         fleets[fl]['BoatList'].append(nbt)
-         bt = nbt
-         clearNewbt()
-         writeBoatList(fl)
-
-      nfl =  fleetChoice.get()
-      if nfl != fl :                           # update fleet
-         fleets[fl]['BoatList'].remove(bt)    
-         fleets[nfl]['BoatList'].append(bt)
-         writeBoatList(fl)
-         writeBoatList(nfl)
-         fl = nfl  
-
-      #correct case where duplicate was introduced in new fleet
-      fleets[fl]['BoatList'] = list(set(fleets[fl]['BoatList']))  
-
-      hn =  gizmoChoice.get()
-
-      cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
-      
-      (bt, conf) = CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
-      
-      # This is really just a confirmation. If screen values change then something is wrong.
-      fleetChoice.set(conf['FLEET'])
-      setbt(conf['BT_ID'])
-      gizmoChoice.set(conf['hn'])
-
-      updateBoatHostMap(bt, hn)
-
-   def updateBoatHostMap(bt, hn):
-      """
-      This is an overall dict, not by fleet, of {hn : bt} which get updated whenever there is a
-      checkout or change. There is little attempt to insure accuracy as the list is not really needed,
-      but it may be useful if a gizmo  goes missing. Entries are not deleted, only updated, so it
-      will remain reasonably accurate even when gizmos are checked in.
-      The map should be a bijection, but there is a small risk of duplicate sail numbers in
-      different fleets, so hn is used as the key. 
-      """
-      global fleets
-      fleets['BoatHostMap'].update({hn:bt})
-
-   def newBoatSetup(bt, fl, t=None):
-      """
-      Set BTconfig on an unassigned gizmo  and update files.
-      Note args bt, fl come from the new boat dialog, so they need to
-      be set in main window.
-      """
-      if t is not None: t.destroy()
-
-      setbt(bt)
-      fleetChoice.set(fl)
-
-      if bt in fleets[fl]['BoatList']: 
-         tkWarning("%s is already in fleet %s\nConfiguring new gizmo." % (bt, fl))
-      else:
-         fleets[fl]['BoatList'].append(bt)
-      
-      (un, conf) = CallOut('unassigned', 'flash, report config')
-      logging.debug(un)
-
-      #MAY NEED TO FIND DUPLICATE GIZMOS FOR A BOAT?
-
-      logging.debug(conf)
-      gizmoChoice.set(conf['hn']) 
-      setBTconfig() # uses choices as set above     
-      writeBoatList()
-      
-
-   def writeBoatList(fl = None):
-      """
-      Save file copy for reload when restarted.
-      Used when BoatList is changed (by newBoatSetup, fleet change or Sail # change)
-      """
-
-      if fl is None : fl =fleetChoice.get()
-      BoatList =  fleets[fl]['BoatList']
-
-      try : 
-         with open('FLEETS/' +fl + '/BoatList.txt', 'w') as f: 
-                  for bt in BoatList : f.write(str(bt) + "\n")  # txt lines not json
-      except :
-         logging.info("Registration failed saving BoatList.txt for " + fl)
-
-
-   def writeCheckedOutList(fl):
-      """
-      Save file copy for reload when restarted.
-      Used when a gizmo is checked in or out
-      """
-
-      checkedOut   =  fleets[fl]['checkedOut']
-      BoatHostMap  =  fleets['BoatHostMap']
-
-      try : 
-         with open('FLEETS/' +fl + '/checkedOut.txt', 'w') as f: 
-                  for bt in checkedOut : f.write(str(bt) + "\n")   # txt lines not json
-      except :
-         logging.info("Registration failed saving checkedOut.txt for " + fl)
-
-      try : 
-         with open('BoatHostMap.json', 'w') as f: json.dump(BoatHostMap, f, indent=4)
-      except :
-         logging.info("Registration failed saving BoatHostMap.json." )
-
-
-   def callForHostG(callout, request, t=None):
-      if t is not None: t.destroy()
-      
-      #unset sail# and fleet for case nothing is returned
-      setbt('')
-      fleetChoice.set('unknown')
-      callForHost(callout, request) 
- 
-   def callForHost(callout, request): 
-      #callout can be gizmone hostname (BT-#)  or boat ID (sail #)
-      global bt
-      bt = getbt()
-      (bt, conf) = CallOut(callout, request)
-      
-      fl = conf['FLEET']
-      fleetChoice.set(fl)
-
-      setbt(bt)
-      
-      #logging.debug('fleets')
-      #logging.debug(fleets)
-       
-      fIP = fleets[fl]['RC_IP']
-      fPT = fleets[fl]['RC_PORT']
-      bIP = conf['RC_IP']
-      bPT = conf['RC_PORT']
-
-      if fIP != bIP  or  fPT != bPT :
-         tkWarning("Boat's IP/PORT was not set to fleet values!\n" +
-                   "boat:  " + bIP + ":" + bPT + "\n" +
-                   "fleet: " + fIP + ":" + fPT + "\n" +
-                   "It is being reset. If the boat values were correct\n" +
-                   "then reset the fleet values and propogate.", width=45)
-         (bt, conf) = setRC(bt)
-
-      # hn is not a standard part of BTconfig, it was added by CallOutRespond()
-      gizmoChoice.set(conf['hn']) 
-
-   def selectGizmo(): 
-      hn = gizmoChoice.set(selectGizmoChoice.get())
-
-
-   def getbt(): return ents[0].get()
-
-   def setbt(bt): 
-      ents[0].delete(0, tkinter.END)
-      ents[0].insert(15, bt)
-
-   def getNewbt(): return ents[1].get()
-
-   def clearNewbt(): 
-      ents[1].delete(0, tkinter.END)
-
-   def checkOut(): 
-      global fleets
-      bt = getbt()
-      fl = fleetChoice.get()
-      hn = gizmoChoice.get()
-      logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
-
-      if bt not in fleets[fl]['checkedOut'] :
-         fleets[fl]['checkedOut'  ] = fleets[fl]['checkedOut']   + [bt,]
-       
-      updateBoatHostMap(bt,hn)
-      
-      logging.debug('checkedOut:' +  str(fleets[fl]['checkedOut']))
-      logging.debug('BoatHostMap' +  str(fleets['BoatHostMap']))
-      writeCheckedOutList(fl)
-      CallOut(bt, "checkout")
-
-   def checkIn(): 
-      global fleets
-      bt = getbt()
-      fl = fleetChoice.get()
-      logging.debug(bt + " " + fl)
-      checkedOut = fleets[fl]['checkedOut']
-      logging.debug(str(checkedOut))
-      if bt not in checkedOut: tkWarning("%s was not checkedOut in fleet %s" % (bt,fl))
-
-      fleets[fl]['checkedOut'] = [x for x in checkedOut if x != bt]
-      logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
-      writeCheckedOutList(fl)
-      CallOut(bt, "checkin")
-
-   def showBoatList(w=None):
-      if w is not None: w.destroy() 
-      
-      fl           = fleetChoice.get()
-      BoatList     = fleets[fl]['BoatList']
-      checkedOut   = fleets[fl]['checkedOut']
-      BoatHostMap  = fleets['BoatHostMap']
-      
-      t = tkinter.Toplevel(w)
-      t.wm_title(fl)
-      
-      if  0 == len(BoatList) : 
-          ROW(t, text='boat list not available for ' + fl, pad=2)
-      else : 
-         for f in sorted(BoatList) :
-            if f  in  checkedOut : out = ' out '
-            else                 : out = '     '
-            gizmo = str([h for h,b in BoatHostMap.items() if b == f])
-            ROW(t, text='%s   %s      %s' % (f, out, gizmo), pad=2)
-
 
    ##################  initiate from files    ################
 
@@ -418,52 +460,12 @@ if __name__ == '__main__':
    But(row, text='extra',                command=(lambda : extraWindow()))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
-   ##########   Registration New Boat  Window   ########### 
-
-   def newBoatWindow():
-      global Nents
-      t = tkinter.Toplevel()
-      t.wm_title("New Boat")
-
-      Nents = []
-      row = tkinter.Frame(t)
-      Nents.append(ENTRY(row, text=  'New Boat Sail #'))
-      NfleetChoice = DROP(row, text= ' fleet:',  options=fleetList, default = 0) #, command = changeFleet)
-      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
-
-      row = tkinter.Frame(t)
-      But(row, text="Commit",  
-                     command=(lambda : newBoatSetup(Nents[0].get(), NfleetChoice.get(), t)))
-      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
-
-   ##########   Registration Extra  Window   ########### 
-
-   def extraWindow():
-      t = tkinter.Toplevel()
-      t.wm_title("Extra Options")
-
-      row = tkinter.Frame(t)
-      But(row,  text="Propogate\nRegist. IP",       command=(lambda : setREG(t)) )
-      But(row,  text="Show fleets'\nRC settings",   command=(lambda : showRC(t)) )
-      But(row,  text="Propogate\nfleet's RC",       command=(lambda : setRC('all', t)) )
-      #But(row,  text='Re-read\nlist of fleets') NEED DYNAMIC DROP MENU FOR THIS
-      But(row,  text='Re-read\nBoatList')
-      selectGizmoChoice = DROP(row, text='re-assigned\nGizmo:', options=('None yet',), default = 0, command= (lambda event : selectGizmo()))
-      But(row,  text='Call Out\nGizmo',  command=(lambda : callForHostG(gizmoChoice.get(),
-                                               "flash, report config", t)))
-      row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
-
-   ###############  end  Registration  Main  GUI     ###############
-
-
-   def abortHandler(signum, frame):
-       logging.info('main thread exit via abortHandler.')
-       sys.exit("RC process killed.")
-
    # ^C works if process is not deamonized with &
    signal.signal(signal.SIGINT,  abortHandler) # ^C, kill -2
    signal.signal(signal.SIGTERM, abortHandler) # kill -15 (default)
 
    w.mainloop()
+   ###############  end  Registration  Main  GUI     ###############
+
 
    logging.info('main thread exit via end.')
