@@ -285,6 +285,11 @@ def clearNewbt():
 def checkOut(): 
    global fleets
    bt = getbt()
+
+   # This callForHost is for the case 'CheckOut' is clicked with just the Sail# entered.
+   # It ensures BT's values are set properly in GUI and then into fleets['checkedOut'].
+   callForHost(bt, "report config")
+   
    fl = fleetChoice.get()
    hn = gizmoChoice.get()
    logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
