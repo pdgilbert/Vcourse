@@ -15,7 +15,15 @@ checkedOut for each fleet). fleets will have a sub-dict for each fleet with boat
 and checkedOut, 
  eg: fleets = {'FX': {'BoatList': ('FX 1',), 'checkedOut': None}}
 """
+#import tkinter
+
+#from tkinter import ttk
+#from tkinter import *
+#from tkinter.ttk import *
+
 import tkinter
+from tkinter import ttk
+
 import signal
 import logging
 import json
@@ -26,8 +34,8 @@ from GUIutils import *
 from CallOut import CallOut
 
 logFormat ='(%(threadName)-9s) %(message)s'
-#logging.basicConfig(level=logging.DEBUG, format=logFormat,)
-logging.basicConfig(level=logging.INFO, format=logFormat,)
+logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+#logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 
 def readBoatList(fl, w=None):
@@ -50,7 +58,7 @@ def readWindow(w=None):
    
    fl   = fleetChoice.get()
    bt   = getbt()
-   chg  = str(ents[1].get()) 
+   #  NEW SAIL NUMBER chg  = str(ents[1].get()) 
    host = gizmoChoice.get()
 
 def showRC(t=None): 
@@ -271,16 +279,19 @@ def selectGizmo():
    hn = gizmoChoice.set(selectGizmoChoice.get())
 
 
-def getbt(): return ents[0].get()
+#def getbt(): return ents[0].get()
+# def setbt(bt): 
+#   ents[0].delete(0, tkinter.END)
+#   ents[0].insert(15, bt)
 
-def setbt(bt): 
-   ents[0].delete(0, tkinter.END)
-   ents[0].insert(15, bt)
+def getbt(): return sailNumberChoice.get()
 
-def getNewbt(): return ents[1].get()
+def setbt(bt): sailNumberChoice.set(bt)
 
-def clearNewbt(): 
-   ents[1].delete(0, tkinter.END)
+# FIX def getNewbt(): return ents[1].get()
+
+# FIX def clearNewbt(): 
+# FIX    ents[1].delete(0, tkinter.END)
 
 def checkOut(): 
    global fleets
@@ -292,6 +303,10 @@ def checkOut():
    
    fl = fleetChoice.get()
    hn = gizmoChoice.get()
+   logging.info("gizmoChoice.get")
+   logging.info(gizmoChoice.get())
+   logging.info(hn)
+
    logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
 
    if bt not in fleets[fl]['checkedOut'] :
@@ -339,6 +354,10 @@ def showBoatList(w=None):
          ROW(t, text='%s   %s      %s' % (f, out, gizmo), pad=2)
 
 
+def changeFleet():
+   # the only thing this has to do is change the drop down sail number menu
+   sailNumberChoice['values'] = fleets[fleetChoice.get()]['BoatList']
+
 ##########   Registration New Boat  Window   ########### 
 
 def newBoatWindow():
@@ -349,7 +368,7 @@ def newBoatWindow():
    Nents = []
    row = tkinter.Frame(t)
    Nents.append(ENTRY(row, text=  'New Boat Sail #'))
-   NfleetChoice = DROP(row, text= ' fleet:',  options=fleetList, default = 0) #, command = changeFleet)
+   NfleetChoice = DROP(row, text= ' fleet:',  options=fleetList, default = 0, command = (lambda event : changeFleet()))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(t)
@@ -434,29 +453,41 @@ if __name__ == '__main__':
 
    
    ##################  Registration  Main  GUI     ################
+
+   #w = ttk.Style()
+   #w.configure("BW.TLabel", foreground="black", background="white")
+
    w = tkinter.Tk()
 
    w.wm_title("Gizmo Registration")
-   w.bind('<Return>', (lambda event : readWindow()))   
+   w.bind('<Return>',   (lambda event : readWindow()))   
    w.bind('<FocusOut>', (lambda event : readWindow()))   
    
-   ents = []
-
    row = tkinter.Frame(w)
-   ents.append(ENTRY(row, text=  'Sail #'))
-   fleetChoice = DROP(row, text= ' fleet:',  options=fleetList, default = 0) #, command = changeFleet)
-   But(row, text='fleet\nboat list',     command=(lambda : showBoatList()))
-   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
- 
-   row = tkinter.Frame(w)
-   But(row,  text='Call Out\nBoat',      command=(lambda : callForHost(getbt(), "flash, report config")))
-   But(row,  text='Check Out\nGizmo',    command=checkOut)
-   But(row,  text='Check In\nGizmo',     command=checkIn)
+   fleetChoice = tkinter.StringVar(row)
+   fleetChoice.set(fleetList[0]) 
+   tkinter.OptionMenu(row, fleetChoice, *fleetList, 
+                      command=(lambda event : changeFleet())).pack(side=tkinter.LEFT)
+   tkinter.Label(row, text= 'Sail #:',   anchor='w').pack(side=tkinter.LEFT)
+   sailNumberChoice = ttk.Combobox(row, values=fleets[fleetList[0]]['BoatList'], width=15)
+   sailNumberChoice.pack(side=tkinter.LEFT)
+   tkinter.Button(row, text='Call Out\nBoat',
+                      command=(lambda : callForHost(getbt(), "flash, report config"))).pack(padx=5, pady=5)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(w)
-   ents.append(ENTRY(row, text=  'Change Sail #'))
-   gizmoChoice = DROP(row, text='Gizmo ID:',       options=gizmoList,     default = 0) #, command= (lambda event : changeGizmo()))
+   But(row,  text='Check Out\nGizmo',       command=checkOut)
+   But(row,  text='Check In\nGizmo',        command=checkIn)
+   But(row,  text='fleet check-\nOut list', command=(lambda : showBoatList()))
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+   row = tkinter.Frame(w)
+   #ents.append(ENTRY(row, text=  'Change Sail #'))
+
+   #gizmoChoice = DROP(row, text='Gizmo ID:',       options=gizmoList,     default = 0) #, command= (lambda event : changeGizmo()))
+   tkinter.Label(row, text= 'Gizmo ID:',   anchor='w').pack(side=tkinter.LEFT)
+   gizmoChoice = ttk.Combobox(row, values=gizmoList   )
+   gizmoChoice.pack()
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(w)
