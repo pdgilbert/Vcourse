@@ -121,12 +121,10 @@ if __name__ == '__main__':
           
           elif "report config" in request : 
              print('doing reportBTconfig')
+             logging.debug(BTconfig)
              reportBTconfig()
-          
-          elif "unassigned" in request : 
-             print('unassigned, doing reportBTconfig')
-             reportBTconfig()
-                 
+             LEDs.ok('green Roger.')
+                
           elif "requestBTconfig" in request :
              #This is a complete reset of the BTconfig.
              cf = resetBTconfig()

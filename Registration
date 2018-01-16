@@ -182,6 +182,7 @@ def newBoatSetup(bt, fl, t=None):
    else:
       fleets[fl]['BoatList'].append(bt)
    
+   # using 'unassigned' at BT_ID
    (un, conf) = CallOut('unassigned', 'flash, report config')
    logging.debug(un)
 
