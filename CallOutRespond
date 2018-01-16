@@ -39,6 +39,8 @@ def reportBTconfig() :
        sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
        sockTCP.connect(REG) #Registration IP, port       
        l = smp.snd(sockTCP,  str(BTconfig))    
+       print(str(l))
+       print(str(BTconfig))
        sockTCP.close()
    except :
        raise Exception('error in reportBTconfig')
