@@ -35,12 +35,6 @@ def DROP(row, text, options=['zero', 'one', 'two'], default=0, command=None, fon
    #b.config(font=("Helvetica", 10)) does not reset, default on next call does the reset
    return v
 
-def ENTRY(row, text, bg="white", width=10):
-   tkinter.Label(row, text= text,   anchor='w').pack(side=tkinter.LEFT)
-   e = tkinter.Entry(row, bg = "white", width=width)
-   e.pack(side=tkinter.LEFT)#,expand=tkinter.YES)#, fill=tkinter.X)
-   return e
-
 def ROW(t, text, width=30, ebg=None, pad=5):
    #ebg None means no entry field, otherwise color of entry field bg.
    row = tkinter.Frame(t)

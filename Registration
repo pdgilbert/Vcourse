@@ -243,6 +243,8 @@ def callForHost(callout):
    global bt
    bt = sailNumberChoice.get()
    (bt, conf) = CallOut(callout, "flash, report config")
+   logging.debug(bt)
+   logging.debug(conf)
    
    fl = conf['FLEET']
    fleetChoice.set(fl)
@@ -347,15 +349,20 @@ def newBoatWindow():
    t = tkinter.Toplevel()
    t.wm_title("New Boat")
 
-   Nents = []
    row = tkinter.Frame(t)
-   Nents.append(ENTRY(row, text=  'New Boat Sail #'))
-   NfleetChoice = DROP(row, text= ' fleet:',  options=fleetList, default = 0, command = (lambda event : changeFleet()))
+   newBoatfleetChoice = ttk.Combobox(row, values=fleetList, state="readonly" , width=10 )
+   newBoatfleetChoice.bind("<<ComboboxSelected>>", (lambda event : changeFleet()))
+   newBoatfleetChoice.pack(side=tkinter.LEFT)
+   newBoatfleetChoice.set(fleetList[0]) 
+
+   tkinter.Label(row, text='New Boat Sail #',   anchor='w').pack(side=tkinter.LEFT)
+   e = tkinter.Entry(row, bg = "white", width=10)
+   e.pack(side=tkinter.LEFT)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(t)
    But(row, text="Commit",  
-                  command=(lambda : newBoatSetup(Nents[0].get(), NfleetChoice.get(), t)))
+                  command=(lambda : newBoatSetup(e.get(), newBoatfleetChoice.get(), t)))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
 ##########   Registration Extra  Window   ########### 
@@ -443,14 +450,13 @@ if __name__ == '__main__':
    w.wm_title("Gizmo Registration")
    
    row = tkinter.Frame(w)
-   fleetChoice = tkinter.StringVar(row)
+   fleetChoice = ttk.Combobox(row, values=fleetList, state="readonly" , width=10 )
+   fleetChoice.bind("<<ComboboxSelected>>", (lambda event : changeFleet()))
+   fleetChoice.pack(side=tkinter.LEFT)
    fleetChoice.set(fleetList[0]) 
-   tkinter.OptionMenu(row, fleetChoice, *fleetList, 
-                      command=(lambda event : changeFleet())).pack(side=tkinter.LEFT)
 
    tkinter.Label(row, text= 'Sail #:',   anchor='w').pack(side=tkinter.LEFT)
-
-   sailNumberChoice = ttk.Combobox(row, values=fleets[fleetList[0]]['BoatList'], width=15)
+   sailNumberChoice = ttk.Combobox(row, values=fleets[fleetList[0]]['BoatList'], width=10)
    sailNumberChoice.pack(side=tkinter.LEFT)
 
    But(row, text='Call Out\nBoat',
