@@ -52,48 +52,41 @@ def readBoatList(fl, w=None):
    logging.debug('BoatList = bl is ' + str(bl))
    fleets[fl].update({'BoatList':bl})
 
-def readWindow(w=None):
-   global fl, bt, RC_IP, RC_PORT, host
-   if w is not None: w.destroy()
-   
-   fl   = fleetChoice.get()
-   bt   = getbt()
-   #  NEW SAIL NUMBER chg  = str(ents[1].get()) 
-   host = gizmoChoice.get()
-
 def showRC(t=None): 
    if t is not None: t.destroy()
 
    w = tkinter.Toplevel()
-   w.wm_title(fl + "Fleet Types & RC settings")
+   w.wm_title("Fleet Names & RC settings")
    for d in fleetList:
       rc = str({x: fleets[d][x] for x in ('RC_IP', 'RC_PORT')})
       ROW(w, text='%s   %s' % (d, rc), pad=2, width=40)
 
-def setRC(bt, t=None): 
-   # This is to all by UDP !!
-   if t is not None: t.destroy()
+def setRC(bt): 
+   # This is to one bt by UDP !!
 
    fl =  fleetChoice.get()
    rc =  fl + "::" + str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
 
    logging.debug(bt)
    logging.debug(rc)
-   #(bt, conf) = 
-   CallOut(bt, 'setRC', conf=rc, timeout=20)
-   # return (bt, conf) does not work when bt is 'all'
-   return None
+   (bt, conf) =  CallOut(bt, 'setRC', conf=rc, timeout=20)
+   return (bt, conf) 
+
+def setAllRC(t=None): 
+   # This is to all boats in all fleets by UDP !!
+   if t is not None: t.destroy()
+
+   for fl in fleetList:
+      rc =  fl + "::" + str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
+      logging.debug(rc)
+      CallOut('all', 'setRC', conf=rc, timeout=20)
 
 def setREG(t=None): 
    # This is to all by UDP !!
    if t is not None: t.destroy()
 
    REG = ("10.42.0.254", 9006) # Registration IP and port, should not be hard coded
-   rc =  str(REG)
-
-   logging.debug(rc)
-   CallOut('all', 'setREG', conf=rc, timeout=20)
-   return None
+   CallOut('all', 'setREG', conf=str(REG), timeout=20)
 
 def setBTconfig(t=None):   
    """
@@ -113,7 +106,7 @@ def setBTconfig(t=None):
 
    if t is not None: t.destroy()
 
-   bt = getbt()
+   bt = sailNumberChoice.get()
    (bt, oldConf) = CallOut(bt, "report config")
    fl = oldConf['FLEET']
 
@@ -156,7 +149,7 @@ def setBTconfig(t=None):
    
    # This is really just a confirmation. If screen values change then something is wrong.
    fleetChoice.set(conf['FLEET'])
-   setbt(conf['BT_ID'])
+   sailNumberChoice.set(conf['BT_ID'])
    gizmoChoice.set(conf['hn'])
 
    updateBoatHostMap(bt, hn)
@@ -181,7 +174,7 @@ def newBoatSetup(bt, fl, t=None):
    """
    if t is not None: t.destroy()
 
-   setbt(bt)
+   sailNumberChoice.set(bt)
    fleetChoice.set(fl)
 
    if bt in fleets[fl]['BoatList']: 
@@ -237,24 +230,24 @@ def writeCheckedOutList(fl):
       logging.info("Registration failed saving BoatHostMap.json." )
 
 
-def callForHostG(callout, request, t=None):
+def callForHostG(callout, t=None):
    if t is not None: t.destroy()
    
    #unset sail# and fleet for case nothing is returned
-   setbt('')
+   sailNumberChoice.set('')
    fleetChoice.set('unknown')
-   callForHost(callout, request) 
+   callForHost(callout) 
 
-def callForHost(callout, request): 
+def callForHost(callout): 
    #callout can be gizmone hostname (BT-#)  or boat ID (sail #)
    global bt
-   bt = getbt()
-   (bt, conf) = CallOut(callout, request)
+   bt = sailNumberChoice.get()
+   (bt, conf) = CallOut(callout, "flash, report config")
    
    fl = conf['FLEET']
    fleetChoice.set(fl)
 
-   setbt(bt)
+   sailNumberChoice.set(bt)
    
    #logging.debug('fleets')
    #logging.debug(fleets)
@@ -275,18 +268,9 @@ def callForHost(callout, request):
    # hn is not a standard part of BTconfig, it was added by CallOutRespond()
    gizmoChoice.set(conf['hn']) 
 
-def selectGizmo(): 
-   hn = gizmoChoice.set(selectGizmoChoice.get())
+#def selectGizmo(): 
+#   gizmoChoice.set(newGizmoChoice.get())
 
-
-#def getbt(): return ents[0].get()
-# def setbt(bt): 
-#   ents[0].delete(0, tkinter.END)
-#   ents[0].insert(15, bt)
-
-def getbt(): return sailNumberChoice.get()
-
-def setbt(bt): sailNumberChoice.set(bt)
 
 # FIX def getNewbt(): return ents[1].get()
 
@@ -295,17 +279,15 @@ def setbt(bt): sailNumberChoice.set(bt)
 
 def checkOut(): 
    global fleets
-   bt = getbt()
+   bt = sailNumberChoice.get()
 
    # This callForHost is for the case 'CheckOut' is clicked with just the Sail# entered.
    # It ensures BT's values are set properly in GUI and then into fleets['checkedOut'].
-   callForHost(bt, "report config")
+   callForHost(bt)
    
    fl = fleetChoice.get()
    hn = gizmoChoice.get()
-   logging.info("gizmoChoice.get")
-   logging.info(gizmoChoice.get())
-   logging.info(hn)
+   logging.debug(hn)
 
    logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
 
@@ -321,7 +303,7 @@ def checkOut():
 
 def checkIn(): 
    global fleets
-   bt = getbt()
+   bt = sailNumberChoice.get()
    fl = fleetChoice.get()
    logging.debug(bt + " " + fl)
    checkedOut = fleets[fl]['checkedOut']
@@ -385,12 +367,11 @@ def extraWindow():
    row = tkinter.Frame(t)
    But(row,  text="Propogate\nRegist. IP",       command=(lambda : setREG(t)) )
    But(row,  text="Show fleets'\nRC settings",   command=(lambda : showRC(t)) )
-   But(row,  text="Propogate\nfleet's RC",       command=(lambda : setRC('all', t)) )
+   But(row,  text="Propogate\nfleet's RC",       command=(lambda : setAllRC(t)) )
    #But(row,  text='Re-read\nlist of fleets') NEED DYNAMIC DROP MENU FOR THIS
    But(row,  text='Re-read\nBoatList')
-   selectGizmoChoice = DROP(row, text='re-assigned\nGizmo:', options=('None yet',), default = 0, command= (lambda event : selectGizmo()))
-   But(row,  text='Call Out\nGizmo',  command=(lambda : callForHostG(gizmoChoice.get(),
-                                            "flash, report config", t)))
+   #newGizmoChoice = DROP(row, text='re-assigned\nGizmo:', options=('None yet',), default = 0, command= (lambda event : selectGizmo()))
+   But(row,  text='Call Out\nGizmo',  command=(lambda : callForHostG(gizmoChoice.get(), t)))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
 
@@ -460,40 +441,42 @@ if __name__ == '__main__':
    w = tkinter.Tk()
 
    w.wm_title("Gizmo Registration")
-   w.bind('<Return>',   (lambda event : readWindow()))   
-   w.bind('<FocusOut>', (lambda event : readWindow()))   
    
    row = tkinter.Frame(w)
    fleetChoice = tkinter.StringVar(row)
    fleetChoice.set(fleetList[0]) 
    tkinter.OptionMenu(row, fleetChoice, *fleetList, 
                       command=(lambda event : changeFleet())).pack(side=tkinter.LEFT)
+
    tkinter.Label(row, text= 'Sail #:',   anchor='w').pack(side=tkinter.LEFT)
+
    sailNumberChoice = ttk.Combobox(row, values=fleets[fleetList[0]]['BoatList'], width=15)
    sailNumberChoice.pack(side=tkinter.LEFT)
-   tkinter.Button(row, text='Call Out\nBoat',
-                      command=(lambda : callForHost(getbt(), "flash, report config"))).pack(padx=5, pady=5)
+
+   But(row, text='Call Out\nBoat',
+                      command=(lambda : callForHost(sailNumberChoice.get())))
+
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(w)
    But(row,  text='Check Out\nGizmo',       command=checkOut)
    But(row,  text='Check In\nGizmo',        command=checkIn)
-   But(row,  text='fleet check-\nOut list', command=(lambda : showBoatList()))
+   But(row,  text='fleet check-\nOut list', command=showBoatList)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(w)
-   #ents.append(ENTRY(row, text=  'Change Sail #'))
-
-   #gizmoChoice = DROP(row, text='Gizmo ID:',       options=gizmoList,     default = 0) #, command= (lambda event : changeGizmo()))
    tkinter.Label(row, text= 'Gizmo ID:',   anchor='w').pack(side=tkinter.LEFT)
-   gizmoChoice = ttk.Combobox(row, values=gizmoList   )
+   gizmoChoice = ttk.Combobox(row, values=gizmoList, state="readonly"   )
+   # should be able to use something like textvariable=hn, rather than .set() and .get()
+   # but have not figured out how to make that work
+   #gizmoChoice.bind("<<ComboboxSelected>>", do_something)
    gizmoChoice.pack()
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(w)
-   But(row,  text="Commit\nchanges",     command=(lambda : setBTconfig()))
-   But(row, text='New Boat',             command=(lambda : newBoatWindow()))
-   But(row, text='extra',                command=(lambda : extraWindow()))
+   But(row,  text="Commit\nchanges",     command=setBTconfig)
+   But(row, text='New Boat',             command=newBoatWindow)
+   But(row, text='extra',                command=extraWindow)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    # ^C works if process is not deamonized with &
