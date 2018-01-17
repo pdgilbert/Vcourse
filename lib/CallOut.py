@@ -89,6 +89,8 @@ def ReportBTconfig(callout) :
    try :
       (sock, (ip,port)) = sockTCP.accept()
       mes = smp.rcv(sock) 
+      logging.debug('mes')
+      logging.debug(str(mes))
       sock.close()
    except :
        raise Exception('no response from ' + str(callout))

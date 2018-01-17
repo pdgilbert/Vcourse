@@ -88,47 +88,31 @@ def setREG(t=None):
    REG = ("10.42.0.254", 9006) # Registration IP and port, should not be hard coded
    CallOut('all', 'setREG', conf=str(REG), timeout=20)
 
-def setBTconfig(t=None):   
+def setBTconfig():   
    """
    This does "requetBTconfig" so BT calls back. 
-   It does a complete reset of a gizmo using values from Registration GUI
-   and the record of RC values for the fleet!
+   It does a complete reset of the gizmo indicated in the GUI using other values 
+   as set in the GUI (and RC values for the fleet).
+   
+   It is important that the gizmo hostname to be reset is in thr GUI, most often by
+   a Call Out of a sail #. 
    
    The fleet(s) BoatList is also updated, so this corrects registration files
-   and can be also for the case the gizmo is ok but the (pre-)registration
+   and can be used also for the case the gizmo is ok but the (pre-)registration
    information is incorrect.
    
-   The callout will be to a gizmo hostname (BT-#).
-   Could allow boat ID (sail #) but that may get changed by the BTconfig,
-   which would get confusing. Gizmo hostname will not change.
+   The callout for "requetBTconfig" will be to a gizmo hostname (BT-#).
    """
    global fleets
 
-   if t is not None: t.destroy()
-
+   hn = gizmoChoice.get()
    bt = sailNumberChoice.get()
-   (bt, oldConf) = CallOut(bt, "report config")
-   fl = oldConf['FLEET']
+   fl = fleetChoice.get()
 
    # first correct case where there are duplicates in (pre-registration) boat list
    fleets[fl]['BoatList'] = list(set(fleets[fl]['BoatList'])) 
 
-   # next correct case where bt is not in (pre-registration) boat list
-   if bt not in fleets[fl]['BoatList'] : 
-      fleets[fl]['BoatList'].append(bt)  
-      writeBoatList(fl)
-
-   nbt = getNewbt()
-   if nbt != '' :                          # update sail#
-      if nbt in fleets[fl]['BoatList']:
-         tkWarning('%s already exists in fleet %s\n Not updating!' % (nbt, fl))
-         return None
-
-      fleets[fl]['BoatList'].remove(bt)    
-      fleets[fl]['BoatList'].append(nbt)
-      bt = nbt
-      clearNewbt()
-      writeBoatList(fl)
+   writeBoatList(fl)
 
    nfl =  fleetChoice.get()
    if nfl != fl :                           # update fleet
@@ -141,9 +125,12 @@ def setBTconfig(t=None):
    #correct case where duplicate was introduced in new fleet
    fleets[fl]['BoatList'] = list(set(fleets[fl]['BoatList']))  
 
-   hn =  gizmoChoice.get()
 
    cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
+   
+   logging.debug('about to Callout to hn: ' + hn)
+   logging.debug('   Callout "requestBTconfig" cf:')
+   logging.debug(str(cf))
    
    (bt, conf) = CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
    
@@ -172,6 +159,7 @@ def newBoatSetup(bt, fl, t=None):
    Note args bt, fl come from the new boat dialog, so they need to
    be set in main window.
    """
+   global fleets
    if t is not None: t.destroy()
 
    sailNumberChoice.set(bt)
@@ -193,6 +181,47 @@ def newBoatSetup(bt, fl, t=None):
    setBTconfig() # uses choices as set above     
    writeBoatList()
    
+def chgSail(bt, t=None):
+   """Change a boats sail number."""
+   global fleets
+   if t is not None: t.destroy()
+   
+   fl = fleetChoice.get()
+
+   if bt in fleets[fl]['BoatList']: 
+      tkWarning("%s is already in fleet %s\nNumber change not allowed." % (bt, fl))
+      return None
+   else:
+      fleets[fl]['BoatList'].remove(sailNumberChoice.get())    
+      fleets[fl]['BoatList'].append(bt)
+      writeBoatList(fl)
+
+      sailNumberChoice['values'] = fleets[fl]['BoatList']
+      sailNumberChoice.set(bt)
+      setBTconfig()        # uses choices as set    
+
+   
+def chgFleet(fl, t=None):
+   """Change a boats sail number."""
+   global fleets
+   if t is not None: t.destroy()
+   
+   bt = sailNumberChoice.get()
+   oldfl = fleetChoice.get()
+
+   if bt in fleets[fl]['BoatList']: 
+      tkWarning("%s is already in fleet %s\nFleet change not allowed." % (bt, fl))
+      return None
+   else:
+      fleets[oldfl]['BoatList'].remove(bt)    
+      fleets[fl]['BoatList'].append(bt)
+      writeBoatList(oldfl)
+      writeBoatList(fl)
+
+      sailNumberChoice['values'] = fleets[fl]['BoatList']
+      fleetChoice.set(fl)
+      setBTconfig()        # uses choices as set    
+
 
 def writeBoatList(fl = None):
    """
@@ -340,13 +369,52 @@ def showBoatList(w=None):
 
 
 def changeFleet():
-   # the only thing this has to do is change the drop down sail number menu
+   # This changes the drop down sail number menu, not the fleet of a boat
    sailNumberChoice['values'] = fleets[fleetChoice.get()]['BoatList']
+   sailNumberChoice.set('')
+
+##########   Change a Boat's Fleet  Window   ########### 
+
+def chgFleetWindow():
+   t = tkinter.Toplevel()
+   t.wm_title("New Fleet")
+
+   oldfl = fleetChoice.get()
+
+   row = tkinter.Frame(t)
+   tkinter.Label(row, text='For Boat %s change Fleet from %s to: ' % (bt,oldfl), anchor='w').pack(side=tkinter.LEFT)
+
+   e = ttk.Combobox(row, values=fleetList, state="readonly" , width=10 )
+   e.pack(side=tkinter.LEFT)
+   e.set(oldfl) 
+
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+   row = tkinter.Frame(t)
+   But(row, text="Commit", command=(lambda : chgFleet(e.get(), t)))
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+##########   Change Sail #  Window   ########### 
+
+def chgSailWindow():
+   t = tkinter.Toplevel()
+   t.wm_title("New Sail #")
+
+   oldbt = sailNumberChoice.get()
+
+   row = tkinter.Frame(t)
+   tkinter.Label(row, text='Change Sail ' + oldbt + ' to: ',   anchor='w').pack(side=tkinter.LEFT)
+   e = tkinter.Entry(row, bg = "white", width=10)
+   e.pack(side=tkinter.LEFT)
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+   row = tkinter.Frame(t)
+   But(row, text="Commit", command=(lambda : chgSail(e.get(), t)))
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
 ##########   Registration New Boat  Window   ########### 
 
 def newBoatWindow():
-   global Nents
    t = tkinter.Toplevel()
    t.wm_title("New Boat")
 
@@ -451,13 +519,15 @@ if __name__ == '__main__':
    w.wm_title("Gizmo Registration")
    
    row = tkinter.Frame(w)
-   fleetChoice = ttk.Combobox(row, values=fleetList, state="readonly" , width=10 )
+   fleetChoice = ttk.Combobox(row,
+                     values=fleetList, state="readonly" , width=10 )
    fleetChoice.bind("<<ComboboxSelected>>", (lambda event : changeFleet()))
    fleetChoice.pack(side=tkinter.LEFT)
    fleetChoice.set(fleetList[0]) 
 
    tkinter.Label(row, text= 'Sail #:',   anchor='w').pack(side=tkinter.LEFT)
-   sailNumberChoice = ttk.Combobox(row, values=fleets[fleetList[0]]['BoatList'], width=10)
+   sailNumberChoice = ttk.Combobox(row,
+                    values=fleets[fleetList[0]]['BoatList'], state="readonly" , width=10)
    sailNumberChoice.pack(side=tkinter.LEFT)
 
    But(row, text='Call Out\nBoat',
@@ -481,7 +551,9 @@ if __name__ == '__main__':
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(w)
-   But(row,  text="Commit\nchanges",     command=setBTconfig)
+   #But(row,  text="Commit\nchanges",    command=setBTconfig)
+   But(row, text='Change Fleet',         command=chgFleetWindow)
+   But(row, text='Change Sail#',         command=chgSailWindow)
    But(row, text='New Boat',             command=newBoatWindow)
    But(row, text='extra',                command=extraWindow)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
