@@ -15,14 +15,10 @@ checkedOut for each fleet). fleets will have a sub-dict for each fleet with boat
 and checkedOut, 
  eg: fleets = {'FX': {'BoatList': ('FX 1',), 'checkedOut': None}}
 """
-#import tkinter
-
-#from tkinter import ttk
-#from tkinter import *
-#from tkinter.ttk import *
 
 import tkinter
 from tkinter import ttk
+from tkinter import messagebox
 
 import signal
 import logging
@@ -189,16 +185,11 @@ def newBoatSetup(bt, fl, t=None):
    logging.debug(status)
 
 def statusSet():
-   logging.debug('in statusSet')
    fl = fleetChoice.get()
-   logging.debug(fl)
    OutLst = fleets[fl]['checkedOut' ] 
-   logging.debug(OutLst)
-   logging.debug(gizmo.get() in OutLst)
    if sailNumberChoice.get() in OutLst :
           status.set('Out')
    else : status.set('In ')
-   logging.debug(status.get())
 
 def chgSail(bt, t=None):
    """Change a boats sail number."""
@@ -296,6 +287,12 @@ def callForHost(callout):
    (bt, conf) = CallOut(callout, "flash, report config")
    logging.debug(bt)
    logging.debug(conf)
+   if conf['hn'] == 'no response' :
+      #fleetChoice.set('unknown')
+      gizmo.set('unknown')
+      status.set('')
+      tkinter.messagebox.showinfo(bt, "No Response from " + callout)
+      return None
    
    fl = conf['FLEET']
    fleetChoice.set(fl)

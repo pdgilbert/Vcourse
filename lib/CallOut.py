@@ -44,7 +44,7 @@ atexit.register(sockUDP.close)
 sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
 sockTCP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sockTCP.bind(("10.42.0.254", 9006) ) #Registration IP, port
-sockTCP.settimeout(10)
+sockTCP.settimeout(5)
 sockTCP.listen(5)  
 atexit.register(sockTCP.close)
 
@@ -93,7 +93,7 @@ def ReportBTconfig(callout) :
       logging.debug(str(mes))
       sock.close()
    except :
-       raise Exception('no response from ' + str(callout))
+      return({'BT_ID': callout, 'hn': 'no response'})
 
    cf = eval(mes) # str to dict
 
@@ -119,7 +119,7 @@ def requestBTconfig(hn, conf) :
       logging.debug(str(cf))
       sock.close()
    except :
-      raise Exception('no TCP connection from' + str(hn))
+      return({'BT_ID': callout, 'hn': 'no response'})
 
    if hn != cf['hn'] :
       raise Exception('Code error, resetting is messed up. Config "hn" is not hn!')
