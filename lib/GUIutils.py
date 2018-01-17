@@ -56,6 +56,7 @@ def foo(n,h,p): return((n, gpsConnection(h,p).getGPS()))
 
 
 def tkWarning(text, w= None, width=40):
+   # consider using  tkinter.messagebox.showinfo("info name","This is a Test")
    if w is not None : w.destroy()
    logging.info('**** WARNING ***' + str(text))
    t = tkinter.Toplevel()
