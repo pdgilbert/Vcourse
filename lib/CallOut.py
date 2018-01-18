@@ -119,7 +119,9 @@ def requestBTconfig(hn, conf) :
       logging.debug(str(cf))
       sock.close()
    except :
-      return({'BT_ID': callout, 'hn': 'no response'})
+      cf = eval(conf)
+      cf.update({'hn': 'no response'})
+      return cf
 
    if hn != cf['hn'] :
       raise Exception('Code error, resetting is messed up. Config "hn" is not hn!')

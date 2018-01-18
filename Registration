@@ -182,7 +182,28 @@ def newBoatSetup(bt, fl, t=None):
    
    statusSet()
 
-   logging.debug(status)
+def rmBoat(bt, fl, t=None):
+   """
+   remove bt  and update files.
+   """
+   global fleets
+   if t is not None: t.destroy()
+
+   logging.debug('fl ' + fl)
+   logging.debug('bt ' + bt)
+   logging.debug(fleets[fl]['BoatList'])
+
+   if bt in fleets[fl]['BoatList'] :
+      fleets[fl]['BoatList'].remove(bt)
+   else :  tkWarning("%s is not in fleet %s." % (bt, fl))
+
+   writeBoatList()
+   #MAY unassign GIZMO?
+
+   sailNumberChoice.set('')
+   fleetChoice.set('')
+   gizmo.set('') 
+
 
 def statusSet():
    fl = fleetChoice.get()
@@ -321,6 +342,7 @@ def callForHost(callout):
    logging.debug('in callForHost')
    logging.debug(conf['hn'])
    logging.debug(status.get())
+   return conf
 
 
 def checkOut(): 
@@ -329,7 +351,8 @@ def checkOut():
 
    # This callForHost is for the case 'CheckOut' is clicked with just the Sail# entered.
    # It ensures BT's values are set properly in GUI and then into fleets['checkedOut'].
-   callForHost(bt)
+   r = callForHost(bt)
+   if r is None :  return None   # no response
    
    fl = fleetChoice.get()
    hn = gizmo.get()
@@ -352,6 +375,12 @@ def checkOut():
 def checkIn(): 
    global fleets
    bt = sailNumberChoice.get()
+
+   # This callForHost is for the case 'CheckIn' is clicked with just the Sail# entered.
+   # It ensures BT's values are set properly in GUI and then into fleets['checkedOut'].
+   r = callForHost(bt)
+   if r is None :  return None  # no response
+
    fl = fleetChoice.get()
    logging.debug(bt + " " + fl)
    checkedOut = fleets[fl]['checkedOut']
@@ -454,6 +483,30 @@ def newBoatWindow(w=None):
                   command=(lambda : newBoatSetup(e.get(), newBoatfleetChoice.get(), t)))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
+
+##########   Remove Boat  Window   ########### 
+
+def removeBoatWindow(w=None):
+   if w is not None: w.destroy() 
+   t = tkinter.Toplevel()
+   t.wm_title("Remove Boat")
+
+   row = tkinter.Frame(t)
+   c = ttk.Combobox(row, values=fleetList, state="readonly" , width=10 )
+   c.bind("<<ComboboxSelected>>", (lambda event : changeFleet()))
+   c.pack(side=tkinter.LEFT)
+   c.set(fleetList[0]) 
+
+   tkinter.Label(row, text='Boat Sail #',   anchor='w').pack(side=tkinter.LEFT)
+   e = ttk.Combobox(row, 
+                  values=fleets[c.get()]['BoatList'], state="readonly" , width=10)
+   e.pack(side=tkinter.LEFT)
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
+   row = tkinter.Frame(t)
+   But(row, text="Commit", command=(lambda : rmBoat(e.get(), c.get(), t)))
+   row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+
 ##########    More  Window   ########### 
 
 def moreWindow():
@@ -465,6 +518,7 @@ def moreWindow():
    But(row, text="Change\nBoat's Fleet", command=(lambda : chgFleetWindow(t)))
    But(row, text="Changee\nBoat's Sail#",command=(lambda : chgSailWindow(t)))
    But(row, text='New Boat',             command=(lambda : newBoatWindow(t)))
+   But(row, text='Remove Boat',          command=(lambda : removeBoatWindow(t)))
    But(row, text='extra',                command=(lambda : extraWindow(t)))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
