@@ -152,7 +152,7 @@ def updateBoatHostMap(bt, hn):
    global fleets
    fleets['BoatHostMap'].update({hn:bt})
 
-def newBoatSetup(bt, fl, t=None):
+def newBoatSetup(bt, fl, hn, t=None):
    """
    Set BTconfig on an unassigned gizmo  and update files.
    Note args bt, fl come from the new boat dialog, so they need to
@@ -163,20 +163,17 @@ def newBoatSetup(bt, fl, t=None):
 
    sailNumberChoice.set(bt)
    fleetChoice.set(fl)
+   gizmo.set(hn)
+   unassignedGizmos.remove(hn)
+   writeUnassignedGizmos()
 
    if bt in fleets[fl]['BoatList']: 
       tkWarning("%s is already in fleet %s\nConfiguring new gizmo." % (bt, fl))
    else:
       fleets[fl]['BoatList'].append(bt)
    
-   # using 'unassigned' at BT_ID
-   (un, conf) = CallOut('unassigned', 'flash, report config')
-   logging.debug(un)
-
    #MAY NEED TO FIND DUPLICATE GIZMOS FOR A BOAT?
 
-   logging.debug(conf)
-   gizmo.set(conf['hn']) 
    setBTconfig() # uses choices as set above     
    writeBoatList()
    
@@ -188,10 +185,6 @@ def rmBoat(bt, fl, t=None):
    """
    global fleets
    if t is not None: t.destroy()
-
-   logging.debug('fl ' + fl)
-   logging.debug('bt ' + bt)
-   logging.debug(fleets[fl]['BoatList'])
 
    if bt in fleets[fl]['BoatList'] :
       fleets[fl]['BoatList'].remove(bt)
@@ -252,6 +245,19 @@ def chgFleet(fl, t=None):
       sailNumberChoice['values'] = fleets[fl]['BoatList']
       fleetChoice.set(fl)
       setBTconfig()        # uses choices as set    
+
+
+def writeUnassignedGizmos():
+   """
+   Save file copy for reload when restarted.
+   Used when gizmo is changed (by newBoatSetup, rmBoat)
+   """
+
+   try : 
+      with open('unassignedGizmos.txt', 'w') as f: 
+               for gz in unassignedGizmos : f.write(str(gz) + "\n")  # txt lines not json
+   except :
+      logging.info("Registration failed saving unassignedGizmos.txt.")
 
 
 def writeBoatList(fl = None):
@@ -445,6 +451,7 @@ def chgFleetWindow(w=None):
 
 def chgSailWindow(w=None):
    if w is not None: w.destroy() 
+
    t = tkinter.Toplevel()
    t.wm_title("New Sail #")
 
@@ -468,19 +475,24 @@ def newBoatWindow(w=None):
    t.wm_title("New Boat")
 
    row = tkinter.Frame(t)
-   newBoatfleetChoice = ttk.Combobox(row, values=fleetList, state="readonly" , width=10 )
-   newBoatfleetChoice.bind("<<ComboboxSelected>>", (lambda event : changeFleet()))
-   newBoatfleetChoice.pack(side=tkinter.LEFT)
-   newBoatfleetChoice.set(fleetList[0]) 
+   f = ttk.Combobox(row, values=fleetList, state="readonly" , width=10 )
+   f.bind("<<ComboboxSelected>>", (lambda event : changeFleet()))
+   f.pack(side=tkinter.LEFT)
+   f.set(fleetList[0]) 
 
    tkinter.Label(row, text='New Boat Sail #',   anchor='w').pack(side=tkinter.LEFT)
-   e = tkinter.Entry(row, bg = "white", width=10)
-   e.pack(side=tkinter.LEFT)
+   b = tkinter.Entry(row, bg = "white", width=10)
+   b.pack(side=tkinter.LEFT)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(t)
+   tkinter.Label(row, text='Assign gizmo:',   anchor='w').pack(side=tkinter.LEFT)
+   g = ttk.Combobox(row, values=unassignedGizmos, state="readonly" , width=10)
+   g.pack(side=tkinter.LEFT)
+   g.set(unassignedGizmos[0]) 
+
    But(row, text="Commit",  
-                  command=(lambda : newBoatSetup(e.get(), newBoatfleetChoice.get(), t)))
+                  command=(lambda : newBoatSetup(b.get(), f.get(), g.get(), t)))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
 
@@ -577,6 +589,13 @@ if __name__ == '__main__':
    
    #logging.debug('gizmoList:')
    #logging.debug(gizmoList)
+
+   try : 
+      with open("unassignedGizmos.txt") as f:  unassignedGizmos =  f.read().splitlines()
+      unassignedGizmos = [b.strip()  for b in  unassignedGizmos]
+   except :
+      unassignedGizmos = ['No gizmos',]
+   
 
 
    for d in fleetList:
