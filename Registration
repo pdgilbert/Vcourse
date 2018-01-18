@@ -48,6 +48,8 @@ def readBoatList(fl, w=None):
    logging.debug('BoatList = bl is ' + str(bl))
    fleets[fl].update({'BoatList':bl})
 
+def BoatList(fl) : return fleets[fl]['BoatList']
+
 def showRC(t=None): 
    if t is not None: t.destroy()
 
@@ -106,7 +108,7 @@ def setBTconfig():
    fl = fleetChoice.get()
 
    # first correct case where there are duplicates in (pre-registration) boat list
-   fleets[fl]['BoatList'] = list(set(fleets[fl]['BoatList'])) 
+   fleets[fl]['BoatList'] = list(set(BoatList(fl))) 
 
    writeBoatList(fl)
 
@@ -119,7 +121,7 @@ def setBTconfig():
       fl = nfl  
 
    #correct case where duplicate was introduced in new fleet
-   fleets[fl]['BoatList'] = list(set(fleets[fl]['BoatList']))  
+   fleets[fl]['BoatList'] = list(set(BoatList(fl)))  
 
 
    cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
@@ -167,7 +169,7 @@ def newBoatSetup(bt, fl, hn, t=None):
    unassignedGizmos.remove(hn)
    writeUnassignedGizmos()
 
-   if bt in fleets[fl]['BoatList']: 
+   if bt in BoatList(fl): 
       tkWarning("%s is already in fleet %s\nConfiguring new gizmo." % (bt, fl))
    else:
       fleets[fl]['BoatList'].append(bt)
@@ -176,26 +178,42 @@ def newBoatSetup(bt, fl, hn, t=None):
 
    setBTconfig() # uses choices as set above     
    writeBoatList()
+   sailNumberChoice['values'] = BoatList(fl)
    
    statusSet()
 
 def rmBoat(bt, fl, t=None):
-   """
-   remove bt  and update files.
-   """
+   """Remove bt, update files and unassign gizmo."""
    global fleets
    if t is not None: t.destroy()
 
-   if bt in fleets[fl]['BoatList'] :
+   if bt in BoatList(fl) :
       fleets[fl]['BoatList'].remove(bt)
-   else :  tkWarning("%s is not in fleet %s." % (bt, fl))
-
-   writeBoatList()
-   #MAY unassign GIZMO?
+      writeBoatList()
+      sailNumberChoice['values'] = BoatList(fl)
+   else :
+      tkinter.messagebox.showinfo("%s was not in fleet %s." % (bt, fl))
 
    sailNumberChoice.set('')
    fleetChoice.set('')
    gizmo.set('') 
+
+   # now unassign gizmo
+
+   r = callForHost(bt)
+
+   if r is None :  # no response
+      tkinter.messagebox.showinfo(bt +" gizmo is not responding. Gizmo unassignment not done." )
+      return None  
+
+   hn = r['hn']
+   cf = {'BT_ID':'unassigned', 'FLEET':'',  'RC_IP':'' ,  'RC_PORT':''}
+
+   logging.debug('in rmBoat about to Callout to hn: ' +  hn)   
+   CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
+   unassignedGizmos.append(hn)
+   writeUnassignedGizmos()
+
 
 
 def statusSet():
@@ -212,7 +230,7 @@ def chgSail(bt, t=None):
    
    fl = fleetChoice.get()
 
-   if bt in fleets[fl]['BoatList']: 
+   if bt in BoatList(fl): 
       tkWarning("%s is already in fleet %s\nNumber change not allowed." % (bt, fl))
       return None
    else:
@@ -220,7 +238,7 @@ def chgSail(bt, t=None):
       fleets[fl]['BoatList'].append(bt)
       writeBoatList(fl)
 
-      sailNumberChoice['values'] = fleets[fl]['BoatList']
+      sailNumberChoice['values'] = BoatList(fl)
       sailNumberChoice.set(bt)
       setBTconfig()        # uses choices as set    
 
@@ -233,7 +251,7 @@ def chgFleet(fl, t=None):
    bt = sailNumberChoice.get()
    oldfl = fleetChoice.get()
 
-   if bt in fleets[fl]['BoatList']: 
+   if bt in BoatList(fl): 
       tkWarning("%s is already in fleet %s\nFleet change not allowed." % (bt, fl))
       return None
    else:
@@ -242,7 +260,7 @@ def chgFleet(fl, t=None):
       writeBoatList(oldfl)
       writeBoatList(fl)
 
-      sailNumberChoice['values'] = fleets[fl]['BoatList']
+      sailNumberChoice['values'] = BoatList(fl)
       fleetChoice.set(fl)
       setBTconfig()        # uses choices as set    
 
@@ -267,11 +285,10 @@ def writeBoatList(fl = None):
    """
 
    if fl is None : fl =fleetChoice.get()
-   BoatList =  fleets[fl]['BoatList']
 
    try : 
       with open('FLEETS/' +fl + '/BoatList.txt', 'w') as f: 
-               for bt in BoatList : f.write(str(bt) + "\n")  # txt lines not json
+               for bt in BoatList(fl) : f.write(str(bt) + "\n")  # txt lines not json
    except :
       logging.info("Registration failed saving BoatList.txt for " + fl)
 
@@ -402,21 +419,21 @@ def checkIn():
 def showBoatList(w=None):
    if w is not None: w.destroy() 
    
-   fl           = fleetChoice.get()
-   BoatList     = fleets[fl]['BoatList']
-   checkedOut   = fleets[fl]['checkedOut']
-   BoatHostMap  = fleets['BoatHostMap']
+   fl     = fleetChoice.get()
+   BtLst  = BoatList(fl)
+   chO    = fleets[fl]['checkedOut']
+   BHMap  = fleets['BoatHostMap']
    
-   t = tkinter.Toplevel(w)
+   t = tkinter.Toplevel()
    t.wm_title(fl)
    
-   if  0 == len(BoatList) : 
+   if  0 == len(BtLst) : 
        ROW(t, text='boat list not available for ' + fl, pad=2)
    else : 
-      for f in sorted(BoatList) :
-         if f  in  checkedOut : out = ' out '
-         else                 : out = '     '
-         gz = str([h for h,b in BoatHostMap.items() if b == f])
+      for f in sorted(BtLst) :
+         if f  in  chO : out = ' out '
+         else          : out = '     '
+         gz = str([h for h,b in BHMap.items() if b == f])
          ROW(t, text='%s   %s      %s' % (f, out, gz), pad=2)
 
 
