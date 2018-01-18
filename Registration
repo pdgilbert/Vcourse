@@ -33,6 +33,52 @@ logFormat ='(%(threadName)-9s) %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=logFormat,)
 #logging.basicConfig(level=logging.INFO, format=logFormat,)
 
+class syncdList():
+    def __init__(self, txtfile):
+       """
+       Define and and maintain list with txtfile copy on change.
+       The values will be a list of unique entries.
+       """
+       self.txtfile  = txtfile
+       
+       try : 
+          with open(self.txtfile) as f:  values =  f.read().splitlines()
+          values = [b.strip()  for b in  values]
+       except :
+          values = []
+       
+       
+       # insure unique sorted values
+       values = list(set(values))
+       values.sort()
+       
+       self.values  = values 
+    
+    def append(self, x) :
+       """Add to the list and save."""
+       self.values.append(x)
+       self.values  = list(set(self.values))
+       self.values.sort()
+       self._save()
+    
+    def remove(self, x) :
+       """Add to the list and save."""
+       self.values  = list(set(self.values)) 
+       if x in self.values : self.values.remove(x) # MESSAGE NOT IN??
+       self._save()
+    
+    def _save(self) :
+       try : 
+          with open(self.txtfile, 'w') as f: 
+               for g in self.values : f.write(str(g) + "\n")  # txt lines not json
+       except :
+          tkWarning("Failed saving " + txtfile)
+
+# test
+#   unassignedGizmos = syncdList('unassignedGizmos.txt')   
+#   unassignedGizmos.values
+#   unassignedGizmos.append('BT-100')
+#   unassignedGizmos.remove('BT-100')
 
 ##########    Utilities   ########### 
 
@@ -174,7 +220,6 @@ def newBoatSetup(bt, fl, hn, t=None):
    fleetChoice.set(fl)
    gizmo.set(hn)
    unassignedGizmos.remove(hn)
-   writeUnassignedGizmos()
 
    if bt in BoatList(fl): 
       tkWarning("%s is already in fleet %s\nConfiguring new gizmo." % (bt, fl))
@@ -201,13 +246,11 @@ def rmBoat(bt, fl, t=None):
    else :
       tkinter.messagebox.showinfo("%s was not in fleet %s." % (bt, fl))
 
+   r = callForHost(bt)
+
    sailNumberChoice.set('')
    fleetChoice.set('')
    gizmo.set('') 
-
-   # now unassign gizmo
-
-   r = callForHost(bt)
 
    if r is None :  # no response
       tkinter.messagebox.showinfo(bt +" gizmo is not responding. Gizmo unassignment not done." )
@@ -219,8 +262,6 @@ def rmBoat(bt, fl, t=None):
    logging.debug('in rmBoat about to Callout to hn: ' +  hn)   
    CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
    unassignedGizmos.append(hn)
-   writeUnassignedGizmos()
-
 
 
 def statusSet():
@@ -270,19 +311,6 @@ def chgFleet(fl, t=None):
       sailNumberChoice['values'] = BoatList(fl)
       fleetChoice.set(fl)
       setBTconfig()        # uses choices as set    
-
-
-def writeUnassignedGizmos():
-   """
-   Save file copy for reload when restarted.
-   Used when gizmo is changed (by newBoatSetup, rmBoat)
-   """
-
-   try : 
-      with open('unassignedGizmos.txt', 'w') as f: 
-               for gz in unassignedGizmos : f.write(str(gz) + "\n")  # txt lines not json
-   except :
-      logging.info("Registration failed saving unassignedGizmos.txt.")
 
 
 def writeBoatList(fl = None):
@@ -511,9 +539,9 @@ def newBoatWindow(w=None):
 
    row = tkinter.Frame(t)
    tkinter.Label(row, text='Assign gizmo:',   anchor='w').pack(side=tkinter.LEFT)
-   g = ttk.Combobox(row, values=unassignedGizmos, state="readonly" , width=10)
+   g = ttk.Combobox(row, values=sorted(unassignedGizmos.values), state="readonly" , width=10)
    g.pack(side=tkinter.LEFT)
-   g.set(unassignedGizmos[0]) 
+   g.set(unassignedGizmos.values[0]) 
 
    But(row, text="Commit",  
                   command=(lambda : newBoatSetup(b.get(), f.get(), g.get(), t)))
@@ -552,7 +580,7 @@ def moreWindow():
    row = tkinter.Frame(t)
    #But(row,  text="Commit\nchanges",    command=setBTconfig)
    But(row, text="Change\nBoat's Fleet", command=(lambda : chgFleetWindow(t)))
-   But(row, text="Changee\nBoat's Sail#",command=(lambda : chgSailWindow(t)))
+   But(row, text="Change\nBoat's Sail#",command=(lambda : chgSailWindow(t)))
    But(row, text='New Boat',             command=(lambda : newBoatWindow(t)))
    But(row, text='Remove Boat',          command=(lambda : removeBoatWindow(t)))
    But(row, text='extra',                command=(lambda : extraWindow(t)))
@@ -573,7 +601,7 @@ def extraWindow(w=None):
 
    tkinter.Label(row, text= 'Call Out Gizmo:',   anchor='w').pack(side=tkinter.LEFT)
    gz = tkinter.StringVar()
-   gzC = ttk.Combobox(row, values=gizmoList, textvariable=gz, state="readonly", width=10)
+   gzC = ttk.Combobox(row, values=sorted(gizmoList), textvariable=gz, state="readonly", width=10)
    gzC.bind("<<ComboboxSelected>>", lambda _ : callForHostG(gz.get(), t)  )
    gzC.pack(side=tkinter.LEFT)
 
@@ -597,23 +625,10 @@ if __name__ == '__main__':
    #logging.debug(fleetList)
    
    if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
-
-   try : 
-      with open("gizmoList.txt") as f:  gizmoList =  f.read().splitlines()
-      gizmoList = [b.strip() for b in gizmoList]
-   except :
-      gizmoList = ['No gizmos',]
    
-   #logging.debug('gizmoList:')
-   #logging.debug(gizmoList)
+   gizmoList = syncdList('gizmoList.txt') 
 
-   try : 
-      with open("unassignedGizmos.txt") as f:  unassignedGizmos =  f.read().splitlines()
-      unassignedGizmos = [b.strip()  for b in  unassignedGizmos]
-   except :
-      unassignedGizmos = ['No gizmos',]
-   
-
+   unassignedGizmos = syncdList('unassignedGizmos.txt')   
 
    for d in fleetList:
       fleets[d].update({'BoatList':()})
