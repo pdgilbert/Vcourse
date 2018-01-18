@@ -34,6 +34,13 @@ logging.basicConfig(level=logging.DEBUG, format=logFormat,)
 #logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 
+##########    Utilities   ########### 
+
+def abortHandler(signum, frame):
+    logging.info('main thread exit via abortHandler.')
+    sys.exit("RC process killed.")
+
+
 def readBoatList(fl, w=None):
    global fleets
    if w is not None: w.destroy()
@@ -562,22 +569,15 @@ def extraWindow(w=None):
    But(row,  text="Propogate\nRegist. IP",       command=(lambda : setREG(t)) )
    But(row,  text="Show fleets'\nRC settings",   command=(lambda : showRC(t)) )
    But(row,  text="Propogate\nfleet's RC",       command=(lambda : setAllRC(t)) )
-   #But(row,  text='Re-read\nlist of fleets') NEED DYNAMIC DROP MENU FOR THIS
    But(row,  text='Re-read\nBoatList')
-   But(row,  text='Call Out\nGizmo',  command=(lambda : callForHostG(gizmoChoice.get(), t)))
-   tkinter.Label(row, text= 'Gizmo ID:',   anchor='w').pack(side=tkinter.LEFT)
-   gizmoChoice = ttk.Combobox(row, values=gizmoList, state="readonly", width=10)
-   # should be able to use something like textvariable=hn, rather than .set() and .get()
-   # but have not figured out how to make that work
-   #gizmoChoice.bind("<<ComboboxSelected>>", do_something)
-   gizmoChoice.pack()
+
+   tkinter.Label(row, text= 'Call Out Gizmo:',   anchor='w').pack(side=tkinter.LEFT)
+   gz = tkinter.StringVar()
+   gzC = ttk.Combobox(row, values=gizmoList, textvariable=gz, state="readonly", width=10)
+   gzC.bind("<<ComboboxSelected>>", lambda _ : callForHostG(gz.get(), t)  )
+   gzC.pack(side=tkinter.LEFT)
+
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
-
-
-def abortHandler(signum, frame):
-    logging.info('main thread exit via abortHandler.')
-    sys.exit("RC process killed.")
-
 
 
 if __name__ == '__main__':
