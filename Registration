@@ -100,7 +100,9 @@ def abortHandler(signum, frame):
     sys.exit("RC process killed.")
 
 
-def BoatList(fl) : return fleets[fl]['BoatList'].values
+def BoatList(fl)   : return fleets[fl]['BoatList'].values
+
+def checkedOut(fl) : return fleets[fl]['checkedOut'].values
 
 def showRC(t=None): 
    if t is not None: t.destroy()
@@ -252,7 +254,7 @@ def rmBoat(bt, fl, t=None):
 
 def statusSet():
    fl = fleetChoice.get()
-   OutLst = fleets[fl]['checkedOut' ] 
+   OutLst = checkedOut(fl)
    if sailNumberChoice.get() in OutLst :
           status.set('Out')
    else : status.set('In ')
@@ -376,7 +378,7 @@ def checkOut():
    bt = sailNumberChoice.get()
 
    # This callForHost is for the case 'CheckOut' is clicked with just the Sail# entered.
-   # It ensures BT's values are set properly in GUI and then into fleets['checkedOut'].
+   # It ensures BT's values are set properly.
    r = callForHost(bt)
    if r is None :  return None   # no response
    
@@ -384,16 +386,12 @@ def checkOut():
    hn = gizmo.get()
    logging.debug(hn)
 
-   logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
-
-   if bt not in fleets[fl]['checkedOut'] :
-      fleets[fl]['checkedOut'  ] = fleets[fl]['checkedOut']   + [bt,]
+   fleets[fl]['checkedOut'].append(bt)
     
    updateBoatHostMap(bt,hn)
    
-   logging.debug('checkedOut:' +  str(fleets[fl]['checkedOut']))
    logging.debug('BoatHostMap' +  str(fleets['BoatHostMap']))
-   writeCheckedOutList(fl)
+
    CallOut(bt, "checkout")
    statusSet()
    logging.debug('status ' +  status.get())
@@ -403,19 +401,14 @@ def checkIn():
    bt = sailNumberChoice.get()
 
    # This callForHost is for the case 'CheckIn' is clicked with just the Sail# entered.
-   # It ensures BT's values are set properly in GUI and then into fleets['checkedOut'].
+   # It ensures BT's values are set properly.
    r = callForHost(bt)
    if r is None :  return None  # no response
 
    fl = fleetChoice.get()
-   logging.debug(bt + " " + fl)
-   checkedOut = fleets[fl]['checkedOut']
-   logging.debug(str(checkedOut))
-   if bt not in checkedOut: tkWarning("%s was not checkedOut in fleet %s" % (bt,fl))
+   if bt not in checkedOut(fl): tkWarning("%s was not checkedOut in fleet %s" % (bt,fl))
+   fleets[fl]['checkedOut'].remove(bt)
 
-   fleets[fl]['checkedOut'] = [x for x in checkedOut if x != bt]
-   logging.debug('checkedOut:' + str(fleets[fl]['checkedOut']))
-   writeCheckedOutList(fl)
    CallOut(bt, "checkin")
    statusSet()
 
@@ -424,7 +417,7 @@ def showBoatList(w=None):
    
    fl     = fleetChoice.get()
    BtLst  = BoatList(fl)
-   chO    = fleets[fl]['checkedOut']
+   chO    = checkedOut(fl)
    BHMap  = fleets['BoatHostMap']
    
    t = tkinter.Toplevel()
@@ -581,6 +574,9 @@ if __name__ == '__main__':
 
    ##################  initiate from files    ################
 
+   gizmoList        = syncdList('gizmoList.txt') 
+   unassignedGizmos = syncdList('unassignedGizmos.txt')   
+
    try :
       # This also has RC_IP and port info
       with open('FleetListRC.json','r') as f: fleets =  json.load(f)
@@ -589,21 +585,14 @@ if __name__ == '__main__':
    
    fleetList = sorted(fleets.keys())  
    
-   if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
+   for d in fleetList:
+      if not os.path.exists('FLEETS/' + d):  os.makedirs('FLEETS/'+d)
    
-   gizmoList = syncdList('gizmoList.txt') 
-
-   unassignedGizmos = syncdList('unassignedGizmos.txt')   
+   for d in fleetList:
+      fleets[d]['BoatList']   = syncdList('FLEETS/' +d+ '/BoatList.txt')
 
    for d in fleetList:
-      fleets[d]['BoatList'] = syncdList('FLEETS/' +d+ '/BoatList.txt')
-
-   for d in fleetList:
-      try : 
-         with open("checkedOut.txt") as f: bl = f.read().splitlines()
-         fleets[d]['checkedOut'] =  [b.strip() for b in bl]
-      except :
-         fleets[d]['checkedOut']  = []
+      fleets[d]['checkedOut'] = syncdList('FLEETS/' +d+ '/checkedOut.txt')
 
 
    try :
