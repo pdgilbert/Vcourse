@@ -11,9 +11,8 @@ Registration uses the same files and file structure as RC for FLEETS/*/BoatList.
 Those files should be used by RC when registration is complete.
 
 Internally in the program there is a comparable dict structure (there is boatLists and 
-checkedOut for each fleet). fleets will have a sub-dict for each fleet with boatList 
-and checkedOut, 
- eg: fleets = {'FX': {'BoatList': ('FX 1',), 'checkedOut': None}}
+checkedOut for each fleet). fleets will have a sub-dict for each fleet with BoatList 
+and checkedOut.
 """
 
 import tkinter
@@ -34,11 +33,11 @@ logging.basicConfig(level=logging.DEBUG, format=logFormat,)
 #logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 class syncdList():
+    """
+    Define and and maintain list with txtfile copy on change.
+    The values will be a list of unique entries.
+    """
     def __init__(self, txtfile):
-       """
-       Define and and maintain list with txtfile copy on change.
-       The values will be a list of unique entries.
-       """
        self.txtfile  = txtfile
        
        try : 
@@ -80,6 +79,20 @@ class syncdList():
 #   unassignedGizmos.append('BT-100')
 #   unassignedGizmos.remove('BT-100')
 
+#  with open('FleetListRC.json','r') as f: fleets =  json.load(f)
+#  fleetList = sorted(fleets.keys())  
+
+#  fl = 'fleet 1'
+#  readBoatList(fl)
+#  fleets[fl]['BoatList']
+
+#  bl = syncdList('FLEETS/' +fl + '/BoatList.txt') 
+#  fleets[fl]['BoatList'] = bl
+#  fleets[fl]['BoatList'].values
+#  fleets[fl]['BoatList'].append('boat 100')
+#  fleets[fl]['BoatList'].remove('boat 100')
+
+
 ##########    Utilities   ########### 
 
 def abortHandler(signum, frame):
@@ -87,21 +100,7 @@ def abortHandler(signum, frame):
     sys.exit("RC process killed.")
 
 
-def readBoatList(fl, w=None):
-   global fleets
-   if w is not None: w.destroy()
-   
-   try : 
-      with open('FLEETS/' +fl + '/BoatList.txt') as f: bl = f.read().splitlines()
-      bl = [b.strip() for b in bl]
-      bl = sorted(bl)
-   except :
-      bl = []   
-   
-   logging.debug('BoatList = bl is ' + str(bl))
-   fleets[fl].update({'BoatList':bl})
-
-def BoatList(fl) : return fleets[fl]['BoatList']
+def BoatList(fl) : return fleets[fl]['BoatList'].values
 
 def showRC(t=None): 
    if t is not None: t.destroy()
@@ -160,22 +159,11 @@ def setBTconfig():
    bt = sailNumberChoice.get()
    fl = fleetChoice.get()
 
-   # first correct case where there are duplicates in (pre-registration) boat list
-   fleets[fl]['BoatList'] = list(set(BoatList(fl))) 
-
-   writeBoatList(fl)
-
    nfl =  fleetChoice.get()
    if nfl != fl :                           # update fleet
       fleets[fl]['BoatList'].remove(bt)    
       fleets[nfl]['BoatList'].append(bt)
-      writeBoatList(fl)
-      writeBoatList(nfl)
       fl = nfl  
-
-   #correct case where duplicate was introduced in new fleet
-   fleets[fl]['BoatList'] = list(set(BoatList(fl)))  
-
 
    cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
    
@@ -229,7 +217,6 @@ def newBoatSetup(bt, fl, hn, t=None):
    #MAY NEED TO FIND DUPLICATE GIZMOS FOR A BOAT?
 
    setBTconfig() # uses choices as set above     
-   writeBoatList()
    sailNumberChoice['values'] = BoatList(fl)
    
    statusSet()
@@ -241,7 +228,6 @@ def rmBoat(bt, fl, t=None):
 
    if bt in BoatList(fl) :
       fleets[fl]['BoatList'].remove(bt)
-      writeBoatList()
       sailNumberChoice['values'] = BoatList(fl)
    else :
       tkinter.messagebox.showinfo("%s was not in fleet %s." % (bt, fl))
@@ -284,7 +270,6 @@ def chgSail(bt, t=None):
    else:
       fleets[fl]['BoatList'].remove(sailNumberChoice.get())    
       fleets[fl]['BoatList'].append(bt)
-      writeBoatList(fl)
 
       sailNumberChoice['values'] = BoatList(fl)
       sailNumberChoice.set(bt)
@@ -305,27 +290,10 @@ def chgFleet(fl, t=None):
    else:
       fleets[oldfl]['BoatList'].remove(bt)    
       fleets[fl]['BoatList'].append(bt)
-      writeBoatList(oldfl)
-      writeBoatList(fl)
 
       sailNumberChoice['values'] = BoatList(fl)
       fleetChoice.set(fl)
       setBTconfig()        # uses choices as set    
-
-
-def writeBoatList(fl = None):
-   """
-   Save file copy for reload when restarted.
-   Used when BoatList is changed (by newBoatSetup, fleet change or Sail # change)
-   """
-
-   if fl is None : fl =fleetChoice.get()
-
-   try : 
-      with open('FLEETS/' +fl + '/BoatList.txt', 'w') as f: 
-               for bt in BoatList(fl) : f.write(str(bt) + "\n")  # txt lines not json
-   except :
-      logging.info("Registration failed saving BoatList.txt for " + fl)
 
 
 def writeCheckedOutList(fl):
@@ -474,7 +442,7 @@ def showBoatList(w=None):
 
 def changeFleet():
    # This changes the drop down sail number menu, not the fleet of a boat
-   sailNumberChoice['values'] = fleets[fleetChoice.get()]['BoatList']
+   sailNumberChoice['values'] = BoatList(fleetChoice.get())
    sailNumberChoice.set('')
 
 ##########   Change a Boat's Fleet  Window   ########### 
@@ -563,7 +531,7 @@ def removeBoatWindow(w=None):
 
    tkinter.Label(row, text='Boat Sail #',   anchor='w').pack(side=tkinter.LEFT)
    e = ttk.Combobox(row, 
-                  values=fleets[c.get()]['BoatList'], state="readonly" , width=10)
+                  values=BoatList(c.get()), state="readonly" , width=10)
    e.pack(side=tkinter.LEFT)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
@@ -621,9 +589,6 @@ if __name__ == '__main__':
    
    fleetList = sorted(fleets.keys())  
    
-   #logging.debug('fleetList:')
-   #logging.debug(fleetList)
-   
    if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
    
    gizmoList = syncdList('gizmoList.txt') 
@@ -631,8 +596,7 @@ if __name__ == '__main__':
    unassignedGizmos = syncdList('unassignedGizmos.txt')   
 
    for d in fleetList:
-      fleets[d].update({'BoatList':()})
-      readBoatList(d) 
+      fleets[d]['BoatList'] = syncdList('FLEETS/' +d+ '/BoatList.txt')
 
    for d in fleetList:
       try : 
@@ -646,12 +610,6 @@ if __name__ == '__main__':
       with open('BoatHostMap.json') as f:  fleets['BoatHostMap'] = json.load(f)
    except :
       fleets['BoatHostMap'] = {}
-
-   logging.debug('fleets:')
-   logging.debug(fleets)
-
-   #logging.debug('fleets[FX][RC_IP]')
-   #logging.debug(fleets['FX']['RC_IP'])
 
    
    ##################  Registration  Main  GUI     ################
@@ -672,7 +630,7 @@ if __name__ == '__main__':
 
    tkinter.Label(row, text= 'Sail #:',   anchor='w').pack(side=tkinter.LEFT)
    sailNumberChoice = ttk.Combobox(row,
-                    values=fleets[fleetList[0]]['BoatList'], state="readonly" , width=10)
+                    values=BoatList(fleetList[0]), state="readonly" , width=10)
    sailNumberChoice.pack(side=tkinter.LEFT)
 
    But(row, text='Call Out\nBoat',
