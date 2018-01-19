@@ -34,7 +34,8 @@ logging.basicConfig(level=logging.DEBUG, format=logFormat,)
 
 class syncdList():
     """
-    Define and and maintain list with txtfile copy on change.
+    Define and maintain a list with txtfile copy on change.
+    The purpose of this is to be able to reload values on program restart.
     The values will be a list of unique entries.
     """
     def __init__(self, txtfile):
@@ -168,11 +169,7 @@ def setBTconfig():
       fl = nfl  
 
    cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
-   
-   logging.debug('about to Callout to hn: ' + hn)
-   logging.debug('   Callout "requestBTconfig" cf:')
-   logging.debug(str(cf))
-   
+      
    (bt, conf) = CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
    
    # This is really just a confirmation. If screen values change then something is wrong.
@@ -181,7 +178,6 @@ def setBTconfig():
    gizmo.set(conf['hn'])
 
    statusSet()
-   logging.debug(status)
 
    updateBoatHostMap(bt, hn)
 
@@ -196,6 +192,11 @@ def updateBoatHostMap(bt, hn):
    """
    global fleets
    fleets['BoatHostMap'].update({hn:bt})
+
+   try : 
+      with open('BoatHostMap.json', 'w') as f: json.dump(BoatHostMap, f, indent=4)
+   except :
+      logging.info("Registration failed to save BoatHostMap.json." )
 
 def newBoatSetup(bt, fl, hn, t=None):
    """
@@ -216,8 +217,6 @@ def newBoatSetup(bt, fl, hn, t=None):
    else:
       fleets[fl]['BoatList'].append(bt)
    
-   #MAY NEED TO FIND DUPLICATE GIZMOS FOR A BOAT?
-
    setBTconfig() # uses choices as set above     
    sailNumberChoice['values'] = BoatList(fl)
    
@@ -247,14 +246,12 @@ def rmBoat(bt, fl, t=None):
    hn = r['hn']
    cf = {'BT_ID':'unassigned', 'FLEET':'',  'RC_IP':'' ,  'RC_PORT':''}
 
-   logging.debug('in rmBoat about to Callout to hn: ' +  hn)   
    CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
    unassignedGizmos.append(hn)
 
 
 def statusSet():
-   fl = fleetChoice.get()
-   OutLst = checkedOut(fl)
+   OutLst = checkedOut(fleetChoice.get())
    if sailNumberChoice.get() in OutLst :
           status.set('Out')
    else : status.set('In ')
@@ -297,26 +294,6 @@ def chgFleet(fl, t=None):
       fleetChoice.set(fl)
       setBTconfig()        # uses choices as set    
 
-
-def writeCheckedOutList(fl):
-   """
-   Save file copy for reload when restarted.
-   Used when a gizmo is checked in or out
-   """
-
-   checkedOut   =  fleets[fl]['checkedOut']
-   BoatHostMap  =  fleets['BoatHostMap']
-
-   try : 
-      with open('FLEETS/' +fl + '/checkedOut.txt', 'w') as f: 
-               for bt in checkedOut : f.write(str(bt) + "\n")   # txt lines not json
-   except :
-      logging.info("Registration failed saving checkedOut.txt for " + fl)
-
-   try : 
-      with open('BoatHostMap.json', 'w') as f: json.dump(BoatHostMap, f, indent=4)
-   except :
-      logging.info("Registration failed saving BoatHostMap.json." )
 
 
 def callForHostG(callout, t=None):
@@ -434,9 +411,17 @@ def showBoatList(w=None):
 
 
 def changeFleet():
-   # This changes the drop down sail number menu, not the fleet of a boat
+   # This changes the drop down sail number menu when GUI changes
+   # from one fleet to another. It does not change the fleet of a boat.
    sailNumberChoice['values'] = BoatList(fleetChoice.get())
    sailNumberChoice.set('')
+   gizmo.set('')
+   status.set('')
+
+def changeBoat():
+   # This changes the gizmo ID and status in the GUI when the sail# is changed
+   gizmo.set('')
+   statusSet()
 
 ##########   Change a Boat's Fleet  Window   ########### 
 
@@ -558,11 +543,10 @@ def extraWindow(w=None):
    But(row,  text="Propogate\nRegist. IP",       command=(lambda : setREG(t)) )
    But(row,  text="Show fleets'\nRC settings",   command=(lambda : showRC(t)) )
    But(row,  text="Propogate\nfleet's RC",       command=(lambda : setAllRC(t)) )
-   But(row,  text='Re-read\nBoatList')
 
    tkinter.Label(row, text= 'Call Out Gizmo:',   anchor='w').pack(side=tkinter.LEFT)
    gz = tkinter.StringVar()
-   gzC = ttk.Combobox(row, values=sorted(gizmoList), textvariable=gz, state="readonly", width=10)
+   gzC = ttk.Combobox(row, values=gizmoList.values, textvariable=gz, state="readonly", width=10)
    gzC.bind("<<ComboboxSelected>>", lambda _ : callForHostG(gz.get(), t)  )
    gzC.pack(side=tkinter.LEFT)
 
@@ -620,6 +604,7 @@ if __name__ == '__main__':
    tkinter.Label(row, text= 'Sail #:',   anchor='w').pack(side=tkinter.LEFT)
    sailNumberChoice = ttk.Combobox(row,
                     values=BoatList(fleetList[0]), state="readonly" , width=10)
+   sailNumberChoice.bind("<<ComboboxSelected>>", (lambda event : changeBoat()))
    sailNumberChoice.pack(side=tkinter.LEFT)
 
    But(row, text='Call Out\nBoat',
