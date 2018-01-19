@@ -47,6 +47,36 @@ def reportBTconfig() :
 
    LEDs.ok('green Roger.')         
 
+def restartBT() :
+   """
+   This restarts the BT program. It is needed in the case where any config files have 
+   changed, so that BT loads the new configuration/
+   """
+   import os 
+   import signal 
+   import time 
+   import sys
+   import subprocess
+
+   pidfile = os.getenv("HOME") + '/.BT.pid'
+
+   pid = ['', os.getenv("PWD")] # for case process is not running 
+
+   try:
+      with open(pidfile, 'r') as f: pid = f.read().splitlines()
+   except:
+      print('pid file ' + pidfile+ ' read error. Process probably not running.')
+
+   try:
+      os.kill(int(pid[0]), signal.SIGTERM)
+      os.remove(pidfile)
+      time.sleep(5)
+   except:
+      print('kill failed. Process probably not running.')
+      print('Will attempt to start process in pwd.')
+
+   npid = subprocess.Popen('BT', cwd=pid[1]).pid
+
 
 def resetBTconfig() :
    """
@@ -135,7 +165,7 @@ if __name__ == '__main__':
              #logging.debug(BTconfig)
              with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
              LEDs.ok('green Roger.')
-             #  NEED TO SIGNAL BT TO RESTART/RE-READ CONFIG        
+             restartBT()        
       
        if bt in called or hn in called or 'all' in called :
           
@@ -149,9 +179,10 @@ if __name__ == '__main__':
                 #logging.debug(BTconfig)
                 with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
                 LEDs.ok('green Roger.')         
-                #  NEED TO SIGNAL BT TO RESTART/RE-READ CONFIG        
+                restartBT()        
           
           elif "setREG" in request :
+             #This is using udp broadcast to reset address used for tcp.
              #print(str(data[1]))
              REG = eval(data[1])
              LEDs.ok('green Roger.')         

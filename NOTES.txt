@@ -10,59 +10,33 @@
 
 RC refers to Race Committee. The program RC runs on a computer (laptop) on the race
 committee (signal) boat. This computer could also run a wifi hotspot for boats to connect,
-but here are better options for the wifi. The RC program has a graphical interface.
+but here are better options for the wifi. The RC program has a graphical interface (GUI).
 
 BT refers to a boat. The program BT runs on a "computer on a chip" (e.g. Raspberry 
 Pi Zero W) which has LEDs for signalling sailors. It needs to be
 configured to connect to the wifi hotspot and contact the RC. The only
 interface used by the sailors is the LEDs. For lack of a better name, this
-device is sometimes refered to as a gizmo. The gizmo has a hostname associated with
+device is referred to as a gizmo. The gizmo has a hostname associated with
 it, typically BT-# with "#" replaced by a number. When configured it also has
 a boat identifier (sail number) associated with it.
 
 Registration refers to the process of configuring gizmos, assigning them to boats,
-and checking them out and in each day. The program Registration runs on a computer at 
-the regatta registration desk. It has a graphical interface.
+and checking them out and in (each day?). The program Registration runs on a computer at 
+the regatta registration desk. It has a GUI.
 
-BT, RC  and Registration programs need a path to the program lib:
+On the gizmo the program CallOutRespond runs to communicate with Registration and
+make configuration changes for the BT program. This is a background process which
+causes the LEDs to blink for acknowledgement and gizmo identification, but has
+no other user interface.
+
+BT, RC, Registration and CallOutRespond programs need a path to the program lib:
    export PYTHONPATH=/path/to/Vcourse/lib
 
-
-############################ BT User notes ############################
-
-For the sailor, the BT (boat gizmo) should be completely automated. Power-up 
-and it works. However, some configuration will be necessary before the sailor
-gets the gizmo:
-
--The battery needs to be charged (every night).
-
--At the start of the regatta the /home/bt/BTconfig  file needs adjustment to
-
-    o identify each boat 
-
-    o the boat's fleet 
-
-    o the RC host IP address and port
-    
- For example
-
-   {"RC_IP": "10.42.0.254", "RC_PORT": "9001", "FLEET": "fleet 1", "BT_ID": "boat1"}
-
- where the boat identifier string "boat 1" could be replaced by a sail number and 
- "fleet 1" by a class name. The fleet string must correspond to the fleet name as 
- specified in the RC configuration file FleetList.txt. The boat identifier string 
- should be as specified in the RC configuration file BoatList.txt.
- The RC IP address and port need to correspond to those set in RCconfig and the wifi.
-
--At the start of the regatta the BTconfig  must be set to match RCconfig 
-    for RC host IP and port.
-
--The gizmo configuration needs the proper wifi ssid  and psk (password). This will 
-   need to be fixed if the wifi details change.
-
-See OSsetup.txt, Raspian.txt/Armbian.txt  for details on building gizmos.
-
-
+These programs need to be started in a directory where their configuration files (more 
+below) are located. This typically is not the location of the executable program itself,
+so the program directory needs to be on the PATH or the program needs to be referred to
+with a full pathname. Since CallOutRespond may change BT's config files and restart it,
+it is important that BT is found on the PATH of the process running CallOutRespond.
 
 ############################ RC User notes ############################
 
@@ -207,3 +181,49 @@ The Registration program
   o configures gizmos with GPS hardware specific information for the gizmo.
 
 
+############################ BT User notes ############################
+
+For the sailor, the BT (boat gizmo) should be completely automated. Power-up 
+and it works. However, some configuration will be necessary before the sailor
+gets the gizmo:
+
+-The battery needs to be charged (every night).
+
+-At the start of the regatta the /home/bt/BTconfig  file needs adjustment to
+
+    o identify each boat 
+
+    o the boat's fleet 
+
+    o the RC host IP address and port
+    
+ For example
+
+   {"RC_IP": "10.42.0.254", "RC_PORT": "9001", "FLEET": "fleet 1", "BT_ID": "boat1"}
+
+ where the boat identifier string "boat 1" could be replaced by a sail number and 
+ "fleet 1" by a class name. The fleet string must correspond to the fleet name as 
+ specified in the RC configuration file FleetList.txt. The boat identifier string 
+ should be as specified in the RC configuration file BoatList.txt.
+ The RC IP address and port need to correspond to those set in RCconfig and the wifi.
+
+-At the start of the regatta the BTconfig  must be set to match RCconfig 
+    for RC host IP and port.
+
+-The gizmo configuration needs the proper wifi ssid  and psk (password). This will 
+   need to be fixed if the wifi details change.
+
+See OSsetup.txt, Raspian.txt/Armbian.txt  for details on building gizmos.
+
+
+
+##################### CallOutRespond User notes #########################
+
+-The CallOutRespond program reads and may re-write BT configuration files
+ so it needs to run in the same directory as BT. It has a (hard coded)
+ address for the Registration computer, but that can be reset by a broadcast
+ from the Registration program. The broadcast should work as long as the BT
+ and Registration computers are on the same network subnet.
+ The CallOutRespond program itself has no configuration files (until I decide
+ that Registration's address should not be hard coded, in which case there may
+ be a REGconfig file).

@@ -1,0 +1,38 @@
+#!/usr/bin/python3
+"""
+NB  restart requires that BT is on PATH
+    and  export PYTHONPATH=/path/to/Vcourse/lib  is needed
+    and  the working directory needs to have config files,
+    so the restart is attempted in the original dir which
+    is the second line of the pid file.
+    If the pid file does not exist (hopefully the process is 
+    not running) then start is attempted in the pwd.
+"""
+
+# License GPL 2. Copyright Paul D. Gilbert, 2018
+
+import os 
+import signal 
+import time 
+import sys
+import subprocess
+
+pidfile = os.getenv("HOME") + '/.BT.pid'
+
+pid = ['', os.getenv("PWD")] # for case process is not running 
+
+try:
+   with open(pidfile, 'r') as f: pid = f.read().splitlines()
+except:
+   print('pid file ' + pidfile+ ' read error. Process probably not running.')
+
+try:
+   os.kill(int(pid[0]), signal.SIGTERM)
+   os.remove(pidfile)
+   time.sleep(5)
+except:
+   print('kill failed. Process probably not running.')
+   print('will attempt to start process in pwd.')
+
+npid = subprocess.Popen('BT', cwd=pid[1]).pid
+print(npid)

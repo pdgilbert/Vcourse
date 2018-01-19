@@ -1,0 +1,23 @@
+#!/usr/bin/python3
+
+# License GPL 2. Copyright Paul D. Gilbert, 2018
+
+import os 
+import signal 
+import sys
+
+pidfile = os.getenv("HOME") + '/.BT.pid'
+
+try:
+   with open(pidfile, 'r') as f: pid = f.read().splitlines()
+except:
+   print('pid file ' + pidfile+ ' read error. Process probably not running.')
+   sys.exit()
+
+try :
+   print(str(pid))
+   os.kill(int(pid[0]), signal.SIGTERM)
+   os.remove(pidfile)
+except:
+   print('kill failed. Process probably not running.')
+
