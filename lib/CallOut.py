@@ -50,10 +50,10 @@ atexit.register(sockTCP.close)
 
 
 def splitConf(mes):
-   z = mes.split('::')
-   bt = z.pop(0)   
-   conf = eval(z[0]) # str to dict
-   return (bt, conf)
+   (btfl, z) = mes.split('::')
+   conf = eval(z) # str to dict
+   (bt,fl) = btfl.split(',')
+   return (bt, fl, conf)
 
 def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    global sockUDP, sockTCP
@@ -62,6 +62,7 @@ def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
          raise Exception("request '" + request + "' to " + str(callout) + " not recognized.")
    
    # double colon separate callout::request[::conf]
+   # callout can be a hn or bt,fl combination
    txt = callout +"::" + request
    if conf is not None : txt = txt + "::" + str(conf)
    sockUDP.sendto(txt.encode('utf-8'), ('<broadcast>', 5005)) #UDP_IP, PORT
@@ -80,7 +81,8 @@ def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    elif request == "requestBTconfig" :         conf = requestBTconfig(callout, str(conf))
 
    bt = conf['BT_ID']
-   return (bt, conf)
+   fl = conf['FLEET']
+   return (bt, fl, conf)
 
 
 def ReportBTconfig(callout) :
@@ -97,7 +99,8 @@ def ReportBTconfig(callout) :
 
    cf = eval(mes) # str to dict
 
-   if not (callout == cf['BT_ID'] or callout == cf['hn'] ) :
+   btfl = cf['BT_ID'] + ',' + cf['FLEET']
+   if not (callout == btfl or callout == cf['hn'] ) :
        raise Exception('incorrect gizmo. Not reporting.')
 
    return cf

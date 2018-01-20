@@ -118,11 +118,12 @@ def setRC(bt):
    # This is to one bt by UDP !!
 
    fl =  fleetChoice.get()
-   rc =  fl + "::" + str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
+   btfl = bt + ',' + fl
+   rc =  btfl + "::" + str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
 
    logging.debug(bt)
    logging.debug(rc)
-   (bt, conf) =  CallOut(bt, 'setRC', conf=rc, timeout=20)
+   (bt, fl, conf) =  CallOut(btfl, 'setRC', conf=rc, timeout=20)
    return (bt, conf) 
 
 def setAllRC(t=None): 
@@ -170,7 +171,7 @@ def setBTconfig():
 
    cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
       
-   (bt, conf) = CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
+   (bt, fl, conf) = CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
    
    # This is really just a confirmation. If screen values change then something is wrong.
    fleetChoice.set(conf['FLEET'])
@@ -311,10 +312,10 @@ def callForHostG(callout, t=None):
    callForHost(callout) 
 
 def callForHost(callout): 
-   #callout can be gizmo hostname (BT-#)  or boat ID (sail #)
+   #callout can be gizmo hostname (BT-#)  or bt,fl combination (boat ID and fleet)
    global bt
    bt = sailNumberChoice.get()
-   (bt, conf) = CallOut(callout, "flash, report config")
+   (bt, fl, conf) = CallOut(callout, "flash, report config")
    logging.debug(bt)
    logging.debug(conf)
    if conf['hn'] == 'no response' :
@@ -374,7 +375,7 @@ def checkOut():
    
    logging.debug('BoatHostMap' +  str(fleets['BoatHostMap']))
 
-   CallOut(bt, "checkout")
+   CallOut(bt + ',' + fl, "checkout")
    statusSet()
    logging.debug('status ' +  status.get())
 
@@ -391,7 +392,7 @@ def checkIn():
    if bt not in checkedOut(fl): tkWarning("%s was not checkedOut in fleet %s" % (bt,fl))
    fleets[fl]['checkedOut'].remove(bt)
 
-   CallOut(bt, "checkin")
+   CallOut(bt + ',' + fl, "checkin")
    statusSet()
 
 def showBoatList(w=None):
