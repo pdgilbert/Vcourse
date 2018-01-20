@@ -29,8 +29,8 @@ from GUIutils import *
 from CallOut import CallOut
 
 logFormat ='(%(threadName)-9s) %(message)s'
-logging.basicConfig(level=logging.DEBUG, format=logFormat,)
-#logging.basicConfig(level=logging.INFO, format=logFormat,)
+#logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 class syncdList():
     """
@@ -194,9 +194,11 @@ def updateBoatHostMap(bt, hn):
    fleets['BoatHostMap'].update({hn:bt})
 
    try : 
-      with open('BoatHostMap.json', 'w') as f: json.dump(BoatHostMap, f, indent=4)
+      with open('BoatHostMap.json', 'w') as f: json.dump(fleets['BoatHostMap'], f, indent=4)
    except :
       logging.info("Registration failed to save BoatHostMap.json." )
+      logging.info("BoatHostMap:" )
+      logging.info(fleets['BoatHostMap'])
 
 def newBoatSetup(bt, fl, hn, t=None):
    """
@@ -240,7 +242,9 @@ def rmBoat(bt, fl, t=None):
    gizmo.set('') 
 
    if r is None :  # no response
-      tkinter.messagebox.showinfo(bt +" gizmo is not responding. Gizmo unassignment not done." )
+      txt = bt + " gizmo is not responding.\nThe boat is removed from the fleet list\n" + \
+            "but the gizmo may still be configured for the boat."
+      tkWarning(txt )
       return None  
 
    hn = r['hn']
@@ -317,7 +321,8 @@ def callForHost(callout):
       #fleetChoice.set('unknown')
       gizmo.set('unknown')
       status.set('')
-      tkinter.messagebox.showinfo(bt, "No Response from " + callout)
+      # don't message here. Instead give more detail in the function returned to.
+      #tkinter.messagebox.showinfo(bt, "No Response from " + callout)
       return None
    
    fl = conf['FLEET']
@@ -501,20 +506,18 @@ def removeBoatWindow(w=None):
    t = tkinter.Toplevel()
    t.wm_title("Remove Boat")
 
+   fl = fleetChoice.get()
    row = tkinter.Frame(t)
-   c = ttk.Combobox(row, values=fleetList, state="readonly" , width=10 )
-   c.bind("<<ComboboxSelected>>", (lambda event : changeFleet()))
-   c.pack(side=tkinter.LEFT)
-   c.set(fleetList[0]) 
+   txt = 'Fleet: ' + fl + '    Boat Sail #'
+   tkinter.Label(row, text= txt, anchor='w').pack(side=tkinter.LEFT)
 
-   tkinter.Label(row, text='Boat Sail #',   anchor='w').pack(side=tkinter.LEFT)
    e = ttk.Combobox(row, 
-                  values=BoatList(c.get()), state="readonly" , width=10)
+                  values=BoatList(fl), state="readonly" , width=10)
    e.pack(side=tkinter.LEFT)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(t)
-   But(row, text="Commit", command=(lambda : rmBoat(e.get(), c.get(), t)))
+   But(row, text="Commit", command=(lambda : rmBoat(e.get(), fl, t)))
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
 ##########    More  Window   ########### 
@@ -626,7 +629,7 @@ if __name__ == '__main__':
    row = tkinter.Frame(w)
    But(row,  text='Check Out\nGizmo',       command=checkOut)
    But(row,  text='Check In\nGizmo',        command=checkIn)
-   But(row,  text='fleet check-\nOut list', command=showBoatList)
+   But(row,  text='fleet check-\nOut status', command=showBoatList)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
    row = tkinter.Frame(w)
