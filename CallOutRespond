@@ -119,7 +119,10 @@ if __name__ == '__main__':
    try:     BTconfig = json.load(open('BTconfig'))  
    except : BTconfig = {}  
 
+   # there may be the same boat # in two fleets, but  bt+fl is unique
    bt = BTconfig['BT_ID']
+   fl = BTconfig['FLEET']
+   btfl = bt + ',' + fl   
 
    hn = socket.gethostname()
 
@@ -138,7 +141,7 @@ if __name__ == '__main__':
        request = data[0]
        # in some cases there will be more sections in data
        
-       if (bt in called or hn in called ) : 
+       if (btfl in called or hn in called ) : 
           # Gizmo specific, not 'all'
 
           if "checkout" in request :
@@ -162,12 +165,14 @@ if __name__ == '__main__':
              cf = resetBTconfig()
              BTconfig.update(cf)
              bt = BTconfig['BT_ID']
+             fl = BTconfig['FLEET']
+             btfl = bt + ',' + fl
              #logging.debug(BTconfig)
              with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
              LEDs.ok('green Roger.')
              restartBT()        
       
-       if bt in called or hn in called or 'all' in called :
+       if btfl in called or hn in called or 'all' in called :
           
           if "flash" in request :
              LEDs.ok('green Roger.')         
