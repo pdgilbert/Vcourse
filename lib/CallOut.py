@@ -100,6 +100,9 @@ def ReportBTconfig(callout) :
    cf = eval(mes) # str to dict
 
    btfl = cf['BT_ID'] + ',' + cf['FLEET']
+   logging.debug(callout)
+   logging.debug(btfl)
+   logging.debug(callout == btfl)
    if not (callout == btfl or callout == cf['hn'] ) :
        raise Exception('incorrect gizmo. Not reporting.')
 

@@ -29,8 +29,8 @@ from GUIutils import *
 from CallOut import CallOut
 
 logFormat ='(%(threadName)-9s) %(message)s'
-#logging.basicConfig(level=logging.DEBUG, format=logFormat,)
-logging.basicConfig(level=logging.INFO, format=logFormat,)
+logging.basicConfig(level=logging.DEBUG, format=logFormat,)
+#logging.basicConfig(level=logging.INFO, format=logFormat,)
 
 class syncdList():
     """
@@ -236,7 +236,7 @@ def rmBoat(bt, fl, t=None):
    else :
       tkinter.messagebox.showinfo("%s was not in fleet %s." % (bt, fl))
 
-   r = callForHost(bt)
+   r = callForHost(bt+','+fl)
 
    sailNumberChoice.set('')
    fleetChoice.set('')
@@ -301,7 +301,7 @@ def chgFleet(fl, t=None):
 
 
 
-def callForHostG(callout, t=None):
+def callForGizmo(callout, t=None):
    if t is not None: t.destroy()
    
    #unset sail# and fleet for case nothing is returned
@@ -309,13 +309,14 @@ def callForHostG(callout, t=None):
    fleetChoice.set('unknown')
    gizmo.set('unknown')
    status.set('')
-   callForHost(callout) 
+   return callForHost(callout) 
+
+def callForBoat(bt, fl):  return callForHost(bt + ',' + fl)
 
 def callForHost(callout): 
    #callout can be gizmo hostname (BT-#)  or bt,fl combination (boat ID and fleet)
    global bt
-   bt = sailNumberChoice.get()
-   (bt, fl, conf) = CallOut(callout, "flash, report config")
+   (bt, fl, conf) = CallOut(callout, "report config")
    logging.debug(bt)
    logging.debug(conf)
    if conf['hn'] == 'no response' :
@@ -329,11 +330,9 @@ def callForHost(callout):
    fl = conf['FLEET']
    fleetChoice.set(fl)
 
+   bt = conf['BT_ID']
    sailNumberChoice.set(bt)
-   
-   #logging.debug('fleets')
-   #logging.debug(fleets)
-    
+       
    fIP = fleets[fl]['RC_IP']
    fPT = fleets[fl]['RC_PORT']
    bIP = conf['RC_IP']
@@ -350,50 +349,51 @@ def callForHost(callout):
    # hn is not a standard part of BTconfig, it was added by CallOutRespond()
    gizmo.set(conf['hn']) 
    statusSet()
-   logging.debug('in callForHost')
-   logging.debug(conf['hn'])
-   logging.debug(status.get())
    return conf
 
 
 def checkOut(): 
    global fleets
    bt = sailNumberChoice.get()
+   fl = fleetChoice.get()
 
-   # This callForHost is for the case 'CheckOut' is clicked with just the Sail# entered.
-   # It ensures BT's values are set properly.
-   r = callForHost(bt)
+   # This callForBoat is used to discover gizmo hn.
+   # When callForBoat used only bt and not fl, it could also discover fl, but that 
+   # assumed bt was unique across fleets.
+
+   r = callForBoat(bt, fl)
    if r is None :  return None   # no response
    
-   fl = fleetChoice.get()
    hn = gizmo.get()
-   logging.debug(hn)
+   CallOut(hn, "checkout")
 
-   fleets[fl]['checkedOut'].append(bt)
-    
+   fleets[fl]['checkedOut'].append(bt)    
    updateBoatHostMap(bt,hn)
-   
-   logging.debug('BoatHostMap' +  str(fleets['BoatHostMap']))
-
-   CallOut(bt + ',' + fl, "checkout")
    statusSet()
    logging.debug('status ' +  status.get())
 
 def checkIn(): 
    global fleets
    bt = sailNumberChoice.get()
-
-   # This callForHost is for the case 'CheckIn' is clicked with just the Sail# entered.
-   # It ensures BT's values are set properly.
-   r = callForHost(bt)
-   if r is None :  return None  # no response
-
    fl = fleetChoice.get()
+
+   logging.debug('in checkIn bt:' + bt)
+
+   # This callForBoat is used to discover gizmo hn.
+   # When callForBoat used only bt and not fl, it could also discover fl, but that 
+   # assumed bt was unique across fleets.
+
+   r = callForBoat(bt, fl)
+   if r is None :  return None  # no response
+   logging.debug('in checkIn r:')
+   logging.debug(r)
+
    if bt not in checkedOut(fl): tkWarning("%s was not checkedOut in fleet %s" % (bt,fl))
    fleets[fl]['checkedOut'].remove(bt)
 
-   CallOut(bt + ',' + fl, "checkin")
+   CallOut(gizmo.get(), "checkin")
    statusSet()
+   logging.debug('status ' +  status.get())
 
 def showBoatList(w=None):
    if w is not None: w.destroy() 
@@ -551,7 +551,7 @@ def extraWindow(w=None):
    tkinter.Label(row, text= 'Call Out Gizmo:',   anchor='w').pack(side=tkinter.LEFT)
    gz = tkinter.StringVar()
    gzC = ttk.Combobox(row, values=gizmoList.values, textvariable=gz, state="readonly", width=10)
-   gzC.bind("<<ComboboxSelected>>", lambda _ : callForHostG(gz.get(), t)  )
+   gzC.bind("<<ComboboxSelected>>", lambda _ : callForGizmo(gz.get(), t)  )
    gzC.pack(side=tkinter.LEFT)
 
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
@@ -611,8 +611,8 @@ if __name__ == '__main__':
    sailNumberChoice.bind("<<ComboboxSelected>>", (lambda event : changeBoat()))
    sailNumberChoice.pack(side=tkinter.LEFT)
 
-   But(row, text='Call Out\nBoat',
-                      command=(lambda : callForHost(sailNumberChoice.get())))
+   But(row, text='Call Out\nBoat', command =
+          (lambda : callForHost(sailNumberChoice.get()+','+fleetChoice.get())))
 
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 
