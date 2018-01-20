@@ -11,25 +11,12 @@ convoluted sometimes: when Registration needs to send a whole new configuration 
 sends a "requestBTconfig" telling the BT to request a new configuration. The alternative would
 require BT to run a process listening for TCP connections.
 
-UDP broadcasts are prepended with bt or hn :: so BTs can determine if it is intended for them.
+UDP broadcasts are prepended with 'all', 'bt,fl' or 'hn' separated by '::' from the request,
+so BTs can determine if it is intended for them.
 This is not needed on individual TCP connections.
 
-   callout = "BT-1"  # hostname
-   callout = "FX-1"  # boat id
-
-    for registration
-   request = "flash" 
-   request = "report config"    #start TCP to listen
-   request = "requestBTconfig"  #start TCP to listen, this is a request to set new BTconfig
-
-   request = "flash, report config"
-
-    for maintenance
-   request = "load Registration address" #UDP
-   request = "load RCaddress" #UDP to a fleet(s)?
-   request = "load GPSconfig" #TCP
-   request = "load runAtBoot" #TCP
-
+   callout = "BT-1"       # hostname
+   callout = "boat 1,FX"  # boat id,fl
 """
 import socket
 import smp
@@ -71,6 +58,7 @@ def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    # callout can be a hn or bt,fl combination
    txt = callout +"::" + request
    if conf is not None : txt = txt + "::" + str(conf)
+   print(txt)
    sockUDP.sendto(txt.encode('utf-8'), ('<broadcast>', 5005)) #UDP_IP, PORT
 
    # Above did requests that broadcast only, like "setRC", so now just return for those.
@@ -82,15 +70,18 @@ def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    elif request == "checkin" :                 return None
    elif request == "setRC" :                   return None
    elif request == "setREG" :                  return None
-   elif request == "report config" :           conf = ReportBTconfig(callout)
-   elif request == "flash, report config" :    conf = ReportBTconfig(callout)
-   elif request == "requestBTconfig" :         conf = requestBTconfig(callout, str(conf))
+   elif request == "report config" :           return ReportBTconfig(callout)
+   elif request == "flash, report config" :    return ReportBTconfig(callout)
+   elif request == "requestBTconfig" :         return requestBTconfig(callout, str(conf))
 
-   return conf
+   return None
 
 
 def ReportBTconfig(callout) :
-   # listen for response but then confirm for correct callout
+   """
+   Listen for response but then confirm the BTconfig is for correct callout.
+   This does not send a BTconfig update.
+   """
    global sockTCP
    try :
       (sock, (ip,port)) = sockTCP.accept()
@@ -113,7 +104,10 @@ def ReportBTconfig(callout) :
    return cf
 
 def requestBTconfig(hn, conf) :
-   # listen for request and confirm it is from correct hostname
+   """
+   Listen for request and confirm it is from correct hostname
+   then send a BTconfig (partial) update
+   """
    global sockTCP
    try :
       (sock, (ip,port)) = sockTCP.accept()        

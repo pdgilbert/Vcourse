@@ -141,6 +141,11 @@ if __name__ == '__main__':
        request = data[0]
        # in some cases there will be more sections in data
        
+       print(data)
+       print(called)
+       print(request)
+       print(str(btfl in called or hn in called ))
+       
        if (btfl in called or hn in called ) : 
           # Gizmo specific, not 'all'
 

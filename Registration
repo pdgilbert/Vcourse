@@ -32,6 +32,8 @@ logFormat ='(%(threadName)-9s) %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=logFormat,)
 #logging.basicConfig(level=logging.INFO, format=logFormat,)
 
+
+################# pseudo DB ################
 class syncdList():
     """
     Define and maintain a list with txtfile copy on change.
@@ -96,24 +98,10 @@ class syncdList():
 
 ##########    Utilities   ########### 
 
-def abortHandler(signum, frame):
-    logging.info('main thread exit via abortHandler.')
-    sys.exit("RC process killed.")
-
 
 def BoatList(fl)   : return fleets[fl]['BoatList'].values
 
 def checkedOut(fl) : return fleets[fl]['checkedOut'].values
-
-def showRC(t=None): 
-   if t is not None: t.destroy()
-
-   w = tkinter.Toplevel()
-   w.wm_title("Fleet Names & RC settings")
-   for d in fleetList:
-      rc = str({x: fleets[d][x] for x in ('RC_IP', 'RC_PORT')})
-      ROW(w, text='%s   %s' % (d, rc), pad=2, width=40)
-
 
 def setAllRC(t=None): 
    # This is to all boats in all fleets by UDP !!
@@ -133,8 +121,8 @@ def setREG(t=None):
 
 def setBTconfig():   
    """
-   This does "requetBTconfig" to a single boat, so BT calls back with tcp. 
-   It does a complete reset of the gizmo indicated in the GUI using other values 
+   This does "requetBTconfig" to a single boat, so BT calls back by tcp. 
+   It sends a BTconfig update to the gizmo indicated in the GUI using other values 
    as set in the GUI (and RC values for the fleet).
    
    It is important that the gizmo hostname to be reset is shown in the GUI, most often by
@@ -146,17 +134,17 @@ def setBTconfig():
    
    The callout for "requetBTconfig" will be to a gizmo hostname (BT-#).
    """
-   global fleets, status
+   global fleets
 
    hn = gizmo.get()
    bt = sailNumberChoice.get()
    fl = fleetChoice.get()
 
-   nfl =  fleetChoice.get()
-   if nfl != fl :                           # update fleet
-      fleets[fl]['BoatList'].remove(bt)    
-      fleets[nfl]['BoatList'].append(bt)
-      fl = nfl  
+   #nfl =  fleetChoice.get()
+   #if nfl != fl :                           # update fleet
+   #   fleets[fl]['BoatList'].remove(bt)    
+   #   fleets[nfl]['BoatList'].append(bt)
+   #   fl = nfl  
 
    cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
       
@@ -164,7 +152,7 @@ def setBTconfig():
    
    if conf['hn'] is None :    # no response
       tkWarning("%s gizmo is not responding.\n%s in fleet %s configuration not set."  % (hn, bt, fl) )
-      return None  
+      return conf  
 
    # Next is really just a confirmation. If screen values change then something is wrong.
    fleetChoice.set(conf['FLEET'])
@@ -173,6 +161,7 @@ def setBTconfig():
 
    statusSet()
    updateBoatHostMap(conf['BT_ID'], conf['hn'])
+   return conf  
 
 def updateBoatHostMap(bt, hn):
    """
@@ -199,7 +188,7 @@ def newBoatSetup(bt, fl, hn, t=None):
    Note args bt, fl come from the new boat dialog, so they need to
    be set in main window.
    """
-   global fleets, status
+   global fleets
    if t is not None: t.destroy()
 
    sailNumberChoice.set(bt)
@@ -229,6 +218,7 @@ def rmBoat(bt, fl, t=None):
       sailNumberChoice['values'] = BoatList(fl)
    else :
       tkinter.messagebox.showinfo("Wrong fleet", "%s was not in fleet %s." % (bt, fl))
+      return None
 
    r = callForBoat(bt, fl)
 
@@ -249,49 +239,61 @@ def rmBoat(bt, fl, t=None):
    unassignedGizmos.append(hn)
 
 
-def statusSet():
-   OutLst = checkedOut(fleetChoice.get())
-   if sailNumberChoice.get() in OutLst :
-          status.set('Out')
-   else : status.set('In ')
-
 def chgSail(bt, t=None):
    """Change a boats sail number."""
    global fleets
    if t is not None: t.destroy()
    
    fl = fleetChoice.get()
+   oldbt = sailNumberChoice.get() # to reset if fails
 
    if bt in BoatList(fl): 
       tkWarning("%s is already in fleet %s\nNumber change not allowed." % (bt, fl))
       return None
    else:
-      fleets[fl]['BoatList'].remove(sailNumberChoice.get())    
-      fleets[fl]['BoatList'].append(bt)
-
-      sailNumberChoice['values'] = BoatList(fl)
       sailNumberChoice.set(bt)
       setBTconfig()        # uses choices as set    
+      if conf['hn'] is  None :    # no response
+         sailNumberChoice.set(oldbt)
+         tkWarning("gizmo not responding.\n %s number not changed." % (oldbt))
+         return None
+      else:
+         fleets[fl]['BoatList'].remove(sailNumberChoice.get())    
+         fleets[fl]['BoatList'].append(bt)
+
+         sailNumberChoice['values'] = BoatList(fl)
 
    
 def chgFleet(fl, t=None):
-   """Change a boats sail number."""
+   """Change a boat's fleet."""
+   # arg fl comes from change fleet dialog not main GUI
    global fleets
    if t is not None: t.destroy()
    
    bt = sailNumberChoice.get()
    oldfl = fleetChoice.get()
+   logging.debug('fl '+ fl)
+   logging.debug('oldfl '+ oldfl)
 
    if bt in BoatList(fl): 
       tkWarning("%s is already in fleet %s\nFleet change not allowed." % (bt, fl))
       return None
    else:
-      fleets[oldfl]['BoatList'].remove(bt)    
-      fleets[fl]['BoatList'].append(bt)
+      # important to change BT first. 
+      # If it fails then do not changes 'BoatList' or br cannot be contacted
+      #conf = setBTconfig()        # uses choices as set
+      cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
+         
+      conf = CallOut(bt+','+oldfl, "requestBTconfig", conf=cf, timeout=10)
+      logging.debug('conf '+ str(conf))
+     
+      if conf['hn'] is not None :    # not no response
+         logging.debug('changing fleet from $s to %s' % (oldfl, fl))
+         fleets[oldfl]['BoatList'].remove(bt)    
+         fleets[fl]['BoatList'].append(bt)
 
-      sailNumberChoice['values'] = BoatList(fl)
-      fleetChoice.set(fl)
-      setBTconfig()        # uses choices as set    
+         fleetChoice.set(fl)
+         sailNumberChoice['values'] = BoatList(fl)
 
 
 
@@ -303,6 +305,7 @@ def callForGizmo(callout, t=None):
    fleetChoice.set('unknown')
    gizmo.set('unknown')
    status.set('')
+
    return callForHost(callout) 
 
 def callForBoat(bt, fl):
@@ -313,13 +316,11 @@ def callForBoat(bt, fl):
 
 def callForHost(callout): 
    #callout can be gizmo hostname (BT-#)  or bt,fl combination (boat ID and fleet)
-   global bt
    conf = CallOut(callout, "report config")
    logging.debug(conf)
-   if conf['hn'] is None : # no response
-      # don't message here. Instead give more detail in the function returned to.
-      #tkinter.messagebox.showinfo("No Response", "%s in fleet %s not responding." % (bt, fl))
-      return conf
+
+   # don't message here. Instead give more detail in the function returned to.
+   if conf['hn'] is None :  return conf   # no response
    
    fl = conf['FLEET']
    fleetChoice.set(fl)
@@ -327,6 +328,7 @@ def callForHost(callout):
    bt = conf['BT_ID']
    sailNumberChoice.set(bt)
        
+   # ensure correct RC settings
    fIP = fleets[fl]['RC_IP']
    fPT = fleets[fl]['RC_PORT']
    bIP = conf['RC_IP']
@@ -390,6 +392,23 @@ def checkIn():
    statusSet()
    logging.debug('checkIn status ' +  status.get())
 
+
+##########  GUI utilities  ########### 
+
+def abortHandler(signum, frame):
+    logging.info('main thread exit via abortHandler.')
+    sys.exit("RC process killed.")
+
+def showRC(t=None): 
+   if t is not None: t.destroy()
+
+   w = tkinter.Toplevel()
+   w.wm_title("Fleet Names & RC settings")
+   for d in fleetList:
+      rc = str({x: fleets[d][x] for x in ('RC_IP', 'RC_PORT')})
+      ROW(w, text='%s   %s' % (d, rc), pad=2, width=40)
+
+
 def showBoatList(w=None):
    if w is not None: w.destroy() 
    
@@ -411,6 +430,12 @@ def showBoatList(w=None):
          ROW(t, text='%s   %s      %s' % (f, out, gz), pad=2)
 
 
+def statusSet():
+   OutLst = checkedOut(fleetChoice.get())
+   if sailNumberChoice.get() in OutLst :
+          status.set('Out')
+   else : status.set('In ')
+
 def changeFleet():
    # This changes the drop down sail number menu when GUI changes
    # from one fleet to another. It does not change the fleet of a boat.
@@ -431,6 +456,7 @@ def chgFleetWindow(w=None):
    t = tkinter.Toplevel()
    t.wm_title("New Fleet")
 
+   bt    = sailNumberChoice.get()
    oldfl = fleetChoice.get()
 
    row = tkinter.Frame(t)
