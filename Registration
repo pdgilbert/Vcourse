@@ -228,9 +228,9 @@ def rmBoat(bt, fl, t=None):
       fleets[fl]['BoatList'].remove(bt)
       sailNumberChoice['values'] = BoatList(fl)
    else :
-      tkinter.messagebox.showinfo("%s was not in fleet %s." % (bt, fl))
+      tkinter.messagebox.showinfo("Wrong fleet", "%s was not in fleet %s." % (bt, fl))
 
-   r = callForHost(bt, fl)
+   r = callForBoat(bt, fl)
 
    sailNumberChoice.set('')
    fleetChoice.set('')
@@ -305,7 +305,11 @@ def callForGizmo(callout, t=None):
    status.set('')
    return callForHost(callout) 
 
-def callForBoat(bt, fl):  return callForHost(bt + ',' + fl)
+def callForBoat(bt, fl):
+   #unset gizmo for case nothing is returned
+   gizmo.set('unknown')
+   status.set('')
+   return callForHost(bt + ',' + fl)
 
 def callForHost(callout): 
    #callout can be gizmo hostname (BT-#)  or bt,fl combination (boat ID and fleet)
@@ -313,12 +317,9 @@ def callForHost(callout):
    conf = CallOut(callout, "report config")
    logging.debug(conf)
    if conf['hn'] is None : # no response
-      #fleetChoice.set('unknown')
-      gizmo.set('unknown')
-      status.set('')
       # don't message here. Instead give more detail in the function returned to.
-      #tkinter.messagebox.showinfo(bt, "No Response from " + callout)
-      return None
+      #tkinter.messagebox.showinfo("No Response", "%s in fleet %s not responding." % (bt, fl))
+      return conf
    
    fl = conf['FLEET']
    fleetChoice.set(fl)
@@ -353,16 +354,16 @@ def checkOut():
    bt = sailNumberChoice.get()
    fl = fleetChoice.get()
 
-   # This callForBoat is used to discover gizmo hn.
+   # This callForBoat is used to discover gizmo hn, which also gets set in the GUI.
    # When callForBoat used only bt and not fl, it could also discover fl, but that 
    # assumed bt was unique across fleets.
 
    r = callForBoat(bt, fl)
-   if r['hn'] is None :       
-      tkinter.messagebox.showinfo("No Response from %s in fleet %s" % (bt, fl))
+   hn = r['hn']
+   if hn is None :       
+      tkinter.messagebox.showinfo("No Response", "%s in fleet %s not responding." % (bt, fl))
       return None
 
-   hn = gizmo.get()
    CallOut(hn, "checkout")
 
    fleets[fl]['checkedOut'].append(bt)    
@@ -375,26 +376,19 @@ def checkIn():
    bt = sailNumberChoice.get()
    fl = fleetChoice.get()
 
-   logging.debug('in checkIn bt:' + bt)
-
-   # This callForBoat is used to discover gizmo hn.
-   # When callForBoat used only bt and not fl, it could also discover fl, but that 
-   # assumed bt was unique across fleets.
-
+   # This callForBoat is used to discover gizmo hn, which also gets set in the GUI.
    r = callForBoat(bt, fl)
    if r['hn'] is None :       
-      tkinter.messagebox.showinfo("No Response from %s in fleet %s" % (bt, fl))
+      tkinter.messagebox.showinfo("No Response", "%s in fleet %s not responding." % (bt, fl))
       return None
 
-   logging.debug('in checkIn r:')
-   logging.debug(r)
-
-   if bt not in checkedOut(fl): tkWarning("%s was not checkedOut in fleet %s" % (bt,fl))
+   if bt not in checkedOut(fl):
+      tkWarning("%s was not checkedOut in fleet %s" % (bt,fl))
    fleets[fl]['checkedOut'].remove(bt)
 
    CallOut(gizmo.get(), "checkin")
    statusSet()
-   logging.debug('status ' +  status.get())
+   logging.debug('checkIn status ' +  status.get())
 
 def showBoatList(w=None):
    if w is not None: w.destroy() 
