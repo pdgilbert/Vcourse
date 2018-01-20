@@ -114,17 +114,6 @@ def showRC(t=None):
       rc = str({x: fleets[d][x] for x in ('RC_IP', 'RC_PORT')})
       ROW(w, text='%s   %s' % (d, rc), pad=2, width=40)
 
-def setRC(bt): 
-   # This is to one bt by UDP !!
-
-   fl =  fleetChoice.get()
-   btfl = bt + ',' + fl
-   rc =  btfl + "::" + str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
-
-   logging.debug(bt)
-   logging.debug(rc)
-   (bt, fl, conf) =  CallOut(btfl, 'setRC', conf=rc, timeout=20)
-   return (bt, conf) 
 
 def setAllRC(t=None): 
    # This is to all boats in all fleets by UDP !!
@@ -144,12 +133,12 @@ def setREG(t=None):
 
 def setBTconfig():   
    """
-   This does "requetBTconfig" so BT calls back. 
+   This does "requetBTconfig" to a single boat, so BT calls back with tcp. 
    It does a complete reset of the gizmo indicated in the GUI using other values 
    as set in the GUI (and RC values for the fleet).
    
-   It is important that the gizmo hostname to be reset is in thr GUI, most often by
-   a Call Out of a sail #. 
+   It is important that the gizmo hostname to be reset is shown in the GUI, most often by
+   a Call Out of a  bt,fl (sail#, fleet). 
    
    The fleet(s) BoatList is also updated, so this corrects registration files
    and can be used also for the case the gizmo is ok but the (pre-)registration
@@ -171,16 +160,19 @@ def setBTconfig():
 
    cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
       
-   (bt, fl, conf) = CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
+   conf = CallOut(hn, "requestBTconfig", conf=cf, timeout=10)
    
-   # This is really just a confirmation. If screen values change then something is wrong.
+   if conf['hn'] is None :    # no response
+      tkWarning("%s gizmo is not responding.\n%s in fleet %s configuration not set."  % (hn, bt, fl) )
+      return None  
+
+   # Next is really just a confirmation. If screen values change then something is wrong.
    fleetChoice.set(conf['FLEET'])
    sailNumberChoice.set(conf['BT_ID'])
    gizmo.set(conf['hn'])
 
    statusSet()
-
-   updateBoatHostMap(bt, hn)
+   updateBoatHostMap(conf['BT_ID'], conf['hn'])
 
 def updateBoatHostMap(bt, hn):
    """
@@ -227,6 +219,8 @@ def newBoatSetup(bt, fl, hn, t=None):
 
 def rmBoat(bt, fl, t=None):
    """Remove bt, update files and unassign gizmo."""
+   #CONSIDER USING setBTconfig HERE IN PLACE OF CallOut
+   # OR GETTING RID OF setBTconfig AND USE CallOut WHERE IT IS USED
    global fleets
    if t is not None: t.destroy()
 
@@ -236,13 +230,13 @@ def rmBoat(bt, fl, t=None):
    else :
       tkinter.messagebox.showinfo("%s was not in fleet %s." % (bt, fl))
 
-   r = callForHost(bt+','+fl)
+   r = callForHost(bt, fl)
 
    sailNumberChoice.set('')
    fleetChoice.set('')
    gizmo.set('') 
 
-   if r is None :  # no response
+   if r['hn'] is None :  # no response
       txt = bt + " gizmo is not responding.\nThe boat is removed from the fleet list\n" + \
             "but the gizmo may still be configured for the boat."
       tkWarning(txt )
@@ -316,10 +310,9 @@ def callForBoat(bt, fl):  return callForHost(bt + ',' + fl)
 def callForHost(callout): 
    #callout can be gizmo hostname (BT-#)  or bt,fl combination (boat ID and fleet)
    global bt
-   (bt, fl, conf) = CallOut(callout, "report config")
-   logging.debug(bt)
+   conf = CallOut(callout, "report config")
    logging.debug(conf)
-   if conf['hn'] == 'no response' :
+   if conf['hn'] is None : # no response
       #fleetChoice.set('unknown')
       gizmo.set('unknown')
       status.set('')
@@ -344,8 +337,11 @@ def callForHost(callout):
                 "fleet: " + fIP + ":" + fPT + "\n" +
                 "It is being reset. If the boat values were correct\n" +
                 "then reset the fleet values and propogate.", width=45)
-      (bt, conf) = setRC(bt)
-
+      # reset this boat's RC settings
+      btfl = bt + ',' + fl
+      rc =  btfl + "::" + str({x: fleets[fl][x] for x in ('RC_IP', 'RC_PORT')})
+      conf =  CallOut(btfl, 'setRC', conf=rc, timeout=20)
+ 
    # hn is not a standard part of BTconfig, it was added by CallOutRespond()
    gizmo.set(conf['hn']) 
    statusSet()
@@ -362,8 +358,10 @@ def checkOut():
    # assumed bt was unique across fleets.
 
    r = callForBoat(bt, fl)
-   if r is None :  return None   # no response
-   
+   if r['hn'] is None :       
+      tkinter.messagebox.showinfo("No Response from %s in fleet %s" % (bt, fl))
+      return None
+
    hn = gizmo.get()
    CallOut(hn, "checkout")
 
@@ -384,7 +382,10 @@ def checkIn():
    # assumed bt was unique across fleets.
 
    r = callForBoat(bt, fl)
-   if r is None :  return None  # no response
+   if r['hn'] is None :       
+      tkinter.messagebox.showinfo("No Response from %s in fleet %s" % (bt, fl))
+      return None
+
    logging.debug('in checkIn r:')
    logging.debug(r)
 
@@ -528,7 +529,6 @@ def moreWindow():
    t.wm_title("More Options")
 
    row = tkinter.Frame(t)
-   #But(row,  text="Commit\nchanges",    command=setBTconfig)
    But(row, text="Change\nBoat's Fleet", command=(lambda : chgFleetWindow(t)))
    But(row, text="Change\nBoat's Sail#",command=(lambda : chgSailWindow(t)))
    But(row, text='New Boat',             command=(lambda : newBoatWindow(t)))
@@ -612,7 +612,7 @@ if __name__ == '__main__':
    sailNumberChoice.pack(side=tkinter.LEFT)
 
    But(row, text='Call Out\nBoat', command =
-          (lambda : callForHost(sailNumberChoice.get()+','+fleetChoice.get())))
+          (lambda : callForBoat(sailNumberChoice.get(), fleetChoice.get())))
 
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
 

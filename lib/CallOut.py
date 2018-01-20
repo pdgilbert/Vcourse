@@ -56,6 +56,12 @@ def splitConf(mes):
    return (bt, fl, conf)
 
 def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
+   """
+   In cases where a response is not expected this function returns None.
+   In cases where a response is expected this function returns a BTconfig dict with
+   the additional element 'hn' indicating the gizmo hostname.
+   In the case  a response is expected but BT does not respond the hn value is set None.
+   """
    global sockUDP, sockTCP
    if request not in ("flash",    "report config", "flash, report config", 
                       "checkout", "checkin",       "requestBTconfig",  "setRC",  "setREG"):
@@ -80,9 +86,7 @@ def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    elif request == "flash, report config" :    conf = ReportBTconfig(callout)
    elif request == "requestBTconfig" :         conf = requestBTconfig(callout, str(conf))
 
-   bt = conf['BT_ID']
-   fl = conf['FLEET']
-   return (bt, fl, conf)
+   return conf
 
 
 def ReportBTconfig(callout) :
@@ -95,7 +99,7 @@ def ReportBTconfig(callout) :
       logging.debug(str(mes))
       sock.close()
    except :
-      return({'BT_ID': callout, 'hn': 'no response'})
+      return({'BT_ID': callout, 'hn': None})
 
    cf = eval(mes) # str to dict
 
@@ -126,7 +130,7 @@ def requestBTconfig(hn, conf) :
       sock.close()
    except :
       cf = eval(conf)
-      cf.update({'hn': 'no response'})
+      cf.update({'hn': None})
       return cf
 
    if hn != cf['hn'] :
