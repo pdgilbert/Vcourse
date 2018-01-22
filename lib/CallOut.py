@@ -1,7 +1,7 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2018
 """
-This module is used by Registration for communication with BTs at regatta checkout and
-BT configuration. callout can be gizmone hostname (BT-#)  or boat ID (sail #)
+This module is used by Registration for communication with BTs at regatta check in/out and
+for BT configuration. callout can be gizmone hostname (BT-#)  or boat ID (sail #)
 but for "requestBTconfig" it should be a gizmone hostname (BT-#) since the  boat ID (sail #) may 
 be getting changed. 
 
@@ -14,9 +14,6 @@ require BT to run a process listening for TCP connections.
 UDP broadcasts are prepended with 'all', 'bt,fl' or 'hn' separated by '::' from the request,
 so BTs can determine if it is intended for them.
 This is not needed on individual TCP connections.
-
-   callout = "BT-1"       # hostname
-   callout = "boat 1,FX"  # boat id,fl
 """
 import socket
 import smp
@@ -48,6 +45,14 @@ def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    In cases where a response is expected this function returns a BTconfig dict with
    the additional element 'hn' indicating the gizmo hostname.
    In the case  a response is expected but BT does not respond the hn value is set None.
+   
+   Following should all be True
+
+   CallOut("BT-1",      "flash")  is None  # callout is hn
+   CallOut("boat 1,FX", "flash")  is None  # callout is bt,fl
+   CallOut("all",       "flash")  is None  # callout is all
+
+
    """
    global sockUDP, sockTCP
    if request not in ("flash",    "report config", "flash, report config", 
@@ -57,6 +62,13 @@ def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    # double colon separate callout::request[::conf]
    # callout can be a hn or bt,fl combination
    txt = callout +"::" + request
+
+   # For broadcasts flash, checkin, checkout and report config there is no conf to appended.
+   # For broadcasts setRC and setREG the conf appended here is used.
+   # For broadcasts requestBTconfig the conf appended here is not used and instead
+   # the same conf is passed to requestBTconfig() to be sent by TCP. This is to
+   # ensuree it is actually received.
+
    if conf is not None : txt = txt + "::" + str(conf)
    print(txt)
    sockUDP.sendto(txt.encode('utf-8'), ('<broadcast>', 5005)) #UDP_IP, PORT
@@ -73,8 +85,7 @@ def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    elif request == "report config" :           return ReportBTconfig(callout)
    elif request == "flash, report config" :    return ReportBTconfig(callout)
    elif request == "requestBTconfig" :         return requestBTconfig(callout, str(conf))
-
-   return None
+   else : return None
 
 
 def ReportBTconfig(callout) :
@@ -103,22 +114,41 @@ def ReportBTconfig(callout) :
 
    return cf
 
-def requestBTconfig(hn, conf) :
+def requestBTconfig(callout, conf) :
    """
-   Listen for request and confirm it is from correct hostname
-   then send a BTconfig (partial) update
+   Listen for request and verify it is from the correct callout
+   hostname or bt,fl,  then send conf (a full or partial BTconfig 
+   update) via the TCP connection. (Beware that  bt,fl may be
+   changing so the verification has to be with the old values. 
+   The conf is a dict which updates some elements of BTconfig.
    """
    global sockTCP
+   logging.debug('in requestBTconfig, conf:')
+   logging.debug(str(conf))
    try :
+      logging.debug('in requestBTconfig, try')
+      logging.debug('conf: '+ str(conf))
       (sock, (ip,port)) = sockTCP.accept()        
+      # get response to the UDP broadcast. This will have the old BTconfig.
       mes = smp.rcv(sock) 
-      cf = eval(mes) # str to dict
+      logging.debug('in requestBTconfig, mes:')
+      logging.debug(mes)
+      oldcf = eval(mes) # str to dict
+      logging.debug('in requestBTconfig, oldcf:')
+      logging.debug(oldcf)
+      btfl = oldcf['BT_ID'] + ',' + oldcf['FLEET']
 
-      if hn != cf['hn'] : raise Exception('incorrect gizmo. Not resetting.')
+      logging.debug(callout == btfl or callout == oldcf['hn'] )  
+      if not (callout == btfl or callout == oldcf['hn'] ) :
+         raise Exception('incorrect gizmo. Not resetting.')
 
+      logging.debug('in requestBTconfig, about to send new conf:')
       logging.debug(str(conf))
+      # send new 
       l   = smp.snd(sock, str(conf))  
       echo = smp.rcv(sock) 
+      logging.debug('in requestBTconfig, echo:')
+      logging.debug(str(echo))
       cf = eval(echo) # str to dict
       logging.debug(str(cf))
       sock.close()
@@ -126,8 +156,5 @@ def requestBTconfig(hn, conf) :
       cf = eval(conf)
       cf.update({'hn': None})
       return cf
-
-   if hn != cf['hn'] :
-      raise Exception('Code error, resetting is messed up. Config "hn" is not hn!')
 
    return cf

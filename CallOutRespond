@@ -91,12 +91,15 @@ def resetBTconfig() :
        sockTCP.connect(REG) #Registration IP, port
        print('sending old conf ' + str(BTconfig))
        l  = smp.snd(sockTCP, str(BTconfig))        
+       cf = smp.rcv(sockTCP) 
+       print('echoing new conf string' + cf)
        cf = eval(smp.rcv(sockTCP) ) # str to dict
        cf.update({"hn": hn})
-       print('new cf ' + str(cf))
+       print('echoing new cf ' + str(cf))
        l  = smp.snd(sockTCP, str(cf))   # echo      
        sockTCP.close()
    except :
+       #return {}
        raise Exception('error in resetBTconfig')
    
    LEDs.ok('green Roger.')         
@@ -166,7 +169,7 @@ if __name__ == '__main__':
              LEDs.ok('green Roger.')
                 
           elif "requestBTconfig" in request :
-             #This is a complete reset of the BTconfig.
+             #This is a update or reset of the BTconfig.
              cf = resetBTconfig()
              BTconfig.update(cf)
              bt = BTconfig['BT_ID']
