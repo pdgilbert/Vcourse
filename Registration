@@ -546,46 +546,14 @@ def extraWindow(w=None):
    gzC.pack(side=tkinter.LEFT)
 
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
-
-
-if __name__ == '__main__':
    
 
-   ##################  initiate from files    ################
+##################  Registration  Main  GUI     ################
 
-   gizmoList        = syncdList('gizmoList.txt') 
-   unassignedGizmos = syncdList('unassignedGizmos.txt')   
-
-   try :
-      # This also has RC_IP and port info
-      with open('FleetListRC.json','r') as f: fleets =  json.load(f)
-   except :
-      fleets = {'No fleet': None}
-   
-   fleetList = sorted(fleets.keys())  
-   
-   for d in fleetList:
-      if not os.path.exists('FLEETS/' + d):  os.makedirs('FLEETS/'+d)
-   
-   for d in fleetList:
-      fleets[d]['BoatList']   = syncdList('FLEETS/' +d+ '/BoatList.txt')
-
-   for d in fleetList:
-      fleets[d]['checkedOut'] = syncdList('FLEETS/' +d+ '/checkedOut.txt')
-
-
-   try :
-      with open('BoatHostMap.json') as f:  fleets['BoatHostMap'] = json.load(f)
-   except :
-      fleets['BoatHostMap'] = {}
-
-   
-   ##################  Registration  Main  GUI     ################
-
+def RegistrationGUI(w):
+   global fleetChoice, sailNumberChoice, gizmo, status
    #w = ttk.Style()
    #w.configure("BW.TLabel", foreground="black", background="white")
-
-   w = tkinter.Tk()
 
    w.wm_title("Gizmo Registration")
    
@@ -627,14 +595,49 @@ if __name__ == '__main__':
    row = tkinter.Frame(w)
    But(row, text='more',                command=moreWindow)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
+   
 
+###############  end  Registration  Main  GUI     ###############
+
+if __name__ == '__main__':
+   
+
+   ##################  initiate from files    ################
+
+   gizmoList        = syncdList('gizmoList.txt') 
+   unassignedGizmos = syncdList('unassignedGizmos.txt')   
+
+   try :
+      # This also has RC_IP and port info
+      with open('FleetListRC.json','r') as f: fleets =  json.load(f)
+   except :
+      fleets = {'No fleet': None}
+   
+   fleetList = sorted(fleets.keys())  
+   
+   for d in fleetList:
+      if not os.path.exists('FLEETS/' + d):  os.makedirs('FLEETS/'+d)
+   
+   for d in fleetList:
+      fleets[d]['BoatList']   = syncdList('FLEETS/' +d+ '/BoatList.txt')
+
+   for d in fleetList:
+      fleets[d]['checkedOut'] = syncdList('FLEETS/' +d+ '/checkedOut.txt')
+
+
+   try :
+      with open('BoatHostMap.json') as f:  fleets['BoatHostMap'] = json.load(f)
+   except :
+      fleets['BoatHostMap'] = {}
+
+
+   w = tkinter.Tk()
+   RegistrationGUI(w)
 
    # ^C works if process is not deamonized with &
    signal.signal(signal.SIGINT,  abortHandler) # ^C, kill -2
    signal.signal(signal.SIGTERM, abortHandler) # kill -15 (default)
 
    w.mainloop()
-   ###############  end  Registration  Main  GUI     ###############
-
 
    logging.info('main thread exit via end.')
