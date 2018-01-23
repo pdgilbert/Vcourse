@@ -100,6 +100,8 @@ def resetBTconfig() :
        cf.update({"hn": hn})
        print('echoing new cf ' + str(cf))
        l  = smp.snd(sockTCP, str(cf))   # echo      
+       print('sent echo l= ' + str(l))
+       time.sleep(1)
        sockTCP.close()
    except :
        #return {}
