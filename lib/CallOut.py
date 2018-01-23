@@ -149,6 +149,7 @@ def requestBTconfig(callout, conf) :
       logging.debug(str(conf))
       # send new 
       l   = smp.snd(sock, str(conf))  
+      logging.debug('in requestBTconfig, getting echo.')
       echo = smp.rcv(sock) 
       logging.debug('in requestBTconfig, echo:')
       logging.debug(str(echo))

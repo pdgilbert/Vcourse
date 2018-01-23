@@ -178,7 +178,7 @@ if __name__ == '__main__':
              bt = BTconfig['BT_ID']
              fl = BTconfig['FLEET']
              btfl = bt + ',' + fl
-             #logging.debug(BTconfig)
+             logging.debug(' about to write BTconfig: ' + str(BTconfig))
              with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
              LEDs.ok('green Roger.')
              restartBT()        

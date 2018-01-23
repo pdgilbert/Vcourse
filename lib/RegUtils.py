@@ -130,7 +130,7 @@ def newBoatSetup(bt, fl, hn, t=None):
    be set in main window.
    This does "requetBTconfig" to a single boat, so BT calls back by tcp. 
    """
-   global fleets
+   global fleets, sailNumberChoice, fleetChoice, gizmo, unassignedGizmos
    if t is not None: t.destroy()
 
    # important to change BT first. 
@@ -163,7 +163,7 @@ def rmBoat(bt, fl, t=None):
    Removing a boat without the gizmo responding causes complications in contacting 
    the gizmo. While it may be tempting to allow this, it is being prevented.
    """
-   global fleets
+   global fleets, sailNumberChoice, fleetChoice, gizmo, unassignedGizmos
    if t is not None: t.destroy()
 
    if bt not in BoatList(fl) :
@@ -189,7 +189,7 @@ def rmBoat(bt, fl, t=None):
 def chgSail(bt, t=None):
    """Change a boats sail number."""
    # arg bt comes from change sail# dialog not main GUI
-   global fleets
+   global fleets, sailNumberChoice
    if t is not None: t.destroy()
    
    fl = fleetChoice.get()
@@ -220,13 +220,13 @@ def chgSail(bt, t=None):
 def chgFleet(fl, t=None):
    """Change a boat's fleet."""
    # arg fl comes from change fleet dialog not main GUI
-   global fleets
+   global fleets, fleetChoice, sailNumberChoice
    if t is not None: t.destroy()
    
    bt = sailNumberChoice.get()
    oldfl = fleetChoice.get()
-   #logging.debug('fl '+ fl)
-   #logging.debug('oldfl '+ oldfl)
+   logging.debug('fl '+ fl)
+   logging.debug('oldfl '+ oldfl)
 
    if bt in BoatList(fl): 
       tkWarning("%s is already in fleet %s\nFleet change not allowed." % (bt, fl))
@@ -236,8 +236,10 @@ def chgFleet(fl, t=None):
       # If it fails then do not changes 'BoatList' or gizmo cannot be contacted
       cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
          
+      logging.debug('calling CallOut. cf: '+str(cf))
       conf = CallOut(bt+','+oldfl, "requestBTconfig", conf=cf, timeout=10)
-     
+      logging.debug('conf '+conf)
+    
       if conf['hn'] is not None :    # not no response
          fleets[oldfl]['BoatList'].remove(bt)    
          fleets[fl]['BoatList'].append(bt)
@@ -248,6 +250,7 @@ def chgFleet(fl, t=None):
 
 
 def callForGizmo(callout, t=None):
+   global fleetChoice, sailNumberChoice, gizmo, status
    if t is not None: t.destroy()
    
    #unset sail# and fleet for case nothing is returned
@@ -258,6 +261,7 @@ def callForGizmo(callout, t=None):
    return callForHost(callout) 
 
 def callForBoat(bt, fl):
+   global gizmo, status
    #unset gizmo for case nothing is returned
    gizmo.set('unknown')
    status.set('')
@@ -265,6 +269,7 @@ def callForBoat(bt, fl):
 
 def callForHost(callout): 
    #callout can be gizmo hostname (BT-#)  or bt,fl combination (boat ID and fleet)
+   global fleetChoice, sailNumberChoice, gizmo, status
    conf = CallOut(callout, "report config")
    logging.debug(conf)
 
@@ -380,6 +385,7 @@ def showBoatList(w=None):
 
 
 def statusSet():
+   global status
    OutLst = checkedOut(fleetChoice.get())
    if sailNumberChoice.get() in OutLst :
           status.set('Out')
@@ -388,6 +394,7 @@ def statusSet():
 def changeFleet():
    # This changes the drop down sail number menu when GUI changes
    # from one fleet to another. It does not change the fleet of a boat.
+   global sailNumberChoice, gizmo, status
    sailNumberChoice['values'] = BoatList(fleetChoice.get())
    sailNumberChoice.set('')
    gizmo.set('')
@@ -395,6 +402,7 @@ def changeFleet():
 
 def changeBoat():
    # This changes the gizmo ID and status in the GUI when the sail# is changed
+   global gizmo, status
    gizmo.set('')
    statusSet()
 
@@ -498,7 +506,7 @@ def moreWindow():
 
    row = tkinter.Frame(t)
    But(row, text="Change\nBoat's Fleet", command=(lambda : chgFleetWindow(t)))
-   But(row, text="Change\nBoat's Sail#",command=(lambda : chgSailWindow(t)))
+   But(row, text="Change\nBoat's Sail#", command=(lambda : chgSailWindow(t)))
    But(row, text='New Boat',             command=(lambda : newBoatWindow(t)))
    But(row, text='Remove Boat',          command=(lambda : removeBoatWindow(t)))
    But(row, text='extra',                command=(lambda : extraWindow(t)))
