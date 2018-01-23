@@ -138,8 +138,11 @@ def requestBTconfig(callout, conf) :
       logging.debug(oldcf)
       btfl = oldcf['BT_ID'] + ',' + oldcf['FLEET']
 
-      logging.debug(callout == btfl or callout == oldcf['hn'] )  
       if not (callout == btfl or callout == oldcf['hn'] ) :
+         logging.info(callout == btfl or callout == oldcf['hn'] )  
+         logging.info(callout)  
+         logging.info(btfl)  
+         logging.info(oldcf['hn'] )  
          raise Exception('incorrect gizmo. Not resetting.')
 
       logging.debug('in requestBTconfig, about to send new conf:')

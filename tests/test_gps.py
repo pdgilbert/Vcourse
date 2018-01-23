@@ -33,6 +33,7 @@ class TestgpsPosMethods(unittest.TestCase):
        pt2 = gpsPos.move(pt, 240, 1.0)
 
        self.assertAlmostEqual(1.0,  gpsPos.nm(pt, pt2))
+       self.assertAlmostEqual(1.0,  pt.nm(pt2) )
 
        fuzz = 1e-12
        self.assertTrue(abs(1.0 - gpsPos.nm(pt, pt2)) < fuzz)
