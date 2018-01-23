@@ -2,21 +2,6 @@
 """Object for defining a GPS position and operation with it."""
 
 
-# PUT INTO UNIT TESTING
-#from gpsPos import gpsConnection
-#from gpsPos import gpsPos
-#pt = gpsPos(45.395676, -75.676829)
-#pt = gpsPos(100.395676, -75.676829)
-#pt = gpsPos(45.395676, -275.676829)
-#pt2 = gpsPos.move(pt, 240, 1.0)
-#gpsPos.nm(pt, pt2)  
-# if not (1.0 == gpsPos.nm(pt, pt2).distance)  then something is wrong
-
-#  con = gpsConnection()
-#  p = con.getGPS()
-#  p.lon
-#  p.lat
-
 #It is possible to use something like gps2net on a phone and connect to it,
 # but python gpsd expects json format data while gps2net supplies raw NMEA0183.
 # Thus it is necessary to run gpsd to talk to the phone and translate:
@@ -25,32 +10,6 @@
 #[sudo] gpsd -S 2949 tcp://10.42.0.74:6000     # uses 127.0.0.1 port 2949
 
 # but NB: python gpsd supports only one connection at a time (in one session)
-
-#  con = gpsConnection(host="127.0.0.1", port=2950)
-#  p = con.getGPS()
-#  p.lon
-#  p.lat
-
-# gpsPos.heading(gpsPos(44.20978198674271, -76.51016279425306), 
-#                gpsPos(44.20144865340938, -76.53029941039073))  # 240 
-
-# gpsPos.heading(gpsPos(44.209853494402275, -76.51003278266177),
-#                gpsPos(44.1980683813825,   -76.526474280851))   # 225 
-
-# gpsPos.heading(gpsPos(44.209853494402275, -76.51092055733824),
-#                gpsPos(44.22163860742205,  -76.52736205552748))  # 315
-
-# gpsPos.heading(gpsPos(44.21048983959772, -76.51092055733824),
-#                gpsPos(44.2222749526175,  -76.49447888150982))   #045
-
-# gpsPos.heading(gpsPos(44.21048983959772, -76.51003278266177),
-#                gpsPos(44.198704726577944, -76.49359110683335))  # 135
-
-# gpsPos.heading(gpsPos(0, -76.51003278266177),
-#                gpsPos(0, -76.49359110683335))  # 90
-
-# gpsPos.heading(gpsPos(44.21048983959772,  0),
-#                gpsPos(44.198704726577944, 0))  # 180
 
 import gpsd
 import math

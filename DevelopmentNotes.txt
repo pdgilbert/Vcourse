@@ -29,6 +29,34 @@
 -consider hardware and case alternatives
 
 
+########## Registration program  ##########
+
+-don't hard code REG IP and port.
+
+-check if it works on Pi.
+
+-need more extensive testing.
+
+-need unit testing.
+
+
+########## Utlities  ##########
+
+-program to compare zoneObj files.
+
+-program to compare raceParms files.
+
+-program to do roll call and collect all gizmo hostnames.
+
+############ gizmos ############
+
+-non-root LEDs on O Pi Lite
+
+- non-usb GPS
+
+-try R Pi Z with wifi dongle
+
+
 ########## Race Committee control program - RC ##########
 
 RC startup tries to connect to gpsd. No auto RC position is available

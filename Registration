@@ -278,7 +278,6 @@ def callForGizmo(callout, t=None):
    fleetChoice.set('unknown')
    gizmo.set('unknown')
    status.set('')
-
    return callForHost(callout) 
 
 def callForBoat(bt, fl):
