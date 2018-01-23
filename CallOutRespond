@@ -91,9 +91,8 @@ def resetBTconfig() :
        sockTCP.connect(REG) #Registration IP, port
        print('sending old conf ' + str(BTconfig))
        l  = smp.snd(sockTCP, str(BTconfig))        
-       cf = smp.rcv(sockTCP) 
-       print('echoing new conf string' + cf)
-       cf = eval(smp.rcv(sockTCP) ) # str to dict
+       
+       cf = eval(smp.rcv(sockTCP) ) # new config  str to dict
        #Next puts hn in echo, but also ensures a received conf does not accidentally
        #cause a changed hn to be recorded in BTconfig. (In theory it would never be
        #used, but is still confusing.)
@@ -101,7 +100,7 @@ def resetBTconfig() :
        print('echoing new cf ' + str(cf))
        l  = smp.snd(sockTCP, str(cf))   # echo      
        print('sent echo l= ' + str(l))
-       time.sleep(1)
+       #time.sleep(1)
        sockTCP.close()
    except :
        #return {}

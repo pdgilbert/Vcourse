@@ -238,7 +238,7 @@ def chgFleet(fl, t=None):
          
       logging.debug('calling CallOut. cf: '+str(cf))
       conf = CallOut(bt+','+oldfl, "requestBTconfig", conf=cf, timeout=10)
-      logging.debug('conf '+conf)
+      logging.debug('conf '+ str(conf))
     
       if conf['hn'] is not None :    # not no response
          fleets[oldfl]['BoatList'].remove(bt)    
