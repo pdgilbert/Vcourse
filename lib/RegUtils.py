@@ -225,8 +225,8 @@ def chgFleet(fl, t=None):
    
    bt = sailNumberChoice.get()
    oldfl = fleetChoice.get()
-   logging.debug('fl '+ fl)
-   logging.debug('oldfl '+ oldfl)
+   #logging.debug('fl '+ fl)
+   #logging.debug('oldfl '+ oldfl)
 
    if bt in BoatList(fl): 
       tkWarning("%s is already in fleet %s\nFleet change not allowed." % (bt, fl))
@@ -236,9 +236,7 @@ def chgFleet(fl, t=None):
       # If it fails then do not changes 'BoatList' or gizmo cannot be contacted
       cf = {'BT_ID': bt, 'FLEET': fl, 'RC_IP': fleets[fl]['RC_IP'], 'RC_PORT': fleets[fl]['RC_PORT'] }
          
-      logging.debug('calling CallOut. cf: '+str(cf))
       conf = CallOut(bt+','+oldfl, "requestBTconfig", conf=cf, timeout=10)
-      logging.debug('conf '+ str(conf))
     
       if conf['hn'] is not None :    # not no response
          fleets[oldfl]['BoatList'].remove(bt)    

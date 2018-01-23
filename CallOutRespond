@@ -89,18 +89,15 @@ def resetBTconfig() :
    try :
        sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
        sockTCP.connect(REG) #Registration IP, port
-       print('sending old conf ' + str(BTconfig))
        l  = smp.snd(sockTCP, str(BTconfig))        
-       
        cf = eval(smp.rcv(sockTCP) ) # new config  str to dict
+
        #Next puts hn in echo, but also ensures a received conf does not accidentally
        #cause a changed hn to be recorded in BTconfig. (In theory it would never be
        #used, but is still confusing.)
        cf.update({"hn": hn})
-       print('echoing new cf ' + str(cf))
        l  = smp.snd(sockTCP, str(cf))   # echo      
-       print('sent echo l= ' + str(l))
-       #time.sleep(1)
+
        sockTCP.close()
    except :
        #return {}
@@ -179,7 +176,7 @@ if __name__ == '__main__':
              bt = BTconfig['BT_ID']
              fl = BTconfig['FLEET']
              btfl = bt + ',' + fl
-             logging.debug(' about to write BTconfig: ' + str(BTconfig))
+             
              with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
              LEDs.ok('green Roger.')
              restartBT()        
@@ -194,14 +191,13 @@ if __name__ == '__main__':
                 fl =  data[1]          # from UDP broadcast, not TCP connection
                 if fl == BTconfig['FLEET'] :
                    BTconfig.update(eval(data[2]))
-                   #logging.debug(BTconfig)
+                   
                    with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
                    LEDs.ok('green Roger.')         
                    restartBT()        
           
           elif "setREG" in request :
              #This is using udp broadcast to reset address used for tcp.
-             #print(str(data[1]))
              if 1 < len(data) : # in theory alway true, but otherwise bad broadcasts cause crash
                REG = eval(data[1])
                LEDs.ok('green Roger.')         
