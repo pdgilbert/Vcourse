@@ -60,25 +60,6 @@ class syncdList():
        except :
           tkWarning("Failed saving " + txtfile)
 
-# test
-#   unassignedGizmos = syncdList('unassignedGizmos.txt')   
-#   unassignedGizmos.values
-#   unassignedGizmos.append('BT-100')
-#   unassignedGizmos.remove('BT-100')
-
-#  with open('FleetListRC.json','r') as f: fleets =  json.load(f)
-#  fleetList = sorted(fleets.keys())  
-
-#  fl = 'fleet 1'
-#  readBoatList(fl)
-#  fleets[fl]['BoatList']
-
-#  bl = syncdList('FLEETS/' +fl + '/BoatList.txt') 
-#  fleets[fl]['BoatList'] = bl
-#  fleets[fl]['BoatList'].values
-#  fleets[fl]['BoatList'].append('boat 100')
-#  fleets[fl]['BoatList'].remove('boat 100')
-
 
 ##########    Utilities   ########### 
 
@@ -584,29 +565,32 @@ def RegistrationGUI(w):
 
 ##################  initiate from files    ################
 
-gizmoList        = syncdList('gizmoList.txt') 
-unassignedGizmos = syncdList('unassignedGizmos.txt')   
+def initiate():
+   global fleets, fleetList, gizmoList, unassignedGizmos
 
-try :
-   # This also has RC_IP and port info
-   with open('FleetListRC.json','r') as f: fleets =  json.load(f)
-except :
-   fleets = {'No fleet': None}
+   gizmoList        = syncdList('gizmoList.txt') 
+   unassignedGizmos = syncdList('unassignedGizmos.txt')   
 
-fleetList = sorted(fleets.keys())  
-
-for d in fleetList:
-   if not os.path.exists('FLEETS/' + d):  os.makedirs('FLEETS/'+d)
-
-for d in fleetList:
-   fleets[d]['BoatList']   = syncdList('FLEETS/' +d+ '/BoatList.txt')
-
-for d in fleetList:
-   fleets[d]['checkedOut'] = syncdList('FLEETS/' +d+ '/checkedOut.txt')
-
-
-try :
-   with open('BoatHostMap.json') as f:  fleets['BoatHostMap'] = json.load(f)
-except :
-   fleets['BoatHostMap'] = {}
-
+   try :
+      # This also has RC_IP and port info
+      with open('FleetListRC.json','r') as f: fleets =  json.load(f)
+   except :
+      fleets = {'No fleet': None}
+   
+   fleetList = sorted(fleets.keys())  
+   
+   for d in fleetList:
+      if not os.path.exists('FLEETS/' + d):  os.makedirs('FLEETS/'+d)
+   
+   for d in fleetList:
+      fleets[d]['BoatList']   = syncdList('FLEETS/' +d+ '/BoatList.txt')
+   
+   for d in fleetList:
+      fleets[d]['checkedOut'] = syncdList('FLEETS/' +d+ '/checkedOut.txt')
+   
+   
+   try :
+      with open('BoatHostMap.json') as f:  fleets['BoatHostMap'] = json.load(f)
+   except :
+      fleets['BoatHostMap'] = {}
+   

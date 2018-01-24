@@ -44,6 +44,8 @@ logging.basicConfig(level=logging.DEBUG, format=logFormat,)
 
 if __name__ == '__main__':
    
+   initiate()
+   
    w = tkinter.Tk()
    RegistrationGUI(w)
 
