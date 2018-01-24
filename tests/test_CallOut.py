@@ -4,6 +4,7 @@
 #python3 -m unittest  test_CallOut
 
 import unittest
+import time
 
 from CallOut import CallOut
 
@@ -61,17 +62,22 @@ class TestCallOutMethods(unittest.TestCase):
       self.assertIsNone(CallOut("noGizmo",  "report config")['hn'],
                    msg="CallOut 'report config' should return hn None when there is no response.")  
 
+      # These tests needs BT-1 running CallOutRespond
+
+      origBTconfig = CallOut("BT-1",  "report config")
+
+      self.assertIsNotNone(origBTconfig['hn'],
+                   msg="CallOut 'report config' no response from BT-1. Following tests will fail.")  
+
       # NOTE THIS IS USING "boat 1b" and "fleet 2"
-      # Next test needs BT-1 running CallOutRespond
       v = {"BT_ID": "boat 1b", "FLEET": "fleet 2", "RC_IP": "10.42.0.254", "RC_PORT": "9001", "hn": "BT-1"}
 
-      self.assertEqual(v, CallOut("BT-1",  "report config"),
-                   msg="CallOut 'report config' should return BTconfig dict." +\
-                       "Possibly CallOutRespond is not running on BT-1.")  
+      btfl = origBTconfig["BT_ID"] + ',' + origBTconfig["FLEET"]
 
-      self.assertEqual(v, CallOut("boat 1b,fleet 2",  "report config"),
+      self.assertEqual(origBTconfig, CallOut(btfl,  "report config"),
                    msg="CallOut 'report config' should return BTconfig dict." +\
                        "Possibly CallOutRespond is crashed on BT-1.")  
+
 
 
    def test_CallOut_requestBTconfig(self):
@@ -81,14 +87,47 @@ class TestCallOutMethods(unittest.TestCase):
       self.assertIsNone(CallOut("noGizmo",  "requestBTconfig", conf=v)['hn'],
                    msg="CallOut 'requestBTconfig' should return hn None when there is no response.")  
 
-      # NOTE THIS IS USING "boat 1b" and "fleet 2"
-      # Next test needs BT-1 running CallOutRespond
-      # v = {"BT_ID": "boat 1b", "FLEET": "fleet 2", "RC_IP": "10.42.0.254", "RC_PORT": "9001", "hn": "BT-1"}
+      # These tests needs BT-1 running CallOutRespond
 
-      v = {"BT_ID": "boat 1"}
-      newv ={"BT_ID": "boat 1", "FLEET": "fleet 2", "RC_IP": "10.42.0.254", "RC_PORT": "9001", "hn": "BT-1"}
+      orig = CallOut("BT-1",  "report config")
 
-      self.assertEqual(newv, CallOut("BT-1",  "requestBTconfig", conf=v),
+      self.assertIsNotNone(orig['hn'],
+                   msg="CallOut 'report config' no response from BT-1. Following tests will fail.")  
+
+
+      v = orig
+      v.update({"BT_ID": "newBoat"})
+      new = CallOut("BT-1",  "requestBTconfig", conf=v)
+
+      self.assertIsNotNone(new['hn'], msg="CallOut 'requestBTconfig' no response from BT-1."+\
+                       "Error in BT_ID change test. Possibly CallOutRespond is crashed on BT-1.")  
+
+      self.assertEqual(v, new,
                    msg="CallOut 'requestBTconfig' should return new BTconfig with BT_ID change."+\
-                       "Possibly CallOutRespond is not running on BT-1.")
+                       "Error in BT_ID change test. Possibly CallOutRespond is crashed on BT-1.")
+      
+
+      time.sleep(5) # restart of BT after config change seems to interfere with UPD reception.
+      v.update({"FLEET": "fleet 2"})
+      new = CallOut("BT-1",  "requestBTconfig", conf=v)
+
+      self.assertIsNotNone(new['hn'], msg="CallOut 'requestBTconfig' no response from BT-1."+\
+                                          "Error in FLEET change test.")  
+
+      self.assertEqual(v, new,
+                   msg="CallOut 'requestBTconfig' should return new BTconfig with FLEET change."+\
+                       "Error in FLEET change test. Possibly CallOutRespond is crashed on BT-1.")
+      
+
+
+      time.sleep(5) # restart of BT after config change seems to interfere with UPD reception.
+      new = CallOut("BT-1",  "requestBTconfig", conf=orig)
+
+      self.assertIsNotNone(new['hn'], msg="CallOut 'requestBTconfig' no response from BT-1."+\
+                                          "Error resetting back to original.")  
+
+      self.assertEqual(orig, new,
+                   msg="CallOut 'requestBTconfig' should return new BTconfig set back to original."+\
+                       "Error resetting. Possibly CallOutRespond is crashed on BT-1.")
+
 
