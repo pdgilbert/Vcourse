@@ -91,6 +91,8 @@ class TestRegUtilstMethods(unittest.TestCase):
       self.assertEqual('100', sailNumberChoice.get(), msg=" GUI Sail #  should be '100'.")  
       self.assertEqual('FX',   fleetChoice.get(),     msg=" GUI Fleet   should be 'FX'.")  
       
+      time.sleep(5)
+      
       chgSail('101', t=None)
       self.assertEqual(['101',], BoatList('FX'),  msg=" BoatList should be ['101'].")  
       
