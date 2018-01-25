@@ -172,11 +172,13 @@ if __name__ == '__main__':
           elif "requestBTconfig" in request :
              #This is a update or reset of the BTconfig.
              cf = resetBTconfig()
+             print('cf for update: ' + str(cf))
              BTconfig.update(cf)
              bt = BTconfig['BT_ID']
              fl = BTconfig['FLEET']
              btfl = bt + ',' + fl
              
+             print('re-writing BTconfig: ' + str(BTconfig))
              with open('BTconfig', 'w') as f: json.dump(BTconfig, f)
              LEDs.ok('green Roger.')
              restartBT()        

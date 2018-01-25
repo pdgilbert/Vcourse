@@ -25,9 +25,20 @@ sockUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 sockUDP.settimeout(5)
 atexit.register(sockUDP.close)
 
+# could read this from file
+REG = ("10.42.0.254", 9006)
+
+# could check it is actual IP address of host eg
+# REG[0] in os.popen("hostname -I").read().split()
+
 sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
 sockTCP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-sockTCP.bind(("10.42.0.254", 9006) ) #Registration IP, port
+sockTCP.bind(REG) #Registration IP, port
+
+#sockTCP.bind(("10.42.0.254", 0))  #this finds an unused port
+#sockTCP.bind(("", 0)              #this listens on everything
+#sockTCP.getsockname()            # returns (addr, port)
+
 sockTCP.settimeout(5)
 sockTCP.listen(5)  
 atexit.register(sockTCP.close)

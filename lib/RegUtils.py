@@ -11,7 +11,7 @@ import signal
 import logging
 import json
 import sys # just for exit
-import os  # just for mkdir
+import os  # just for mkdir and getcwd
 
 from GUIutils import *
 from CallOut import CallOut
@@ -560,37 +560,49 @@ def RegistrationGUI(w):
    But(row, text='more',                command=moreWindow)
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
    
+   # return used for unit testing
+   return {'fleetChoice': fleetChoice,
+           'sailNumberChoice' : sailNumberChoice,
+           'status' : status }
 
 ###############  end  Registration  Main  GUI     ###############
 
 ##################  initiate from files    ################
 
-def initiate():
+def initiate(path=os.getcwd()+'/'):
    global fleets, fleetList, gizmoList, unassignedGizmos
 
-   gizmoList        = syncdList('gizmoList.txt') 
-   unassignedGizmos = syncdList('unassignedGizmos.txt')   
+   gizmoList        = syncdList(path + 'gizmoList.txt') 
+   unassignedGizmos = syncdList(path + 'unassignedGizmos.txt')   
 
    try :
       # This also has RC_IP and port info
-      with open('FleetListRC.json','r') as f: fleets =  json.load(f)
+      with open(path + 'FleetListRC.json','r') as f: fleets =  json.load(f)
    except :
       fleets = {'No fleet': None}
    
    fleetList = sorted(fleets.keys())  
    
    for d in fleetList:
-      if not os.path.exists('FLEETS/' + d):  os.makedirs('FLEETS/'+d)
+      if not os.path.exists(path + 'FLEETS/' + d):  os.makedirs(path + 'FLEETS/'+d)
    
    for d in fleetList:
-      fleets[d]['BoatList']   = syncdList('FLEETS/' +d+ '/BoatList.txt')
+      fleets[d]['BoatList']   = syncdList(path + 'FLEETS/' +d+ '/BoatList.txt')
    
    for d in fleetList:
-      fleets[d]['checkedOut'] = syncdList('FLEETS/' +d+ '/checkedOut.txt')
+      fleets[d]['checkedOut'] = syncdList(path + 'FLEETS/' +d+ '/checkedOut.txt')
    
    
    try :
-      with open('BoatHostMap.json') as f:  fleets['BoatHostMap'] = json.load(f)
+      with open(path + 'BoatHostMap.json') as f:  fleets['BoatHostMap'] = json.load(f)
    except :
       fleets['BoatHostMap'] = {}
    
+   # currently these are globals, returning is only for unit testing.
+   # It might be better if this was a class object
+   return {    'fleets': fleets, 
+            'fleetList': fleetList, 
+            'gizmoList': gizmoList, 
+     'unassignedGizmos': unassignedGizmos,
+     
+     }
