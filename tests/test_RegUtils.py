@@ -5,6 +5,7 @@
 
 import unittest
 import os
+import time
 
 from RegUtils import *
 
@@ -93,6 +94,8 @@ class TestRegUtilstMethods(unittest.TestCase):
       chgSail('101', t=None)
       self.assertEqual(['101',], BoatList('FX'),  msg=" BoatList should be ['101'].")  
       
+      time.sleep(5)
+
       chgFleet('49er', t=None)
       self.assertEqual([],       BoatList('FX'),   msg=" BoatList should be [].")  
       self.assertEqual(['101',], BoatList('49er'), msg=" BoatList should be ['101'].")  
