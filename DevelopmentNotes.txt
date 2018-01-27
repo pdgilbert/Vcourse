@@ -5,6 +5,10 @@
 ########## To Do notes  ##########
 -clean up  notes
 
+-more Registration unit testing
+
+-RC unit testing
+
 -utility to confirm/adjust BT's and Registration files to put them all in agreement.
 
 -utility to gather all BT gizmo ids.
@@ -19,7 +23,6 @@
 -is occassional segfault fixed? 
 -segfault if GPS is disconnected? 
 
--more unit testing
 
 -transfer tracks back to RC
 -tracks in local time (optional?) rather than UTC, but this seems to be a
