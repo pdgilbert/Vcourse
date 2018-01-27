@@ -43,10 +43,10 @@ class distributionCheck(threading.Thread):
    The file can also be editted by hand with care to preserve the dict structure.
    """
    
-   def __init__(self, update, shutdown):
+   def __init__(self, update, shutdown, path='./'):
       threading.Thread.__init__(self)
 
-      config = json.load(open('BTconfig'))   # read config
+      config = json.load(open(path + 'BTconfig'))   # read config
 
       self.name='distributionCheck'
 
@@ -63,7 +63,7 @@ class distributionCheck(threading.Thread):
       # robust to an accidental reboot. (distributionCheck only needs the cid)
       global cid  # see note in BT re zoneSignal and cid
       try :
-         with open("activeBTzoneObj.json","r") as f:  zoneObj = json.load(f)
+         with open(path + "activeBTzoneObj.json","r") as f:  zoneObj = json.load(f)
          cid = zoneObj['cid']
       except :
          cid = None
@@ -165,13 +165,13 @@ class distributer(threading.Thread):
    The file can also be edited by hand with care to preserve the dict structure.
    """
 
-   def __init__(self, shutdown):
+   def __init__(self, shutdown, path='./'):
       threading.Thread.__init__(self)
 
       self.name='distributer'
       self.shutdown=shutdown
 
-      config = json.load(open('RCconfig'))   # read config
+      with open(path + 'RCconfig') as f: config = json.load(f)   # read config
 
       self.tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       self.tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -187,21 +187,21 @@ class distributer(threading.Thread):
       # RC distribute and status button accesses it through distributer (dr) object.
 
       try : 
-         with open("FleetList.txt") as f:  fleets =  f.read().splitlines()
+         with open(path + "FleetList.txt") as f:  fleets =  f.read().splitlines()
          fleets = [b.strip() for b in fleets]
          self.fleets = {'fleetList' : fleets}
       except :
          self.fleets = {'fleetList' : ('No fleet',) }
 
-      if not os.path.exists('FLEETS'):  os.makedirs('FLEETS')
-      if not os.path.exists('RACEPARMS'):  os.makedirs('RACEPARMS')
+      if not os.path.exists(path + 'FLEETS'):  os.makedirs(path + 'FLEETS')
+      if not os.path.exists(path + 'RACEPARMS'):  os.makedirs(path + 'RACEPARMS')
 
       for d in self.fleets['fleetList']:
 
-         if not os.path.exists('FLEETS/' + d):
-             os.makedirs('FLEETS/' + d)
-         if not os.path.exists('FLEETS/' + d + '/DISTRIBUTEDZONES'):
-             os.makedirs('FLEETS/' + d + '/DISTRIBUTEDZONES')
+         if not os.path.exists(path + 'FLEETS/' + d):
+             os.makedirs(path + 'FLEETS/' + d)
+         if not os.path.exists(path + 'FLEETS/' + d + '/DISTRIBUTEDZONES'):
+             os.makedirs(path + 'FLEETS/' + d + '/DISTRIBUTEDZONES')
 
 
       for d in self.fleets['fleetList']:
@@ -211,7 +211,7 @@ class distributer(threading.Thread):
 
          #Load active zoneObj's if they exists, to be a bit robust when restarted.
          try :
-            with open('FLEETS/' + d + '/activeBTzoneObj.json','r') as f:
+            with open(path + 'FLEETS/' + d + '/activeBTzoneObj.json','r') as f:
                   self.setzoneObj(d, json.load(f))
             logging.info("distributer loaded existing active zoneObj for " + d)
             logging.info("cid is " + self.cid(d))
@@ -234,6 +234,7 @@ class distributer(threading.Thread):
          except Exception: 
             pass
 
+      self.tcpsock.close()
       logging.info('exiting ' + self.name + ' thread.')
    
    def prt(self):

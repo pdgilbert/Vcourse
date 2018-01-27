@@ -21,7 +21,7 @@ import stadium2RC as stadium2
 
 def initiate(path='./'):
    global GPS_HOST, GPS_PORT
-   config = json.load(open(path + 'GPSconfig'))   
+   with open(path + 'GPSconfig') as f : config = json.load(f) 
    GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
    GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
@@ -107,11 +107,18 @@ class RCmanager():
       for f in fldLabels:
          self.ents.append(ROW(w, text=f, width=15, ebg="white"))
      
-      But(w,  text='get RC GPS',     command=self.getRCgps)
-      But(w,  text='distribute',    
+      self.getRCGPS_button = But(
+                w,  text='get RC GPS',     command=self.getRCgps)
+
+      self.distribute_button = But( 
+                w,  text='distribute',    
                    command=(lambda : dr.distribute(self.parmsAll(), self.ZTobj)))
-      But(w,  text='update\nStatus', command=(lambda : self.updateStatus(w, dr)))
-      But(w, text='extra',           command=(lambda : extraWindow(self, dr)))
+
+      self.updateStatus_button = But(
+                w,  text='update\nStatus', command=(lambda : self.updateStatus(w, dr)))
+
+      self.extra_button = But( 
+                w, text='extra',           command=(lambda : extraWindow(self, dr)))
 
       self.writeRCWindow()
 
@@ -387,11 +394,12 @@ class RCmanager():
    def readRace(self, w=None, fleet=None, filename = None):
       if w is not None: w.destroy()
 
-      filename =  filedialog.askopenfilename(initialdir = "RACEPARMS/",
+      if filename is None: 
+         filename =  filedialog.askopenfilename(initialdir = "RACEPARMS/",
                   title = "choose file",
               filetypes = (("race parameters","*.raceParms"),("all files","*.*")))
 
-      if filename is "":  return   # i.e. cancel clicked in dialog
+         if filename is "":  return   # i.e. cancel clicked in dialog
 
       RF = self.readRaceFile(filename)
 
