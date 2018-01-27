@@ -245,7 +245,9 @@ def callForGizmo(callout, t=None):
    if conf['hn'] is None :  return conf   # no response
 
    # hn is not a standard part of BTconfig, it was added by CallOutRespond()
-   gizmo.set(conf['hn']) 
+   gizmo.set(           conf['hn']) 
+   fleetChoice.set(     conf['FLEET'])
+   sailNumberChoice.set(conf['BT_ID'])
    return conf
 
 def callForBoat(bt, fl):

@@ -19,9 +19,11 @@ from gpsPos import gpsConnection
 import stadiumRC as stadium
 import stadium2RC as stadium2
 
-config = json.load(open('GPSconfig'))   
-GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
-GPS_PORT = int(config['GPS_PORT']) # 2947 is default
+def initiate(path='./'):
+   global GPS_HOST, GPS_PORT
+   config = json.load(open(path + 'GPSconfig'))   
+   GPS_HOST = config['GPS_HOST']      # typically "127.0.0.1"
+   GPS_PORT = int(config['GPS_PORT']) # 2947 is default
 
 #########################  RCmanager class and  Main  Window     ######################### 
 
