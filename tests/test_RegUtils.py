@@ -84,6 +84,18 @@ class TestRegUtilstMethods(unittest.TestCase):
       unassignedGizmos.remove('BT-2')
       self.assertEqual(['BT-1'], unassignedGizmos.values, msg="unassignedGizmos should be ['BT-1'].")  
 
+   def test_gizmo(self):
+      w = tkinter.Tk()
+      z = RegistrationGUI(w)
+      fleetChoice      = z['fleetChoice']
+      sailNumberChoice = z['sailNumberChoice']
+
+      z = callForGizmo('BT-1', t=None)
+      self.assertEqual('BT-1', z['hn'],
+        msg="callForGizmo should have hn ='BT-1'\n"+\
+            "Did BT-1 LED flash green?   If not:\n" +\
+            "Check wifi connection from Registration to BT-1.\n" +\
+            "Check CallOutRespond is running on BT-1 and has 'unassigned' configuration.")  
 
    def test_utilities(self):
       #NB Registration files are in tmp/ but actual changes are made on BT-1 gizmo
@@ -94,7 +106,11 @@ class TestRegUtilstMethods(unittest.TestCase):
       status           = z['status']
 
       newBoatSetup('100', 'FX', 'BT-1', t=None)
-      self.assertEqual(['100',], BoatList('FX'),      msg=" BoatList should be ['100'].")  
+      self.assertEqual(['100',], BoatList('FX'),      msg=" BoatList should be ['100'].\n"+\
+        "Did BT-1 LED flash green?   If not:\n" +\
+        "Check wifi connection from Registration to BT-1.\n" +\
+        "Check CallOutRespond is running on BT-1 and has 'unassigned' configuration.")  
+
       self.assertEqual('100', sailNumberChoice.get(), msg=" GUI Sail #  should be '100'.")  
       self.assertEqual('FX',   fleetChoice.get(),     msg=" GUI Fleet   should be 'FX'.")  
       

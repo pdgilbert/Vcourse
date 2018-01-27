@@ -237,24 +237,30 @@ def callForGizmo(callout, t=None):
    fleetChoice.set('unknown')
    gizmo.set('unknown')
    status.set('')
-   return callForHost(callout) 
 
-def callForBoat(bt, fl):
-   global gizmo, status
-   #unset gizmo for case nothing is returned
-   gizmo.set('unknown')
-   status.set('')
-   return callForHost(bt + ',' + fl)
-
-def callForHost(callout): 
-   #callout can be gizmo hostname (BT-#)  or bt,fl combination (boat ID and fleet)
-   global fleetChoice, sailNumberChoice, gizmo, status
    conf = CallOut(callout, "report config")
    logging.debug(conf)
 
    # don't message here. Instead give more detail in the function returned to.
    if conf['hn'] is None :  return conf   # no response
-   
+
+   # hn is not a standard part of BTconfig, it was added by CallOutRespond()
+   gizmo.set(conf['hn']) 
+   return conf
+
+def callForBoat(bt, fl):
+   global fleetChoice, sailNumberChoice, gizmo, status
+   #unset gizmo for case nothing is returned
+   gizmo.set('unknown')
+   status.set('')
+
+   callout =bt + ',' + fl
+   conf = CallOut(callout, "report config")
+   logging.debug(conf)
+
+   # don't message here. Instead give more detail in the function returned to.
+   if conf['hn'] is None :  return conf   # no response
+
    fl = conf['FLEET']
    fleetChoice.set(fl)
 
@@ -282,7 +288,6 @@ def callForHost(callout):
    gizmo.set(conf['hn']) 
    statusSet()
    return conf
-
 
 def checkOut(): 
    global fleets
