@@ -31,7 +31,6 @@ if __name__ == '__main__':
    logging.info('main thread starting. ' +time.strftime('%Y-%m-%d %H:%M:%S %Z'))
    shutdown = threading.Event()
 
-   shutdown = threading.Event()
    dr = distribution.distributer(shutdown)
    dr.start() 
    
