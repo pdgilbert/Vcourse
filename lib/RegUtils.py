@@ -86,9 +86,9 @@ def setREG(t=None):
    # that will require changes in CallOut handling of txt in broadcast.
    path = './'
    with open(path + 'REGconfig','r') as f: config =  json.load(f)
-   REG = (config['REG_HOST'], config['REG_PORT'])
+   #REG = (config['REG_HOST'], config['REG_PORT'])
 
-   CallOut('all', 'setREG', conf=str(REG), timeout=20)
+   CallOut('all', 'setREG', conf=config, timeout=20)
 
 
 def updateBoatHostMap(bt, hn):

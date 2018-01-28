@@ -21,18 +21,25 @@ import logging
 import atexit
 import json
 
-sockUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #Internet, UDP
-sockUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-sockUDP.settimeout(5)
-atexit.register(sockUDP.close)
-
 #REG = ("10.42.0.254", 9006)
 path = './'
 with open(path + 'REGconfig','r') as f: config =  json.load(f)
 REG = (config['REG_HOST'], config['REG_PORT'])
 
+# note that BTs need REG to do TCP response but they listen for UDP on whatever
+# network they are connected to, so this UDP is only for Registration side.
+# It is changed by changing REGconfig for Registration an restarting.
+# Then BTs REG could be changed by broadcast. (extra button 'Propagate Regist. IP')
+UDP = REG[0].split('.')
+UDP = (UDP[0] + '.' + UDP[1] + '.' + UDP[2] + '.255', 5005)
+
 # could check it is actual IP address of host eg
 # REG[0] in os.popen("hostname -I").read().split()
+
+sockUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #Internet, UDP
+sockUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+sockUDP.settimeout(5)
+atexit.register(sockUDP.close)
 
 sockTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
 sockTCP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -84,8 +91,9 @@ def CallOut(callout, request, conf=None, timeout=5) :  #timeout NOT BEING USED
    # ensuree it is actually received.
 
    if conf is not None : txt = txt + "::" + str(conf)
-   print(txt)
-   sockUDP.sendto(txt.encode('utf-8'), ('<broadcast>', 5005)) #UDP_IP, PORT
+   #sockUDP.sendto(txt.encode('utf-8'), ('<broadcast>', 5005)) #UDP_IP, PORT
+   #sockUDP.sendto(txt.encode('utf-8'), ('10.42.0.255', 5005)) #UDP_IP, PORT
+   sockUDP.sendto(txt.encode('utf-8'), UDP ) #UDP_IP, PORT
 
    # Above did requests that broadcast only, like "setRC", so now just return for those.
    # Check in/out is just a broadcast to flash LEDs. Bookkeeping about in or out

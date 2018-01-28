@@ -137,6 +137,11 @@ if __name__ == '__main__':
    try:     GPSconfig = json.load(open('GPSconfig')) #Typically "127.0.0.1", 2947 is default port.
    except : GPSconfig = {}                           #This is a problem, but it can be set by broadcast.
 
+   print('hn: ' + hn)
+   print('btfl: ' + btfl)
+   print('sockUDP: ' + str(sockUDP))
+   print('BTconfig: '+ str(BTconfig))
+   print('CallOutRespond init finished.')
    ######## run ########
 
    while not shutdown:
@@ -149,11 +154,7 @@ if __name__ == '__main__':
        request = data[0]
        # in some cases there will be more sections in data
        
-       print(data)
-       print(called)
-       print(request)
-       print(str(btfl in called or hn in called ))
-       
+      
        if (btfl in called or hn in called ) : 
           # Gizmo specific, not 'all'
 
