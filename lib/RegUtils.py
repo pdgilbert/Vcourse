@@ -81,7 +81,13 @@ def setREG(t=None):
    # This is to all by UDP !!
    if t is not None: t.destroy()
 
-   REG = ("10.42.0.254", 9006) # Registration IP and port, should not be hard coded
+   #REG = ("10.42.0.254", 9006) # Registration IP and port, should not be hard coded
+   # This is also read in CallOut.py. It should probably only be done there, but
+   # that will require changes in CallOut handling of txt in broadcast.
+   path = './'
+   with open(path + 'REGconfig','r') as f: config =  json.load(f)
+   REG = (config['REG_HOST'], config['REG_PORT'])
+
    CallOut('all', 'setREG', conf=str(REG), timeout=20)
 
 

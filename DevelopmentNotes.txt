@@ -7,7 +7,7 @@
 
 -more Registration unit testing
 
--RC unit testing
+-more RC unit testing
 
 -utility to confirm/adjust BT's and Registration files to put them all in agreement.
 

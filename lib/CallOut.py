@@ -19,14 +19,17 @@ import socket
 import smp
 import logging
 import atexit
+import json
 
 sockUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #Internet, UDP
 sockUDP.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 sockUDP.settimeout(5)
 atexit.register(sockUDP.close)
 
-# could read this from file
-REG = ("10.42.0.254", 9006)
+#REG = ("10.42.0.254", 9006)
+path = './'
+with open(path + 'REGconfig','r') as f: config =  json.load(f)
+REG = (config['REG_HOST'], config['REG_PORT'])
 
 # could check it is actual IP address of host eg
 # REG[0] in os.popen("hostname -I").read().split()

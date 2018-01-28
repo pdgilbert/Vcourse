@@ -116,8 +116,11 @@ if __name__ == '__main__':
    LEDs.off('lights out')
    shutdown = False
    
-   REG = ("10.42.0.254", 9006) # Registration IP and port, should not be hard coded
-   
+   #REG = ("10.42.0.254", 9006) # Registration IP and port
+   path = './'
+   with open(path + 'REGconfig','r') as f: REGconfig =  json.load(f)
+   REG = (REGconfig['REG_HOST'], REGconfig['REG_PORT'])
+  
    sockUDP = socket.socket(socket.AF_INET,   socket.SOCK_DGRAM) # UDP
    sockUDP.bind(('', 5005))  #UDP_IP, PORT
    
@@ -202,7 +205,10 @@ if __name__ == '__main__':
           elif "setREG" in request :
              #This is using udp broadcast to reset address used for tcp.
              if 1 < len(data) : # in theory alway true, but otherwise bad broadcasts cause crash
-               REG = eval(data[1])
+               REG = eval(data[2])
+               print(str(data[1]))
+               print(str(data[2]))
+               print(str(REG))
                LEDs.ok('green Roger.')         
 
 

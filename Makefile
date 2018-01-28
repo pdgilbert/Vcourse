@@ -2,17 +2,20 @@
 
 #python3 -m unittest  test_RegUtils
 
-default: alltests
+default: test_Register test_RC
 
-alltests: gps  Register
+test_BT: test_gps
 
-Register: CallOut RegUtils
+test_RC: test_gps
+	python3 -m unittest  test_RC
 
-gps:
+test_Register: test_CallOut test_RegUtils
+
+test_gps:
 	python3 -m unittest  test_gps
 
-RegUtils:
+testRegUtils:
 	python3 -m unittest  test_RegUtils
 
-CallOut:
+test_CallOut:
 	python3 -m unittest  test_CallOut
