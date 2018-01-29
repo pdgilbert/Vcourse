@@ -144,6 +144,12 @@ A boat moving at 10 knots => 5.1 m/s.  Reading gps about 8 times/s => almost a
 -The Registration program will look for various configuration files (some json)
  in the Registration startup directory:
 
+    o A json file  REGconfig with the address and port of the registration computer.
+      The address for the Registration computer should be the wifi subnet that
+      gizmos can be reached on. (Most settings can be broadcast from the Registration
+      program to gizmos, but if the wrong subnet is indicated then broadasts will
+      not go to the gizmos.
+
     o A directory FLEETS/ with a subdirectories for each fleet. These directories 
       should each have a file BoatList.txt as described above for RC. These files
       should be created using pre-registration information if that exists.
@@ -220,10 +226,8 @@ See OSsetup.txt, Raspian.txt/Armbian.txt  for details on building gizmos.
 ##################### CallOutRespond User notes #########################
 
 -The CallOutRespond program reads and may re-write BT configuration files
- so it needs to run in the same directory as BT. It has a (hard coded)
- address for the Registration computer, but that can be reset by a broadcast
- from the Registration program. The broadcast should work as long as the BT
- and Registration computers are on the same network subnet.
- The CallOutRespond program itself has no configuration files (until I decide
- that Registration's address should not be hard coded, in which case there may
- be a REGconfig file).
+ so it needs to run in the same directory as BT. For its own configuration it
+ reads an address for the registration computer from the json file REGconfig, 
+ similar to that used by the Registration program. On the gizmos the address
+ can be reset by a broadcast from the Registration program as long as it is 
+ on the same subnet.

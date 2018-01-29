@@ -5,13 +5,18 @@
 ########## To Do notes  ##########
 -clean up  notes
 
+-broadcast of REG needs to re-write REGconfig file on gizmos. (possibly broadcast
+ of RC to as well?)
+
 -more Registration unit testing
 
 -more RC unit testing
 
+-BT unit testing?
+
 -utility to confirm/adjust BT's and Registration files to put them all in agreement.
 
--utility to gather all BT gizmo ids.
+-utility to gather all BT gizmo ids, and option to set then 'unassigned'.
 
 -check BT is robust against starting up with no fix (ie inside)
 
@@ -38,13 +43,11 @@
 
 ########## Registration program  ##########
 
--don't hard code REG IP and port.
+-need more unit testing.
 
--check if it works on Pi.
-
--need more extensive testing.
-
--need unit testing.
+-unit testing uses REGconfig so needs to run in a directory like that used 
+for the GUI, but it might be possible to avoid this (easily?). The testing
+does not use the dir, but sets up a /tmp/Vcourse dir to use.
 
 
 ########## Utlities  ##########
@@ -63,6 +66,15 @@
 
 -try R Pi Z with wifi dongle
 
+
+########## gizmo check out/in program - Registration ##########
+
+Registration reads REGconfig on startup. It needs the subnet to know where
+to broadcast to reach gizmos. The program can be used to (re)configure gizmos
+but some bulk setup mechanism would be good.
+
+It currently works on one subnet, which should be the same subnet as RC uses.
+This may be a problem if there are multiple RCs with different subnets.
 
 ########## Race Committee control program - RC ##########
 
