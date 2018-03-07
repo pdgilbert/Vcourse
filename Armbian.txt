@@ -288,4 +288,6 @@ Tried to remove Network Manager on Armbian xenial but it messed up:
   but it doe not seem to be needed (multi-user still starts)
 
 #########################################################################
+Re UART to USB  http://linux-sunxi.org/UART
 
+header pinout http://linux-sunxi.org/Xunlong_Orange_Pi_Zero_Plus

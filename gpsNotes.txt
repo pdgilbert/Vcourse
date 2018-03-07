@@ -29,38 +29,118 @@ On BT, if
 shows data then all is working correctly. Following instructions are for
 the case when there are problems.
 
-##################################################
-CLEANUP FOR CASE OF USB GPS vs SERIAL
+#################    USB GPS  ###########################
+USB GPS puck mostly just plugs in and works, but there can be gpsd problems,
+especially when unplugged and re-plugged
+
    usb     /dev/ttyACM0
-   serial  /dev/ttyAMA0
- ls -l /dev
+
+#####  test GPS is working  
+
+   cat /dev/ttyACM0  # usb
+   gpsmon  /dev/ttyACM0  # usb
+   gpsmon # tries to use gpsd first I think
+
+See gpsd notes below.
+
+#################   serial GPS #################################
+http://www.instructables.com/id/Raspberry-Pi-the-Neo-6M-GPS/   serial  
+
+ls -l   /dev/ttyAM*
+  serial   /dev/ttyAMA0
+
+ls -l  /dev/ser*
 lrwxrwxrwx 1 root root           7 Sep 21 02:17 serial1 -> ttyAMA0
     possibly serial0,  possibly-> ttyS0
 
-[ not sure
+ls -l   /dev/ttyS*
+
+Raspberry Pi uses the UART as a serial console, which needs to be turned off
+to use the UART for gps. As root on the Raspberry Pi:
+  cp /boot/cmdline.txt /boot/cmdline_backup.txt
+Edit cmdline.txt to remove the serial interface. Delete 
+   console=ttyAMA0,115200
+
+[This seems to be for Raspbian Wheezy only (pre systemd):
+Edit  /etc/inittab to comment out line for ttyAMA0 
+]
+
+(from https://learn.adafruit.com/adafruit-ultimate-gps-on-the-raspberry-pi/using-uart-instead-of-usb )
+
+Raspian Jessie on R Pi Zero  W
+Edit  /boot/config.txt  and add
+  enable_uart=1
+Also seem to need to use  /dev/ttyS0  in place of /dev/ttyAMA0
+
+[ not sure but I think some of this is needed ]
  /dev/ttyAMA0 is linked to the getty (console) service, so:
-$ sudo systemctl stop serial-getty@ttyAMA0.service
-$ sudo systemctl disable serial-getty@ttyAMA0.service
+    systemctl stop serial-getty@ttyAMA0.service
+    systemctl disable serial-getty@ttyAMA0.service
+
+    systemctl stop bluetooth
+    systemctl disable bluetooth
+    systemctl status bluetooth
 ]
 
-[ not sure  serial0  vs serial1 ??
-Remove the console from the cmdline.txt, edit  /boot/cmdline.txt and
-remove the: console=serial0,115200   ???  UNDO ???
-and reboot
-]
+reboot
 
-   sudo stty -F /dev/ttyAMA0 9600  # start serial port (not necessary ? )
-   sudo gpsd /dev/ttyAMA0 -F /var/run/gpsd.sock  # start deamon Pi 2
+  stty -F /dev/ttyAMA0 9600  # start serial port (not necessary ? )
+  gpsd /dev/ttyAMA0 -F /var/run/gpsd.sock  # start deamon Pi 2
+or
+  stty -F /dev/ttyS0 9600  # start serial port (not necessary ? )
+  gpsd /dev/ttyS0 -F /var/run/gpsd.sock  # start deamon Pi 2
+
+
+On some systems may need to check C /boot/config.txt FOR  dtoverlay=
+
+dmesg | tail -100
+dmesg | grep UART
 
 [    1.068316] 20201000.serial: ttyAMA0 at MMIO 0x20201000 (irq = 81, base_baud = 0) is a PL011 rev2
 
+[ 1.068522] 20201000.serial: ttyAMA0 at MMIO 0x20201000 (irq = 81, base_baud = 0) is a PL011 rev2
+[    1.068360] 20201000.serial: ttyAMA0 at MMIO 0x20201000 (irq = 81, base_baud = 0) is a PL011 rev2
 
-     gpsmon 
-     gpsmon  /dev/ttyAMA0
-     gpsmon  /dev/serial1 
+#####  test GPS is working  
 
-##################################################
+   cat /dev/ttyAMA0  # serial
+   cat /dev/ttyS0 # serial Jessie# (Working on R Pi Zero W, as root, not as bt)
 
+   gpsmon # tries to use gpsd first I think
+   gpsmon  /dev/ttyAMA0  # serial
+   gpsmon  /dev/ttyS0 # serial Jessie (Working on R Pi Zero W, as root, not as bt)
+
+   sudo gpsd -D 3  -S 2948  /dev/ttyS0  # as -N does not fork
+   gpsmon  127.0.0.1:2948  # works as bt, root not needed
+
+( -S 2948 is because port does not seem to be released. If gpsd comes up
+properly at boot then 
+   gpsmon 
+defaults to  tcp://localhost:2947 and works as bt, root not needed.
+After reboot this tested ok with serial NEO-M8N and /etc/default/gpsd set 
+   DEVICES="/dev/ttyS0"    #serial  
+)
+
+
+##### Arbian on Orange Pi Zero Plus  (allwinner  H5 chip)
+tested with both ublox  NEO-6M and NEO-M8N
+
+pinout  http://linux-sunxi.org/Xunlong_Orange_Pi_Zero_Plus
+  ( http://linux-sunxi.org/UART  #is UART0? not UART1)
+
+DT (Device Tree) overlays (use FEX files in place of DT prior to Arbian 3.10)
+ https://docs.armbian.com/User-Guide_Allwinner_overlays/
+ https://github.com/armbian/documentation/blob/master/docs/Hardware_Allwinner.md
+
+more /boot/dtb/allwinner/overlay/README.sun50i-h5-overlays
+
+To activate UART1 (on pins 8 and 10) edit  /boot/armbianEnv.txt and add
+  overlays= uart1  #to space separated list
+reboot, then gps data should be seen
+  cat /dev/ttyS1
+  gpsmon  /dev/ttyS1  # serial (Yes, working on O Pi Zero Plus, as bt not root )
+
+##################    gpsd    ########################
 
 
 Typically the boot process should start gpsd (when all works correctly)
@@ -70,7 +150,9 @@ or
 
 Howeever, it can be running but not working. I had to edit /etc/default/gpsd to
 
-DEVICES="/dev/ttyACM0"
+DEVICES="/dev/ttyACM0"     #usb  working I think
+DEVICES="/dev/ttyAMA0"  #serial
+DEVICES="/dev/ttyS0"    #serial  
 GPSD_OPTIONS="-n"
 
 Then
@@ -97,6 +179,7 @@ line gpsd start up for default port 2947 and gps usb
 plugged in on /dev/ttyACM0 is
    gpsd  /dev/ttyACM0   # possibly as root ??
 
+   gpsd  /dev/ttyS0   # possibly as root ??
 verify
   ps -elf | grep gps
 
@@ -115,7 +198,7 @@ shows data but
    gpsmon  localhost
    gpsmon  127.0.0.1:2947
 
-do not, then the problem is probably gpsd startup or hotplug
+do not, then the problem is probably gpsd startup or hotplug for usb
 
 (with X it shoud also be possible to run xgps or cgps and show data from gpsd.)
 
