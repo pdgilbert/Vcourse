@@ -42,10 +42,67 @@ it is important that BT is found on the PATH of the process running CallOutRespo
 
 ##################### Gcheckout User notes #########################
 
--The Gcheckout program is used to do the daily check out/in of gizmos. It cam be used
- to assign a gizmo to a boat (sail numer), move boats between fleets, and remove boats.
- It ...
--ADD MORE NOTES ABOUT TYPICAL Gcheckout STEPS.
+The Gcheckout program is used to do the daily check out/in of gizmos. It cam be used
+to assign a gizmo to a boat (sail numer), move gizmos (boats) between fleets, and  
+unassign gizmos (remove boats). It can do most of the configuration of gizmos, 
+including propogating the address of the Gcheckout program computer, as long as the 
+Gcheckout REGconfig file indicates the proper subnet for contacting the gizmos and the 
+gizmos are within wifi range.
+
+However, the more typical operation will not need most of these capabilities.  
+Typical most configuration of gizmos can be done in bulk using pre-registration information.
+If a gizmo is already properly configured for a boat then check out will consist of:
+
+ -select the fleet and Sail number; 'Call Out' the selection so that the LEDs flash on
+  the configured gizmo.
+  
+ -click 'Check Out Gizmo', note that the LED flashes, and give it to the sailor.
+
+
+Check in will consist of:
+
+ -select the fleet and Sail number.
+  
+ -take the gizmo from the sailor, click 'Check In Gizmo' and note that the LED flashes.
+
+If 'Call Out' successfully contacts a gizmo the the fields 'Gizmo ID' and 'Status' will be
+filled in on the GUI.
+
+The button 'fleet check out status' will display the in/out status of all gizmos in a 
+selected fleet.
+
+In the 'more' submenu are options to reconfigure a gizmo. All except adding a new boat
+will require that the existing fleet and sail number are first selected. Options are:
+
+ -change the fleet in which a boat is registered.
+
+ -change the sail number of a boat.
+ 
+ -add a new boat.
+ 
+ -remove a boat.
+
+In the 'more/extra' submenu are options which may be rarely used:
+
+ -'Propogate Gcheckout IP' broadcasts the IP address configuted for Gcheckout to all
+  gizmos on the subnet. This should only be needed if there is an incorrect initial 
+  setting in the gizmos. It will only work for gizmos within wifi range and on the
+  proper subnet.
+
+ -'Show fleets' RC settings' displays what the Gcheckout is configured to use as the
+  IP address and port of the RC boat. These are not used by Gcheckout except for the next. 
+
+ -'Propogate fleet's RC' broadcast the configuration to all gizmos in a selected fleet.
+  This will not work for gizmos outside wifi range (or turned off).
+
+ -The 'Call Out Gizmo:' will cause a selected gizmo to blink. This can be used to identify
+  a gizmo even when it is not configured for a fleet and sail number
+
+Below are some more detailed notes about the Gcheckout program. 
+
+-The Gcheckout program communicates with the CallOutRespond program on the gizmos, which
+ will normally start when they boot. All communications with a gizmo will fail if that 
+ program is not running.
 
 -The Gcheckout program can be configured for different regattas by using a different
  startup directory for each regatta. It looks for various configuration files (some json)

@@ -512,7 +512,7 @@ def extraWindow(w=None):
    t.wm_title("Extra Options")
 
    row = tkinter.Frame(t)
-   But(row,  text="Propogate\nRegist. IP",       command=(lambda : setREG(t)) )
+   But(row,  text="Propogate\nGcheckout IP",       command=(lambda : setREG(t)) )
    But(row,  text="Show fleets'\nRC settings",   command=(lambda : showRC(t)) )
    But(row,  text="Propogate\nfleet's RC",       command=(lambda : setAllRC(t)) )
 
@@ -547,7 +547,7 @@ def GcheckoutGUI(w):
    sailNumberChoice.bind("<<ComboboxSelected>>", (lambda event : changeBoat()))
    sailNumberChoice.pack(side=tkinter.LEFT)
 
-   But(row, text='Call Out\nBoat', command =
+   But(row, text='Call Out', command =
           (lambda : callForBoat(sailNumberChoice.get(), fleetChoice.get())))
 
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
