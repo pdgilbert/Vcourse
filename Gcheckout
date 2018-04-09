@@ -1,14 +1,14 @@
 #!/usr/bin/python3
 # License GPL 2. Copyright Paul D. Gilbert, 2018
 """
-Registration is run at the registration desk to find gizmo (by flashing LEDs), (re) load BTconfig, 
+Gcheckout is run at the registration desk to find gizmo (by flashing LEDs), (re) load BTconfig, 
 and distribute fleet info, etc. See the file NOTES.txt for general user documentation.
 
 This program needs a setting to find other modules, e.g.
    export PYTHONPATH=/path/to/Vcourse/lib
 
-Registration uses the same files and file structure as RC for FLEETS/*/BoatList.txt.
-Those files should be used by RC when registration is complete.
+Gcheckout uses the same files and file structure as RC for FLEETS/*/BoatList.txt.
+Those files should be used by RC when Gcheckout is complete.
 
 Internally in the program there is a comparable dict structure (there is boatLists and 
 checkedOut for each fleet). The dict fleets will have a sub-dict for each fleet with BoatList 
@@ -17,7 +17,7 @@ and checkedOut.
 This program manages some lists which have similarities to a database. However, beware that the
 main purpose is to manage the gizmos and most changes in settings will not be done unless the
 gizmo can be contacted. In a sense, the gizmos are considered the primary authority for 
-information, not the lists. Do not confuse this with regatta boat registration.
+information, not the lists. 
 
 One important list which is not kept on the gizmos is FLEETS/*/checkedOut.txt.
 """
@@ -47,7 +47,7 @@ if __name__ == '__main__':
    initiate()
    
    w = tkinter.Tk()
-   RegistrationGUI(w)
+   GcheckoutGUI(w)
 
    # ^C works if process is not deamonized with &
    signal.signal(signal.SIGINT,  abortHandler) # ^C, kill -2

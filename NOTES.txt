@@ -8,6 +8,12 @@
 
 ############################ Overview ############################
 
+The program Gcheckout runs on a computer at the regatta registration desk. 
+It handles the process of configuring gizmos, assigning them to boats,
+and checking them out and in (each day?). It also handles some related things like
+moving boats between fleets or removing them.  The Gcheckout program has a 
+graphical interface (GUI).
+
 RC refers to Race Committee. The program RC runs on a computer (laptop) on the race
 committee (signal) boat. This computer could also run a wifi hotspot for boats to connect,
 but here are better options for the wifi. The RC program has a graphical interface (GUI).
@@ -20,16 +26,12 @@ device is referred to as a gizmo. The gizmo has a hostname associated with
 it, typically BT-# with "#" replaced by a number. When configured it also has
 a boat identifier (sail number) associated with it.
 
-Registration refers to the process of configuring gizmos, assigning them to boats,
-and checking them out and in (each day?). The program Registration runs on a computer at 
-the regatta registration desk. It has a GUI.
-
-On the gizmo the program CallOutRespond runs to communicate with Registration and
+On the gizmo the program CallOutRespond runs to communicate with Gcheckout and
 make configuration changes for the BT program. This is a background process which
 causes the LEDs to blink for acknowledgement and gizmo identification, but has
 no other user interface.
 
-BT, RC, Registration and CallOutRespond programs need a path to the program lib:
+BT, RC, Gcheckout and CallOutRespond programs need a path to the program lib:
    export PYTHONPATH=/path/to/Vcourse/lib
 
 These programs need to be started in a directory where their configuration files (more 
@@ -37,6 +39,68 @@ below) are located. This typically is not the location of the executable program
 so the program directory needs to be on the PATH or the program needs to be referred to
 with a full pathname. Since CallOutRespond may change BT's config files and restart it,
 it is important that BT is found on the PATH of the process running CallOutRespond.
+
+##################### Gcheckout User notes #########################
+
+-The Gcheckout program is used to do the daily check out/in of gizmos. It cam be used
+ to assign a gizmo to a boat (sail numer), move boats between fleets, and remove boats.
+ It ...
+-ADD MORE NOTES ABOUT TYPICAL Gcheckout STEPS.
+
+-The Gcheckout program can be configured for different regattas by using a different
+ startup directory for each regatta. It looks for various configuration files (some json)
+ in the startup directory:
+
+    o A json file  REGconfig with the IP address and port of the computer run the 
+      Gcheckout program. The address for the Gcheckout computer should be the wifi
+      that gizmos can be reached on. (Most settings can be broadcast from the 
+      subnet Gcheckout program to gizmos, but if the wrong subnet is indicated then 
+      broadasts will not go to the gizmos.
+
+    o A directory FLEETS/ with a subdirectories for each fleet. These directories 
+      should each have a file BoatList.txt as described for the RC program. These files
+      should be created using pre-registration information if that exists.
+      The Gcheckout program will modify the files if new boats are added, 
+      sail numbers changed, or boats moved between fleets. 
+      Gcheckout uses the same file structure as RC for FLEETS/*/BoatList.txt. 
+      These files should be used by RC when Gcheckout is complete.
+
+    o The file unassignedGizmos.txt with one gizmo hostname per line. When no
+      gizmos are assigned this file will be identical to gizmoList.txt. Lines are
+      removed from it by the Gcheckout program when a new boat is registered, 
+      and added if a boat is removed. In a batch setup of pre-registered boats
+      this file will need to be generated.
+
+    o FleetListRC.json for the list of fleet names with associated RC IP and port
+      information for each fleet. This is a different structure from the RC file 
+      fleetList.txt, but it is important that the fleet names are the same in 
+      both files. THIS JSON FILE CURRENTLY NEEDS TO BE MANUALLY CREATED.
+
+    o The file gizmoList.txt with one gizmo hostname per line. This file will not
+      change unless hardware gizmos are added or removed.
+
+    o The Gcheckout program will record check out/in information in a file 
+      checkedOut.txt in each fleet directory. This is created and used 
+      internally by the program.
+      
+-Configuration of gizmos is done with this utility, but much might typically be
+done before the regatta begins using pre-registration information. 
+The Gcheckout program 
+  
+  o maintains a list of boats that have checked out/in their associated gizmo.
+  o maintains lists of boats registered in each fleet.
+  o configures gizmos with boat specific information ("FLEET" and "BT_ID" ).
+  o configures gizmos with RC information for the fleet("RC_PORT" and "RC_IP").
+  o configures gizmos with GPS hardware specific information for the gizmo.
+
+###### Gcheckout program Errors ###### 
+
+On start up:
+  ... OSError: [Errno 99] Cannot assign requested address
+
+  probably means the REGconfig file indicates an address which is not correct, eg,
+  "REG_HOST": "192.168.43.xxx" instead of "10.42.0.xxx"
+
 
 ############################ RC User notes ############################
 
@@ -137,56 +201,6 @@ A boat moving at 10 knots => 5.1 m/s.  Reading gps about 8 times/s => almost a
 -ADD MORE NOTES ABOUT SETTING AND DISTRIBUTING THE RACE ZONE INFO.
 
 
-##################### Registration User notes #########################
-
--ADD MORE NOTES ABOUT TYPICAL REGISTRATION STEPS.
-
--The Registration program will look for various configuration files (some json)
- in the Registration startup directory:
-
-    o A json file  REGconfig with the address and port of the registration computer.
-      The address for the Registration computer should be the wifi subnet that
-      gizmos can be reached on. (Most settings can be broadcast from the Registration
-      program to gizmos, but if the wrong subnet is indicated then broadasts will
-      not go to the gizmos.
-
-    o A directory FLEETS/ with a subdirectories for each fleet. These directories 
-      should each have a file BoatList.txt as described above for RC. These files
-      should be created using pre-registration information if that exists.
-      The Registration program will modify the files if new boats are added, 
-      sail numbers changed, or boats moved between fleets. 
-      Registration uses the same file structure as RC for FLEETS/*/BoatList.txt. 
-      These files should be used by RC when registration is complete.
-
-    o The file unassignedGizmos.txt with one gizmo hostname per line. When no
-      gizmos are assigned this file will be identical to gizmoList.txt. Lines are
-      removed from it by the Registration program when a new boat is registered, 
-      and added if a boat is removed. In a batch setup of pre-registered boats
-      this file will need to be generated.
-
-    o FleetListRC.json for the list of fleet names with associated RC IP and port
-      information for each fleet. This is a different structure from the RC file 
-      fleetList.txt, but it is important that the fleet names are the same in 
-      both files. THIS JSON FILE CURRENTLY NEEDS TO BE MANUALLY CREATED.
-
-    o The file gizmoList.txt with one gizmo hostname per line. This file will not
-      change unless hardware gizmos are added or removed.
-
-    o The Registration program will record check out/in information in a file 
-      checkedOut.txt in each fleet directory. This is created and used 
-      internally by the program.
-      
--Configuration of gizmos is done with this utility, but much might typically be
-done before registration begins, using pre-registration information. 
-The Registration program 
-  
-  o maintains a list of boats that have checked out/in their associated gizmo.
-  o maintains lists of boats registered in each fleet.
-  o configures gizmos with boat specific information ("FLEET" and "BT_ID" ).
-  o configures gizmos with RC information for the fleet("RC_PORT" and "RC_IP").
-  o configures gizmos with GPS hardware specific information for the gizmo.
-
-
 ############################ BT User notes ############################
 
 For the sailor, the BT (boat gizmo) should be completely automated. Power-up 
@@ -227,7 +241,7 @@ See OSsetup.txt, Raspian.txt/Armbian.txt  for details on building gizmos.
 
 -The CallOutRespond program reads and may re-write BT configuration files
  so it needs to run in the same directory as BT. For its own configuration it
- reads an address for the registration computer from the json file REGconfig, 
- similar to that used by the Registration program. On the gizmos the address
- can be reset by a broadcast from the Registration program as long as it is 
+ reads an address for the Gcheckout computer from the json file REGconfig, 
+ similar to that used by the Gcheckout program. On the gizmos the address
+ can be reset by a broadcast from the Gcheckout program as long as it is 
  on the same subnet.

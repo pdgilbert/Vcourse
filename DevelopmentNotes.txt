@@ -8,13 +8,17 @@
 -broadcast of REG needs to re-write REGconfig file on gizmos. (possibly broadcast
  of RC to as well?)
 
--more Registration unit testing
+
+-uti;ities to produce files for the Gcheckout program using the pre-registration
+ database.
+ 
+-more Gcheckout unit testing
 
 -more RC unit testing
 
 -BT unit testing?
 
--utility to confirm/adjust BT's and Registration files to put them all in agreement.
+-utility to confirm/adjust BT's and Gcheckout files to put them all in agreement.
 
 -utility to gather all BT gizmo ids, and option to set then 'unassigned'.
 
@@ -41,7 +45,7 @@
 -consider hardware and case alternatives
 
 
-########## Registration program  ##########
+########## Gcheckout program  ##########
 
 -need more unit testing.
 
@@ -67,9 +71,9 @@ does not use the dir, but sets up a /tmp/Vcourse dir to use.
 -try R Pi Z with wifi dongle
 
 
-########## gizmo check out/in program - Registration ##########
+########## gizmo check out/in program - Gcheckout ##########
 
-Registration reads REGconfig on startup. It needs the subnet to know where
+Gcheckout reads REGconfig on startup. It needs the subnet to know where
 to broadcast to reach gizmos. The program can be used to (re)configure gizmos
 but some bulk setup mechanism would be good.
 

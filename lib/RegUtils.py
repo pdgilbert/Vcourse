@@ -1,6 +1,6 @@
 # License GPL 2. Copyright Paul D. Gilbert, 2018
 """
-This is the main code for the Registration program.
+This is the main code for the Gcheckout program.
 """
 
 import tkinter
@@ -81,7 +81,7 @@ def setREG(t=None):
    # This is to all by UDP !!
    if t is not None: t.destroy()
 
-   #REG = ("10.42.0.254", 9006) # Registration IP and port, should not be hard coded
+   #REG = ("10.42.0.254", 9006) # Gcheckout IP and port, should not be hard coded
    # This is also read in CallOut.py. It should probably only be done there, but
    # that will require changes in CallOut handling of txt in broadcast.
    path = './'
@@ -106,7 +106,7 @@ def updateBoatHostMap(bt, hn):
    try : 
       with open('BoatHostMap.json', 'w') as f: json.dump(fleets['BoatHostMap'], f, indent=4)
    except :
-      logging.info("Registration failed to save BoatHostMap.json." )
+      logging.info("Gcheckout failed to save BoatHostMap.json." )
       logging.info("BoatHostMap:" )
       logging.info(fleets['BoatHostMap'])
 
@@ -525,14 +525,14 @@ def extraWindow(w=None):
    row.pack(side=tkinter.TOP, fill=tkinter.X, padx=5, pady=5)
    
 
-##################  Registration  Main  GUI     ################
+##################  Gcheckout  Main  GUI     ################
 
-def RegistrationGUI(w):
+def GcheckoutGUI(w):
    global fleetChoice, sailNumberChoice, gizmo, status
    #w = ttk.Style()
    #w.configure("BW.TLabel", foreground="black", background="white")
 
-   w.wm_title("Gizmo Registration")
+   w.wm_title("Gizmo check out / check in")
    
    row = tkinter.Frame(w)
    fleetChoice = ttk.Combobox(row,
@@ -578,7 +578,7 @@ def RegistrationGUI(w):
            'sailNumberChoice' : sailNumberChoice,
            'status' : status }
 
-###############  end  Registration  Main  GUI     ###############
+###############  end  Gcheckout  Main  GUI     ###############
 
 ##################  initiate from files    ################
 
