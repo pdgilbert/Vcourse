@@ -44,8 +44,8 @@ it is important that BT is found on the PATH of the process running CallOutRespo
 
 The Gcheckout program is used to do the daily check out/in of gizmos. It cam be used
 to assign a gizmo to a boat (sail numer), move gizmos (boats) between fleets, and  
-unassign gizmos (remove boats). It can do most of the configuration of gizmos, 
-including propogating the address of the Gcheckout program computer, as long as the 
+unassign gizmos (remove boats). It can do most of the configuration of gizmos 
+other than propogating the address of the Gcheckout program computer, as long as the 
 Gcheckout REGconfig file indicates the proper subnet for contacting the gizmos and the 
 gizmos are within wifi range.
 

@@ -153,6 +153,7 @@ Howeever, it can be running but not working. I had to edit /etc/default/gpsd to
 DEVICES="/dev/ttyACM0"     #usb  working I think
 DEVICES="/dev/ttyAMA0"  #serial
 DEVICES="/dev/ttyS0"    #serial  
+DEVICES="/dev/ttyS1"    #serial on O Pi Zero Plus (Yes, working as bt, root not needed)
 GPSD_OPTIONS="-n"
 
 Then

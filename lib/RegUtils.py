@@ -77,16 +77,20 @@ def setAllRC(t=None):
       logging.debug(rc)
       CallOut('all', 'setRC', conf=rc, timeout=20)
 
-def setREG(t=None): 
-   # This is to all by UDP !!
-   if t is not None: t.destroy()
+# In theory next might be possible but would always be unreliable. It would need to 
+# broadcast new IP to proper subnet. Currently only a request to respond is braodcast,
+# and the response from BT is to already configured IP, so fails.
 
-   #REG = ("10.42.0.254", 9006) # Gcheckout IP and port, should not be hard coded
-   # This is also read in CallOut.py. It should probably only be done there, but
-   # that will require changes in CallOut handling of txt in broadcast.
-   path = './'
-   with open(path + 'REGconfig','r') as f: config =  json.load(f)
-   #REG = (config['REG_HOST'], config['REG_PORT'])
+#def setREG(t=None): 
+#   # This is to all by UDP !!
+#   if t is not None: t.destroy()
+#
+#   #REG = ("10.42.0.254", 9006) # Gcheckout IP and port, should not be hard coded
+#   # This is also read in CallOut.py. It should probably only be done there, but
+#   # that will require changes in CallOut handling of txt in broadcast.
+#   path = './'
+#   with open(path + 'REGconfig','r') as f: config =  json.load(f)
+#   #REG = (config['REG_HOST'], config['REG_PORT'])
 
    CallOut('all', 'setREG', conf=config, timeout=20)
 
@@ -115,7 +119,7 @@ def newBoatSetup(bt, fl, hn, t=None):
    Set BTconfig on an unassigned gizmo  and update files.
    Note args bt, fl, and hn come from the new boat dialog, so they need to
    be set in main window.
-   This does "requetBTconfig" to a single boat, so BT calls back by tcp. 
+   This does "requestBTconfig" to a single boat, so BT calls back by tcp. 
    """
    global fleets, sailNumberChoice, fleetChoice, gizmo, unassignedGizmos
    if t is not None: t.destroy()
@@ -512,7 +516,7 @@ def extraWindow(w=None):
    t.wm_title("Extra Options")
 
    row = tkinter.Frame(t)
-   But(row,  text="Propogate\nGcheckout IP",       command=(lambda : setREG(t)) )
+   #But(row,  text="Propogate\nGcheckout IP",       command=(lambda : setREG(t)) )
    But(row,  text="Show fleets'\nRC settings",   command=(lambda : showRC(t)) )
    But(row,  text="Propogate\nfleet's RC",       command=(lambda : setAllRC(t)) )
 
