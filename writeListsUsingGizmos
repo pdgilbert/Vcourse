@@ -1,0 +1,108 @@
+#!/usr/bin/python3
+"""
+NB  export PYTHONPATH=/path/to/Vcourse/lib  is needed.
+
+The approach used is not delicate. Every machine on the subnet is contacted,
+since IP addresses of gizmos are unknown. They are assumed to be usable
+gizmos if a ssh login as bt without password (using key) is allowed.
+
+The gizmos are polled and their BTconfig file used to build BoatList.txt files 
+for each fleet.
+
+The following files are generated in the directory where this 
+program is executed, and any existing versions are over written:
+  - files FLEETS/*/BoatList.txt   list of boats in each fleet
+  - FleetListRC.json              fleets and RC address/port. 
+  - gizmoList.txt                 listing all gizmos found on the subnet
+  - unassignedGizmos.txt          listing unused gizmos on the subnet
+  - BoatHostMap.json 
+"""
+
+# License GPL 2. Copyright Paul D. Gilbert, 2018
+
+import os 
+import sys, subprocess
+import json 
+
+usage = 'usage: \n\
+   writeListsUsingGizmos  xxx.yyy.zzz. \n\
+where xxx.yyy.zzz. are the three first parts of the subnet dot quad address. \n\
+Note the trailing ".". Example: \n\
+   writeListsUsingGizmos  10.42.0. \n\
+'
+
+if 2 != len(sys.argv) :
+   print(usage)
+   raise RuntimeError('(only) subnet dot quad prefix should be supplied as argument.')
+ 
+subnet = sys.argv[1]
+
+addrs = list(range(2,254))
+
+#  subset for experimenting
+addrs = list(range(10,15))
+addrs.extend(list(range(60,65)))
+addrs.extend(list(range(160,175)))
+
+BoatLists = {} # dict with fleet as hash and boat list as value
+FleetListRC = {} 
+BoatHostMap = {}
+
+fleetList = []  #would be sorted(BoatLists.keys())  when complete
+gizmoList = [] 
+unassignedGizmos = []
+
+while True :
+   try    : ip = subnet + str(addrs.pop(0))
+   except : break 
+
+   z = os.system("ping  -c 1 -r -W 1 " + ip + " >/dev/null")
+
+   if z == 0 : 
+      zz = subprocess.run(["scp", '-B', '-q',  'bt@' + ip + ':BTconfig', 'TMP-BTconfig' ]).returncode       
+      with open('TMP-BTconfig', 'r') as f:  BTconfig = json.load(f)
+      fl = BTconfig["FLEET"] 
+      bt = BTconfig["BT_ID"] 
+      #print(str(BTconfig))
+      #print('fl "'+fl+'"')
+
+      if zz == 0 : 
+         zzz = subprocess.run(["scp", '-B', '-q', 'bt@' + ip + ':/etc/hostname', 'TMP-hn.txt']).returncode 
+         if zzz != 0 : 
+            print('warning: no hostname returnecd from' + ip )
+            break
+         with open('TMP-hn.txt','r') as f: hn =  f.read().splitlines()[0]
+         gizmoList.append(hn)
+         #print(str(gizmoList))
+         if fl == '' :
+            unassignedGizmos.append(hn)
+         else :
+            BoatHostMap.update({hn : bt})
+            if  fl not in fleetList :
+               fleetList.append(fl)
+               rc = {k:v for k,v in BTconfig.items() if k in ['RC_IP', 'RC_PORT']}
+               FleetListRC.update({fl: rc})
+               BoatLists.update( {fl: [bt]}) 
+            else :
+               print(str(BoatLists))
+               BoatLists[fl].append( bt)
+               # could catch conflicting RC info here
+
+for fl in fleetList:
+   if not os.path.exists('FLEETS/' + fl):  os.makedirs('FLEETS/'+ fl)
+   with open('FLEETS/'+fl+'/BoatList.txt', 'w') as f: 
+      for g in BoatLists[fl] : f.write(str(g) + "\n")
+   
+with open('FleetListRC.json', 'w')    as f:  json.dump(FleetListRC, f)
+with open('BoatHostMap.json', 'w')    as f:  json.dump(BoatHostMap, f)
+with open("gizmoList.txt","w")        as f:
+   for g in gizmoList        : f.write(str(g) + "\n")
+
+with open("unassignedGizmos.txt","w") as f:
+   for g in unassignedGizmos : f.write(str(g) + "\n")
+
+try:
+   os.remove('TMP-BTconfig')
+   os.remove('TMP-hn.txt')
+except:
+   print('cleanup failed. Possibly some TMP files remain.')
