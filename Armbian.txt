@@ -45,7 +45,9 @@ sha256sum -c sha256sum.sha # checks files as listed in file sha256sum.sha
 Following needs mostly to be as root.
 
 1/  Burn the image to microSD card. 
+     [umount /dev/sdc1 ]
      dd  bs=4M if=Armbianxxx.img of=/dev/sdc
+     sync
   ( root / 1234 )
  (used if=Armbian_5.34_Orangepizero_Ubuntu_xenial_next_4.13.8.img for O Pi Zero)
  (used if= 

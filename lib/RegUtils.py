@@ -91,8 +91,8 @@ def setAllRC(t=None):
 #   path = './'
 #   with open(path + 'REGconfig','r') as f: config =  json.load(f)
 #   #REG = (config['REG_HOST'], config['REG_PORT'])
-
-   CallOut('all', 'setREG', conf=config, timeout=20)
+#
+#   CallOut('all', 'setREG', conf=config, timeout=20)
 
 
 def updateBoatHostMap(bt, hn):
@@ -335,7 +335,7 @@ def checkIn():
       return None
 
    if bt not in checkedOut(fl):
-      tkWarning("%s was not checkedOut in fleet %s" % (bt,fl))
+      tkWarning("%s not checked Out in fleet %s" % (bt,fl))
    fleets[fl]['checkedOut'].remove(bt)
 
    CallOut(gizmo.get(), "checkin")
@@ -375,7 +375,7 @@ def showBoatList(w=None):
    else : 
       for f in sorted(BtLst) :
          if f  in  chO : out = ' out '
-         else          : out = '     '
+         else          : out = ' in  '
          gz = str([h for h,b in BHMap.items() if b == f])
          ROW(t, text='%s   %s      %s' % (f, out, gz), pad=2)
 

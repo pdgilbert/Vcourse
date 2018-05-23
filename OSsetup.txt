@@ -24,7 +24,15 @@ longer needed. See nmcli notes in  Arbian.txt or wpa_sipplicant in Raspian.txt.
    OS reference  misc quick notes 
 #######################################################################
     
-cat /sys/class/thermal/thermal_zone0/temp
+cat /sys/class/thermal/thermal_zone0/temp # in 1000 * deg C.
+or on Arbian
+cat /etc/armbianmonitor/datasources/soctemp
+or
+cat /sys/devices/virtual/thermal/thermal_zone0/temp
+or
+sudo armbianmonitor -r
+sudo armbianmonitor -m
+
 
 ping6 -I wlan0 fe80::a673:a21e:265c:b223
 

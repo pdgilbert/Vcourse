@@ -82,6 +82,13 @@ This may be a problem if there are multiple RCs with different subnets.
 
 ########## Race Committee control program - RC ##########
 
+#####
+To run RC on a Pi need
+  apt-get install  job-lib
+  apt-get install  xauth  # for X forwarding to remote
+  
+#####
+
 RC startup tries to connect to gpsd. No auto RC position is available
 if it does not (lat=90, lon=0 is reported if gpsd is not connected.) So
 

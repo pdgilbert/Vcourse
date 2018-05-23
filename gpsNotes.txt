@@ -140,6 +140,16 @@ reboot, then gps data should be seen
   cat /dev/ttyS1
   gpsmon  /dev/ttyS1  # serial (Yes, working on O Pi Zero Plus, as bt not root )
 
+##### Arbian on Orange Pi Lite  (allwinner  H3 chip)
+NOT WORKING 
+tested with ublox  NEO-6M 
+more /boot/dtb/overlay/README.sun8i-h3-overlays
+To activate UART1 (on pins 8 and 10) edit  /boot/armbianEnv.txt and add
+  overlays=uart1  #to space separated list
+reboot, then gps data should be seen
+BUT IT IS NOT 
+  cat /dev/ttyS1
+
 ##################    gpsd    ########################
 
 

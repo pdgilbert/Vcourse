@@ -84,13 +84,10 @@ will require that the existing fleet and sail number are first selected. Options
 
 In the 'more/extra' submenu are options which may be rarely used:
 
- -'Propogate Gcheckout IP' broadcasts the IP address configuted for Gcheckout to all
-  gizmos on the subnet. This should only be needed if there is an incorrect initial 
-  setting in the gizmos. It will only work for gizmos within wifi range and on the
-  proper subnet.
-
  -'Show fleets' RC settings' displays what the Gcheckout is configured to use as the
-  IP address and port of the RC boat. These are not used by Gcheckout except for the next. 
+  IP address and port of the RC boat. These are set in the file FleetListRC.json which
+  must be manually edited and is read when Gcheckout is started. The RC settings are 
+  not used by Gcheckout except for the next. 
 
  -'Propogate fleet's RC' broadcast the configuration to all gizmos in a selected fleet.
   This will not work for gizmos outside wifi range (or turned off).
