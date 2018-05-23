@@ -20,7 +20,7 @@ def makeSTL(part, body = "Box") :
    #Gui.getDocument("LEDMainBox").getObject(body).Visibility=False
    #Gui.getDocument("LEDMainBox").getObject(body + " (Meshed)").Visibility=True
 
-   Mesh.export([mesh], "/home/paul/CAD/BT/BT-" + part + ".stl")
+   Mesh.export([mesh], "./BT-" + part + ".stl")
    return None
 
 #######################################
@@ -72,9 +72,9 @@ prongs_top =    ((   3,       25), (      3,    width/2), (      3,    width - 2
 prongWidth = 6.0
 prongThickness =  1.5  #2.0
 prongBump = 1.5
-prongCatchDepth = 10.0 # from top of box, not through back to cover
+prongCatchDepth = height - 5.0 #10.0 # from top of box, not through back to cover
 
-prongSlotDepth  = 20.0
+prongSlotDepth  = height  #20.0
 prongSlotLength = 10.0
 prongSlotWidth  = 3.8  # 2 + 1.5 + clearance
 
@@ -498,8 +498,9 @@ CoverRemove.Shape = inside.fuse(holes)
 
 cover=doc.addObject("Part::Cut","CoverWithHoles")
 cover.Base = outside
-#cover.Tool = CoverRemove
-cover.Tool = inside.fuse(holes)
+# not sure why next two have opposite effect on what is left.
+cover.Tool = CoverRemove
+#cover.Tool = inside.fuse(holes)
 
 # fillet inside edges to hold solar panel
 edges=[]
