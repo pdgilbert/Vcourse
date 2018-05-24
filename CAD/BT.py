@@ -48,29 +48,27 @@ originCover = FreeCAD.Vector(0, 300, 0)  # over solar panel
 dr = FreeCAD.Vector(0,0,1)
 
 # Outside dimensions
-length = 165 # top to bottom
-width  = 106 # side to side
+length = 161 # top to bottom
+width  = 102 # side to side
 height = 55  # front to back of box, not including cover and back
 
-wall = 15.0
+wall = 13.0
+backwall = 10.0
 coverThickness = 3.0
 backThickness  = 3.0
 
 # prongs
 # reference locations (center, outside edge of slot holes)
-# on X-Y plane these are 3mm from outside edges
+# on X-Y plane these are 2mm from outside edges
 # These will be displaced by origin.
-#  edges
-#  x = 30, 80 130 = 30, length/2, length-30
-#  y = 3, 104 = 3, width-3
 
 # left  and right as in axiometric view. If back and cover are folded over onto
 # the box with LEDs at bottom. left on box will be port and right on prongs
 # will be port.
-prongs_left = ((20, 3),         (50, 3),         (80, 3),         (110, 3),         (140, 3))
-prongs_right =  ((20, width - 3), (50, width - 3), (80, width - 3), (110, width - 3), (140, width - 3))
-prongs_bottom = ((length - 3, 25), (length - 3, width/2), (length - 3, width - 25) )
-prongs_top =    ((   3,       25), (      3,    width/2), (      3,    width - 25) )
+prongs_left =   ((20.5, 2),         (60.5, 2),         (100.5, 2),         (141.5, 2))
+prongs_right =  ((20.5, width - 2), (60.5, width - 2), (100.5, width - 2), (141.5, width - 2))
+prongs_bottom = ((length - 2, 20), (length - 2, width/2), (length - 2, width - 20) )
+prongs_top =    ((   2,       20), (      2,    width/2), (      2,    width - 20) )
 
 prongWidth = 6.0
 prongThickness =  1.5  #2.0
@@ -79,10 +77,10 @@ prongCutoutDepth = 5.0 # cutout for catch
 prongCatchDepth = height - prongCutoutDepth # from top of box, not through back to cover
 
 prongSlotDepth  = height  #20.0
-prongSlotLength = 10.0
+prongSlotLength = prongWidth + 4.0 # lots of clearance
 prongSlotWidth  = 3.8  # 2 + 1.5 + clearance
 
-glandTongue = 2    # depth into gland, width neds clearance
+glandTongue = 2    # depth into gland, width needs clearance
 glandWidth  = 3.6  # 20% larger than 3.0 seal dia.
 glandDepth  = 4.4  # glandTongue + 75% of 3.0 seal dia.
 
@@ -128,8 +126,8 @@ outside.Height = height
 inside = Part.makeBox(          
    length - 2 * wall,
    width  - 2 * wall,
-   height -  wall,
-   originBox + FreeCAD.Vector(wall, wall, wall),
+   height -  backwall,
+   originBox + FreeCAD.Vector(wall, wall, backwall),
    FreeCAD.Vector(0,0,1) ) 
 
 #Part.show(inside)
