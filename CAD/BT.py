@@ -64,15 +64,19 @@ backThickness  = 3.0
 #  x = 30, 80 130 = 30, length/2, length-30
 #  y = 3, 104 = 3, width-3
 
-prongs_starb = ((20, 3),         (50, 3),         (80, 3),         (110, 3),         (140, 3))
-prongs_port =  ((20, width - 3), (50, width - 3), (80, width - 3), (110, width - 3), (140, width - 3))
+# left  and right as in axiometric view. If back and cover are folded over onto
+# the box with LEDs at bottom. left on box will be port and right on prongs
+# will be port.
+prongs_left = ((20, 3),         (50, 3),         (80, 3),         (110, 3),         (140, 3))
+prongs_right =  ((20, width - 3), (50, width - 3), (80, width - 3), (110, width - 3), (140, width - 3))
 prongs_bottom = ((length - 3, 25), (length - 3, width/2), (length - 3, width - 25) )
 prongs_top =    ((   3,       25), (      3,    width/2), (      3,    width - 25) )
 
 prongWidth = 6.0
 prongThickness =  1.5  #2.0
 prongBump = 1.5
-prongCatchDepth = height - 5.0 #10.0 # from top of box, not through back to cover
+prongCutoutDepth = 5.0 # cutout for catch
+prongCatchDepth = height - prongCutoutDepth # from top of box, not through back to cover
 
 prongSlotDepth  = height  #20.0
 prongSlotLength = 10.0
@@ -137,8 +141,7 @@ holes = []  # these will be fused to inside
 w = prongSlotLength / 2
 h = height - prongSlotDepth
 
-pin_dr = FreeCAD.Vector(0,1,0)
-for pos in prongs_starb :
+for pos in prongs_left :
    p = originBox + FreeCAD.Vector(pos[0] -w,  pos[1],  h)
 
    # slot
@@ -147,13 +150,10 @@ for pos in prongs_starb :
 
    #catch cutout
    holes.append(Part.makeBox( prongSlotLength, prongSlotWidth + 2, 
-            prongCatchDepth, p + FreeCAD.Vector(0, -2, 0), dr ) )
+            prongCutoutDepth, p, dr ) )
 
-   #release pin hole
-   pin_p = originBox + FreeCAD.Vector(pos[0],  0,  height - prongCatchDepth - 1.0)
-   holes.append(Part.makeCylinder( 1.5/2, 3,  pin_p,  pin_dr, 360 ) )
 
-for pos in prongs_port :
+for pos in prongs_right :
    p = originBox + FreeCAD.Vector(pos[0] -w,  pos[1] - prongSlotWidth,  h)
 
    # slot
@@ -162,13 +162,9 @@ for pos in prongs_port :
 
    #catch cutout
    holes.append(Part.makeBox( prongSlotLength, prongSlotWidth + 2, 
-               prongCatchDepth, p, dr ) )
+               prongCutoutDepth, p + FreeCAD.Vector(0, -2, 0), dr ) )
 
-   #release pin hole
-   pin_p = originBox + FreeCAD.Vector(pos[0],  pos[1],  height - prongCatchDepth - 1.0)
-   holes.append(Part.makeCylinder( 1.5/2, 3,  pin_p,  pin_dr, 360 ) )
 
-pin_dr = FreeCAD.Vector(1,0,0)
 for pos in prongs_bottom :
    p = originBox + FreeCAD.Vector(pos[0] - prongSlotWidth,  pos[1] - w,  h)
 
@@ -177,11 +173,8 @@ for pos in prongs_bottom :
 
    #catch cutout
    holes.append(Part.makeBox( prongSlotWidth + 2, prongSlotLength, 
-               prongCatchDepth, p, dr ) )
+               prongCutoutDepth, p + FreeCAD.Vector(-2, 0, 0), dr ) )
 
-   #release pin hole
-   pin_p = originBox + FreeCAD.Vector(pos[0],  pos[1],  height - prongCatchDepth - 1.0)
-   holes.append(Part.makeCylinder( 1.5/2, 3,  pin_p,  pin_dr, 360 ) )
 
 for pos in prongs_top :
    p = originBox + FreeCAD.Vector(pos[0],  pos[1] - w,  h)
@@ -191,11 +184,8 @@ for pos in prongs_top :
 
    #catch cutout
    holes.append(Part.makeBox( prongSlotWidth + 2, prongSlotLength, 
-               prongCatchDepth, p + FreeCAD.Vector(-2, 0, 0), dr ) )
+               prongCutoutDepth, p, dr ) )
 
-   #release pin hole
-   pin_p = originBox + FreeCAD.Vector(0,  pos[1],  height - prongCatchDepth - 1.0)
-   holes.append(Part.makeCylinder( 1.5/2, 3,  pin_p,  pin_dr, 360 ) )
 
 # Gland
 # inside is 3mm from inside wall edge, outside is glandWidth more.
@@ -345,13 +335,13 @@ holes = []
 
 w = prongSlotLength / 2
 
-for pos in prongs_starb :
+for pos in prongs_left :
    p = originBack + FreeCAD.Vector(pos[0] -w,  pos[1],  0)
 
    holes.append(Part.makeBox( prongSlotLength, prongSlotWidth,
                 backThickness, p, dr ) )
 
-for pos in prongs_port :
+for pos in prongs_right :
    p = originBack + FreeCAD.Vector(pos[0] -w,  pos[1] - prongSlotWidth, 0)
 
    holes.append(Part.makeBox( prongSlotLength, prongSlotWidth, 
@@ -531,7 +521,7 @@ h = backThickness + prongCatchDepth + 0.2
 
 prongLength = h + 2 * prongBump
 
-for pos in prongs_starb :
+for pos in prongs_left :
    p = originCover + FreeCAD.Vector(pos[0] -w,  pos[1],  coverThickness)
 
    prongs.append(
@@ -539,24 +529,24 @@ for pos in prongs_starb :
 
    #catch 
    z = Part.makeBox( prongWidth,   prongBump,        2 * prongBump, 
-            p + FreeCAD.Vector(0, -prongBump, h), dr )
+            p + FreeCAD.Vector(0, prongThickness, h), dr )
 
    # fillet edges to get catch taper
    edges=[]
 
    # both edge ends at prong ends and
-   # both edge ends at outside (not at inside)
+   # both edge ends at inside (not at outside)
    for e in z.Edges :
       if (e.Vertexes[0].Point[2] == coverThickness + prongLength) and \
          (e.Vertexes[1].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[0].Point[1] != p[1]    ) and \
-         (e.Vertexes[1].Point[1] != p[1]    ): edges.append(e)
+         (e.Vertexes[0].Point[1] == p[1] + prongThickness + prongBump ) and \
+         (e.Vertexes[1].Point[1] == p[1] + prongThickness + prongBump ): edges.append(e)
 
    z = z.makeChamfer(prongBump - 0.2, edges) 
 
    prongs.append(z)
 
-for pos in prongs_port :
+for pos in prongs_right :
    p = originCover + FreeCAD.Vector(pos[0] -w,  pos[1] - prongThickness, coverThickness)
 
    prongs.append(
@@ -564,14 +554,14 @@ for pos in prongs_port :
 
    #catch
    z = Part.makeBox( prongWidth,   prongBump,        2 * prongBump,
-            p + FreeCAD.Vector(0, prongThickness, h), dr )
+            p + FreeCAD.Vector(0, -prongBump, h), dr )
 
    edges=[]
    for e in z.Edges :
       if (e.Vertexes[0].Point[2] == coverThickness + prongLength) and \
          (e.Vertexes[1].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[0].Point[1] != p[1] + prongThickness    ) and \
-         (e.Vertexes[1].Point[1] != p[1] + prongThickness    ): edges.append(e)
+         (e.Vertexes[0].Point[1] == p[1]  - prongBump    ) and \
+         (e.Vertexes[1].Point[1] == p[1]  - prongBump    ): edges.append(e)
 
    z = z.makeChamfer(prongBump - 0.2, edges) 
 
@@ -585,14 +575,14 @@ for pos in prongs_bottom :
 
    #catch
    z = Part.makeBox(  prongBump,     prongWidth,      2 * prongBump,
-            p + FreeCAD.Vector(prongThickness, 0, h), dr )
+            p + FreeCAD.Vector( - prongBump, 0, h), dr )
 
    edges=[]
    for e in z.Edges :
       if (e.Vertexes[0].Point[2] == coverThickness + prongLength) and \
          (e.Vertexes[1].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[0].Point[0] != p[0] + prongThickness   ) and \
-         (e.Vertexes[1].Point[0] != p[0] + prongThickness   ): edges.append(e)
+         (e.Vertexes[0].Point[0] == p[0] - prongBump   ) and \
+         (e.Vertexes[1].Point[0] == p[0] - prongBump   ): edges.append(e)
 
    z = z.makeChamfer(prongBump - 0.2, edges) 
 
@@ -606,14 +596,14 @@ for pos in prongs_top :
 
    #catch
    z = Part.makeBox(  prongBump,     prongWidth,     2 * prongBump, 
-                p + FreeCAD.Vector(-prongBump, 0, h), dr )
+                p + FreeCAD.Vector(prongThickness, 0, h), dr )
 
    edges=[]
    for e in z.Edges :
       if (e.Vertexes[0].Point[2] == coverThickness + prongLength) and \
          (e.Vertexes[1].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[0].Point[0] != p[0]    ) and \
-         (e.Vertexes[1].Point[0] != p[0]    ): edges.append(e)
+         (e.Vertexes[0].Point[0] == p[0] + prongThickness + prongBump  ) and \
+         (e.Vertexes[1].Point[0] == p[0] + prongThickness + prongBump  ): edges.append(e)
 
    z = z.makeChamfer(prongBump - 0.2, edges) 
 
