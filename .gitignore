@@ -5,3 +5,5 @@ zot*
 RCtest/
 boat*/
 GcheckoutTest/
+CAD/*.stl
+CAD/*.gcode
