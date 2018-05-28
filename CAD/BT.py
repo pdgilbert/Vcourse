@@ -1,3 +1,10 @@
+# Copyright 2018 Paul Gilbert
+#CC BY-SA 4.0
+
+#This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. 
+#To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a 
+#letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
 #import FreeCAD, FreeCADGui
 import Part, PartDesignGui
 import Mesh, MeshPart, MeshPartGui
@@ -92,11 +99,17 @@ LEDholeDepth = 4.0    #should not go alll the wy through cover and back
 LEDwireSlotWidth   = 3.6
 LEDwireSlotLength  = LEDholeDia - 0.2
 
+strapSlotWidth  = 25.0
+strapSlotHeight = 5.0
+strapSlotPos    = (28, 108.5)
+
 #######################################
 ################ MainBox ################
 #######################################
 
 doc.Tip = doc.addObject('App::Part','MainBox')
+#  is the same as
+#App.activeDocument().Tip = App.ActiveDocument.addObject('App::Part','MainBox')
 #  is the same as
 # App.activeDocument().Tip = App.activeDocument().addObject('App::Part','MainBox')
 
@@ -184,6 +197,36 @@ for pos in prongs_top :
    holes.append(Part.makeBox( prongSlotWidth + 2, prongSlotLength, 
                prongCutoutDepth, p, dr ) )
 
+
+# slots for straps through back edges
+# 50mm is long enough to go all the way through
+# starting 10mm out is enough ensure removed rectangle does not start inside the wall.
+# starting 23mm from edge is enough to leave edge and not to pierce inside.
+# slot positioning point is below slot on the left and above slot on the right.
+# 23 on left is about 18+strapSlotHeight (angled) on the right
+
+for pos in strapSlotPos :
+   # left slots: remove rectangles positioned on the side and extending downward at 45° 
+   z = Part.makeBox(strapSlotWidth, 50, strapSlotHeight)
+   z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, -10, 23), 
+                              FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), -45))   # -45° about X) 
+   holes.append(z ) 
+
+   # right slots: remove rectangles positioned on the bottom and extending upward at 45°
+   z = Part.makeBox(strapSlotWidth, 50, strapSlotHeight)
+   z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, width-18-strapSlotHeight, -10), 
+                              FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), 45))   # 45° about X) 
+   holes.append(z ) 
+
+
+# slot for extra attachment line (saftey)
+# bottom edge: remove 5x5 rectangle positioned on the bottom and extending upward at 45°
+
+pos = 35 # cannot be center because of prong hole
+z = Part.makeBox(50, 5, 5)
+z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( length-5-15, pos,  -10), 
+                           FreeCAD.Rotation(FreeCAD.Vector(0, 1, 0), -45))   # -45° about Y) 
+holes.append(z ) 
 
 # Gland
 # inside is 3mm from inside wall edge, outside is glandWidth more.
@@ -437,12 +480,18 @@ outside.Height = coverThickness
 
 #makeBox ( length,width,height,[pnt,dir] )
 
-holeLength = 110 - 4    # solar panel is 110 x 69
-holeWidth  =  69 - 4
+holeLength = 110   # solar panel is 110 x 69
+holeWidth  =  69   # chamfer will be used to reduce outside edge of hole
 
 # an option here would be to do this with something like
 # solarHole = doc.addObject("Part::Cut","SolarHole") 
 # but other holes need to be removed too.
+
+#solarHole =  doc.addObject("Part::Box","SolarHole")          
+#solarHole.Placement.Base = originCover + FreeCAD.Vector(20, (width - holeWidth)/2, 0)
+#solarHole.Length = holeLength
+#solarHole.Width  = holeWidth
+#solarHole.Height = coverThickness
 
 solarHole = Part.makeBox(          
    holeLength,
@@ -452,6 +501,18 @@ solarHole = Part.makeBox(
    dr ) 
 
 doc.recompute() 
+
+# fillet outside edges of part being removed to hold solar panel
+edges=[]
+
+# both edge ends at coverThickness
+# edge ends all at zero height 
+for e in solarHole.Edges :
+   if (e.Vertexes[0].Point[2] == 0.0 ) and \
+      (e.Vertexes[1].Point[2] == 0.0 ) : edges.append(e)
+
+solarHole = solarHole.makeChamfer(2.5, edges)
+
 
 #Part.show(outside)
 #Part.show(solarHole)
@@ -479,8 +540,6 @@ holes.append(
 #Gui.activeDocument().resetEdit()
 #Gui.SendMsgToActiveView("ViewFit")
 
-# REATTEMPT HERE SO CHAMFER CAN BE CUT
-
 CoverRemove = doc.addObject("Part::Feature","CoverRemove")
 CoverRemove.Shape = inside.fuse(holes)
 
@@ -490,16 +549,6 @@ cover.Base = outside
 cover.Tool = CoverRemove
 #cover.Tool = inside.fuse(holes)
 
-# fillet inside edges to hold solar panel
-edges=[]
-
-# both edge ends at coverThickness
-# edge ends not at outside 
-for e in solarHole.Edges :
-   if (e.Vertexes[0].Point[2] == coverThickness ) and \
-      (e.Vertexes[1].Point[2] == coverThickness ) : edges.append(e)
-
-xcover = doc.CoverWithHoles.makeChamfer(2.0, edges) 
 
 doc.SolarCover.addObject(doc.CoverWithHoles) #mv CoverWithHoles (body) into part SolarCover
 
@@ -617,9 +666,9 @@ for pos in prongs_top :
 
 CoverAdd = doc.addObject("Part::Feature","Prongs")
 CoverAdd.Shape = prongs[0].fuse(prongs)
+#CoverAdd = doc.addObject("Part::Feature","Prongs").Shape = prongs[0].fuse(prongs)
 
-doc.addObject("Part::MultiFuse","CoverFusion")
-doc.CoverFusion.Shapes = [doc.CoverWithHoles, doc.Prongs,]
+doc.addObject("Part::MultiFuse","CoverFusion").Shapes = [doc.CoverWithHoles, doc.Prongs,]
 
 doc.SolarCover.addObject(doc.CoverFusion) #mv Fusion into part SolarCover
 
