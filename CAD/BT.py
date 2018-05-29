@@ -234,10 +234,22 @@ for pos in strapSlotPos :
                               FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), -45))   # -45° about X) 
    holes.append(z ) 
 
+   # flatten 45° edge at slot side opening
+   z = Part.makeBox(strapSlotWidth, 5, strapSlotHeight)
+   z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, 0, 9),
+                              FreeCAD.Rotation(dr, 0)) 
+   holes.append(z ) 
+
    # right slots: remove rectangles positioned on the bottom and extending upward at 45°
    z = Part.makeBox(strapSlotWidth, 50, strapSlotHeight)
    z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, width-18-strapSlotHeight, -10), 
                               FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), 45))   # 45° about X) 
+   holes.append(z ) 
+
+   # flatten 45° edge at slot side opening
+   z = Part.makeBox(strapSlotWidth, 5, strapSlotHeight)
+   z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, width-5, 9),
+                              FreeCAD.Rotation(dr, 0)) 
    holes.append(z ) 
 
 
