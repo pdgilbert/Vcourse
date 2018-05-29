@@ -127,14 +127,36 @@ Gui.activeView().setActiveObject('part', App.activeDocument().MainBox)
 Gui.Selection.clearSelection()
 Gui.Selection.addSelection(App.ActiveDocument.MainBox)
 
-outside = doc.addObject("Part::Box","Outside") 
-outside.Placement.Base = originBox 
-outside.Length = length
-outside.Width  = width
-outside.Height = height
-#outside.Label = 'Outside'
+# Fillet all edges that touch zero height, so corners and bottom edges
+edges=[]
 
-#makeBox ( length,width,height,[pnt,dir] )
+# next works and does Fillet but then the Fillet is lost on recompute ??
+#outside = doc.addObject("Part::Box","Outside") 
+#outside.Placement.Base = originBox 
+#outside.Length = length
+#outside.Width  = width
+#outside.Height = height
+##outside.Label = 'Outside'
+#for e in outside.Shape.Edges :
+#   for p in e.Vertexes : 
+#      if p.Point[2] == 0 : edges.append(e)
+#edges = list(set(edges)) # unique elements
+# outside.Shape = outside.Shape.makeFillet(6, edges) 
+#doc.recompute() 
+
+
+out = Part.makeBox ( length,width,height)  #,[pnt,dir] )
+
+for e in out.Edges :
+   for p in e.Vertexes : 
+      if p.Point[2] == 0 : edges.append(e)
+
+edges = list(set(edges)) # unique elements
+
+outside = doc.addObject("Part::Feature","Outside")
+outside.Shape = out.makeFillet(6, edges)
+
+doc.recompute() 
 
 inside = Part.makeBox(          
    length - 2 * wall,
@@ -280,18 +302,6 @@ remove.Shape = inside.fuse(holes)
 box=doc.addObject("Part::Cut","Box")
 box.Base = outside
 box.Tool = remove
-
-# NEXT IS NOT WORKING
-# fillet all edges that touch zero height, so corners and bottom edges
-edges=[]
-
-for e in box.Edges :
-   for p in e.Vertexes : 
-      if p.Point[2] == 0 : edges.append(e)
-
-edges = list(set(edges)) # unique elements
-outside = outside.makeFillet(1.5, edges) # radius = seal  dia/2 =3/2 
-
 
 doc.MainBox.addObject(doc.Box) #mv Box (body) into part MainBox
 
