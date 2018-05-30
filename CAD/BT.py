@@ -478,6 +478,26 @@ doc.SolarBack.addObject(doc.Back) #mv Back (body) into part SolarBack
 
 doc.recompute() 
 
+# fillet holes to accommodate fillet on prongs
+edges=[]
+for e in doc.Back.Shape.Edges :
+   for p in e.Vertexes : 
+       p0 =  p.Point[0] - originBack[0]
+       p1 =  p.Point[1] - originBack[1]
+       if p.Point[2] == 0.0 :
+          if       0.5      < p1  <     10.0      : edges.append(e)  # left
+          if  width  - 10.0 < p1  < width  - 0.5  : edges.append(e)  # right
+          if  length - 10.0 < p0  < length - 0.5  : edges.append(e)  # bottom
+          if       0.5      < p0  <     10.0      : edges.append(e)  # top
+
+edges = list(set(edges)) # unique elements
+
+BackFinished = doc.addObject("Part::Feature","BackFinished")
+BackFinished.Shape = doc.Back.Shape.makeFillet(0.5, edges)
+doc.SolarBack.addObject(doc.BackFinished) #mv BackFinished (body) into part SolarBack
+
+doc.recompute() 
+
 Gui.activeDocument().resetEdit()
 Gui.SendMsgToActiveView("ViewFit")
 Gui.activeDocument().activeView().viewAxonometric()
@@ -485,7 +505,7 @@ Gui.activeDocument().activeView().viewAxonometric()
 FreeCAD.Console.PrintMessage('SolarBack object construction complete.\n')
 
 
-makeSTL("SolarBack", "Back")
+makeSTL("SolarBack", "BackFinished")
 
 #######################################
 ################ Cover ################
@@ -696,6 +716,39 @@ doc.SolarCover.addObject(doc.CoverFusion) #mv Fusion into part SolarCover
 
 doc.recompute() 
 
+# chanfer cover outside edges
+# edges=[]
+# for e in doc.CoverFusion.Shape.Edges :
+#    for p in e.Vertexes : 
+#       if p.Point[2] == 0 and p.Point[0] == originCover[0]  : edges.append(e)
+# 
+# edges = list(set(edges)) # unique elements
+# 
+# z = doc.CoverFusion.Shape.makeChamfer(3.0, edges) 
+
+doc.recompute() 
+
+# fillet prong connection to cover
+edges=[]
+for e in doc.CoverFusion.Shape.Edges :
+   for p in e.Vertexes : 
+       p0 =  p.Point[0] - originCover[0]
+       p1 =  p.Point[1] - originCover[1]
+       if p.Point[2] == coverThickness :
+          if       0.5      < p1  <     10.0      : edges.append(e)  # left
+          if  width  - 10.0 < p1  < width  - 0.5  : edges.append(e)  # right
+          if  length - 10.0 < p0  < length - 0.5  : edges.append(e)  # bottom
+          if       0.5      < p0  <     10.0      : edges.append(e)  # top
+
+edges = list(set(edges)) # unique elements
+
+coverFinished = doc.addObject("Part::Feature","CoverFinished")
+coverFinished.Shape = doc.CoverFusion.Shape.makeFillet(0.5, edges)
+
+doc.SolarCover.addObject(doc.CoverFinished) #mv Finished into part SolarCover
+
+doc.recompute() 
+
 Gui.activeDocument().resetEdit()
 Gui.SendMsgToActiveView("ViewFit")
 Gui.activeDocument().activeView().viewAxonometric()
@@ -703,4 +756,4 @@ Gui.activeDocument().activeView().viewAxonometric()
 FreeCAD.Console.PrintMessage('SolarCover object construction complete.\n')
 
 
-makeSTL("SolarCover", "CoverFusion")
+makeSTL("SolarCover", "CoverFinished")
