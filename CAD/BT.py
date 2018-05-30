@@ -716,15 +716,20 @@ doc.SolarCover.addObject(doc.CoverFusion) #mv Fusion into part SolarCover
 
 doc.recompute() 
 
-# chanfer cover outside edges
-# edges=[]
-# for e in doc.CoverFusion.Shape.Edges :
-#    for p in e.Vertexes : 
-#       if p.Point[2] == 0 and p.Point[0] == originCover[0]  : edges.append(e)
-# 
-# edges = list(set(edges)) # unique elements
-# 
+# Fillet cover outside edges
+edges=[]
+for e in doc.CoverFusion.Shape.Edges :
+   for p in e.Vertexes : 
+      if p.Point[2] == 0 :
+         if p.Point[0] == originCover[0]          : edges.append(e)
+         if p.Point[0] == originCover[0] + length : edges.append(e)
+
+edges = list(set(edges)) # unique elements
+
 # z = doc.CoverFusion.Shape.makeChamfer(3.0, edges) 
+coverFinished = doc.addObject("Part::Feature","CoverFinished")
+coverFinished.Shape = doc.CoverFusion.Shape.makeFillet(2.5, edges)
+doc.SolarCover.addObject(doc.CoverFinished) #mv Finished into part SolarCover
 
 doc.recompute() 
 
