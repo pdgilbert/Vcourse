@@ -131,13 +131,13 @@ Gui.Selection.addSelection(App.ActiveDocument.MainBox)
 edges=[]
 
 # next works and does Fillet but then the Fillet is lost on recompute ??
-#outside = doc.addObject("Part::Box","Outside") 
-#outside.Placement.Base = originBox 
-#outside.Length = length
-#outside.Width  = width
-#outside.Height = height
-##outside.Label = 'Outside'
-#for e in outside.Shape.Edges :
+#box_outside = doc.addObject("Part::Box","Outside") 
+#box_outside.Placement.Base = originBox 
+#box_outside.Length = length
+#box_outside.Width  = width
+#box_outside.Height = height
+##box_outside.Label = 'Outside'
+#for e in box_outside.Shape.Edges :
 #   for p in e.Vertexes : 
 #      if p.Point[2] == 0 : edges.append(e)
 #edges = list(set(edges)) # unique elements
@@ -145,16 +145,22 @@ edges=[]
 #doc.recompute() 
 
 
-out = Part.makeBox ( length,width,height)  #,[pnt,dir] )
+box_out = Part.makeBox ( length,width,height)  #,[pnt,dir] )
 
-for e in out.Edges :
-   for p in e.Vertexes : 
-      if p.Point[2] == 0 : edges.append(e)
+#  round back edges (bottom outside of box)
+for e in box_out.Edges :
+   if e.Vertexes[0].Point[2] == 0 and e.Vertexes[1].Point[2] == 0 : edges.append(e)
+
+#  round corners
+for e in box_out.Edges :
+   if e.Vertexes[0].Point[2] == 0 and e.Vertexes[1].Point[2] == height : edges.append(e)
+   if e.Vertexes[1].Point[2] == 0 and e.Vertexes[0].Point[2] == height : edges.append(e)
 
 edges = list(set(edges)) # unique elements
 
-outside = doc.addObject("Part::Feature","Outside")
-outside.Shape = out.makeFillet(6, edges)
+box_outside = doc.addObject("Part::Feature","Outside")
+box_outside.Placement.Base = originBox 
+box_outside.Shape = box_out.makeFillet(6, edges)
 
 doc.recompute() 
 
@@ -308,11 +314,11 @@ remove.Shape = inside.fuse(holes)
 
 
 # or something like 
-# MainBox = outside.cut(remove)
+# MainBox = box_outside.cut(remove)
 # see https://www.freecadweb.org/wiki/Topological_data_scripting
 
 box=doc.addObject("Part::Cut","Box")
-box.Base = outside
+box.Base = box_outside
 box.Tool = remove
 
 doc.MainBox.addObject(doc.Box) #mv Box (body) into part MainBox
@@ -336,14 +342,23 @@ makeSTL("MainBox", "Box")
 
 doc.Tip = doc.addObject('App::Part','SolarBack')
 
-outside = doc.addObject("Part::Box","BackOutside") 
-outside.Placement.Base = originBack 
-outside.Length = length
-outside.Width  = width
-outside.Height = backThickness
-#outside.Label = 'Outside'
+back_out = Part.makeBox ( length,width,backThickness)  #,[pnt,dir] )
 
-#makeBox ( length,width,height,[pnt,dir] )
+#  round corners
+edges = []
+for e in back_out.Edges :
+   if e.Vertexes[0].Point[2] == 0 and e.Vertexes[1].Point[2] == backThickness : edges.append(e)
+   if e.Vertexes[1].Point[2] == 0 and e.Vertexes[0].Point[2] == backThickness : edges.append(e)
+
+edges = list(set(edges)) # unique elements
+
+doc.recompute() 
+
+back_outside = doc.addObject("Part::Feature","BackOutside")
+back_outside.Shape = back_out.makeFillet(6, edges)
+back_outside.Placement.Base = originBack # sensitive to Placement after Shape!
+
+doc.recompute() 
 
 # add Gland
 # groove inside is 3mm from inside wall edge, outside is glandWidth more.
@@ -369,7 +384,7 @@ glandBack = gland_outside.cut(gland_inside)
 #Part.show(inside)
 
 # fillet all gland corners (verticle edges so x and y coordinates of 
-#    end points are equal
+#    end points are equal)
 
 edges=[]
 
@@ -379,6 +394,7 @@ for e in glandBack.Edges :
 
 glandBack = glandBack.makeFillet(1.5, edges) # radius = seal  dia/2 =3/2 
 
+doc.recompute() 
 
 #add = [glandBack ]  no need, glandBack is only addition
 
@@ -513,11 +529,29 @@ makeSTL("SolarBack", "BackFinished")
 
 doc.Tip = doc.addObject('App::Part','SolarCover')
 
-outside = doc.addObject("Part::Box","CoverOutside") 
-outside.Placement.Base = originCover 
-outside.Length = length
-outside.Width  = width
-outside.Height = coverThickness
+cover_out = Part.makeBox ( length,width,backThickness)  #,[pnt,dir] )
+
+#  round corners
+edges = []
+for e in cover_out.Edges :
+   if e.Vertexes[0].Point[2] == 0 and e.Vertexes[1].Point[2] == coverThickness : edges.append(e)
+   if e.Vertexes[1].Point[2] == 0 and e.Vertexes[0].Point[2] == coverThickness : edges.append(e)
+
+edges = list(set(edges)) # unique elements
+
+doc.recompute() 
+
+cover_outside = doc.addObject("Part::Feature","CoverOutside")
+cover_outside.Shape = cover_out.makeFillet(6, edges)
+cover_outside.Placement.Base = originCover # sensitive to Placement after Shape!
+
+doc.recompute() 
+
+#outside = doc.addObject("Part::Box","CoverOutside") 
+#outside.Placement.Base = originCover 
+#outside.Length = length
+#outside.Width  = width
+#outside.Height = coverThickness
 
 
 #makeBox ( length,width,height,[pnt,dir] )
@@ -529,12 +563,6 @@ holeWidth  =  69   # chamfer will be used to reduce outside edge of hole
 # solarHole = doc.addObject("Part::Cut","SolarHole") 
 # but other holes need to be removed too.
 
-#solarHole =  doc.addObject("Part::Box","SolarHole")          
-#solarHole.Placement.Base = originCover + FreeCAD.Vector(20, (width - holeWidth)/2, 0)
-#solarHole.Length = holeLength
-#solarHole.Width  = holeWidth
-#solarHole.Height = coverThickness
-
 solarHole = Part.makeBox(          
    holeLength,
    holeWidth,
@@ -545,10 +573,9 @@ solarHole = Part.makeBox(
 doc.recompute() 
 
 # fillet outside edges of part being removed to hold solar panel
-edges=[]
-
 # both edge ends at coverThickness
 # edge ends all at zero height 
+edges=[]
 for e in solarHole.Edges :
    if (e.Vertexes[0].Point[2] == 0.0 ) and \
       (e.Vertexes[1].Point[2] == 0.0 ) : edges.append(e)
@@ -586,7 +613,7 @@ CoverRemove = doc.addObject("Part::Feature","CoverRemove")
 CoverRemove.Shape = inside.fuse(holes)
 
 cover=doc.addObject("Part::Cut","CoverWithHoles")
-cover.Base = outside
+cover.Base = cover_outside
 # not sure why next two have opposite effect on what is left.
 cover.Tool = CoverRemove
 #cover.Tool = inside.fuse(holes)
@@ -716,23 +743,6 @@ doc.SolarCover.addObject(doc.CoverFusion) #mv Fusion into part SolarCover
 
 doc.recompute() 
 
-# Fillet cover outside edges
-edges=[]
-for e in doc.CoverFusion.Shape.Edges :
-   for p in e.Vertexes : 
-      if p.Point[2] == 0 :
-         if p.Point[0] == originCover[0]          : edges.append(e)
-         if p.Point[0] == originCover[0] + length : edges.append(e)
-
-edges = list(set(edges)) # unique elements
-
-# z = doc.CoverFusion.Shape.makeChamfer(3.0, edges) 
-coverFinished = doc.addObject("Part::Feature","CoverFinished")
-coverFinished.Shape = doc.CoverFusion.Shape.makeFillet(2.5, edges)
-doc.SolarCover.addObject(doc.CoverFinished) #mv Finished into part SolarCover
-
-doc.recompute() 
-
 # fillet prong connection to cover
 edges=[]
 for e in doc.CoverFusion.Shape.Edges :
@@ -747,9 +757,26 @@ for e in doc.CoverFusion.Shape.Edges :
 
 edges = list(set(edges)) # unique elements
 
-coverFinished = doc.addObject("Part::Feature","CoverFinished")
-coverFinished.Shape = doc.CoverFusion.Shape.makeFillet(0.5, edges)
+coverPreFinished = doc.addObject("Part::Feature","CoverPreFinished")
+coverPreFinished.Shape = doc.CoverFusion.Shape.makeFillet(0.5, edges)
 
+doc.SolarCover.addObject(doc.CoverPreFinished) #mv PreFinished into part SolarCover
+
+doc.recompute() 
+
+# Fillet cover outside edges
+edges=[]
+for e in doc.CoverPreFinished.Shape.Edges :
+   for p in e.Vertexes : 
+      if p.Point[2] == 0 :
+         if p.Point[0] == originCover[0]          : edges.append(e)
+         if p.Point[0] == originCover[0] + length : edges.append(e)
+
+edges = list(set(edges)) # unique elements
+
+# z = doc.CoverCoverPreFinished.Shape.makeChamfer(3.0, edges) 
+coverFinished = doc.addObject("Part::Feature","CoverFinished")
+coverFinished.Shape = doc.CoverPreFinished.Shape.makeFillet(2.5, edges)
 doc.SolarCover.addObject(doc.CoverFinished) #mv Finished into part SolarCover
 
 doc.recompute() 
