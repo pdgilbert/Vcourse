@@ -91,9 +91,10 @@ glandTongue = 2    # depth into gland, width needs clearance
 glandWidth  = 3.6  # 20% larger than 3.0 seal dia.
 glandDepth  = 4.4  # glandTongue + 75% of 3.0 seal dia.
 
-#  LEDs
-LEDcenter = FreeCAD.Vector( length - 20, width/2, 0)
-LEDspacing =FreeCAD.Vector(0, 8, 0)
+#  LEDs  vertical at top
+LEDcenters = (FreeCAD.Vector( 16, width/2, 0),
+              FreeCAD.Vector( 24, width/2, 0),
+              FreeCAD.Vector( 32, width/2, 0))
 LEDholeDia   = 5.2
 LEDholeDepth = 4.0    #should not go alll the wy through cover and back
 LEDwireSlotWidth   = 3.6
@@ -444,35 +445,35 @@ for pos in prongs_top :
 
 # position
 h =  coverThickness + backThickness - LEDholeDepth
-p = originBack + LEDcenter + FreeCAD.Vector(0, 0, h)    # main box
+p = originBack + FreeCAD.Vector(0, 0, h)   
 
 
 # these holes need to be slightly bigger than in cover as the LED base needs to
 # go into them, but cover can go on after base is already in.
 holes.append( 
-  Part.makeCylinder( (LEDholeDia + 1.0) / 2, backThickness,  p,  dr, 360 ) ) #LED center
+  Part.makeCylinder( (LEDholeDia + 1.0) / 2, backThickness,  
+                      p + LEDcenters[0],  dr, 360 ) ) #LED 1
 
 holes.append( 
-  Part.makeCylinder( (LEDholeDia + 1.0) / 2, backThickness,  p -
-                                LEDspacing, dr, 360 ) ) #LED left
+  Part.makeCylinder( (LEDholeDia + 1.0) / 2, backThickness,  
+                      p + LEDcenters[1], dr, 360 ) ) #LED 2
 
 holes.append( 
-  Part.makeCylinder( (LEDholeDia + 1.0) / 2, backThickness,  p +
-                                LEDspacing, dr, 360 ) ) #LED right
+  Part.makeCylinder( (LEDholeDia + 1.0) / 2, backThickness, 
+                      p + LEDcenters[2], dr, 360 ) ) #LED 3
 
 #  wire slots
 
-p = originBack + LEDcenter - \
-           FreeCAD.Vector(LEDwireSlotWidth/2, LEDwireSlotLength/2, 0)
+p = originBack -  FreeCAD.Vector(LEDwireSlotWidth/2, LEDwireSlotLength/2, 0)
 
-holes.append(Part.makeBox( LEDwireSlotWidth, LEDwireSlotLength, 
-               backThickness, p, dr ) )#LED center
+holes.append(Part.makeBox( LEDwireSlotWidth, LEDwireSlotLength, backThickness, 
+               p + LEDcenters[0], dr ) )#LED 1
 
-holes.append(Part.makeBox( LEDwireSlotWidth, LEDwireSlotLength, 
-               backThickness, p + LEDspacing, dr ) )#LED left
+holes.append(Part.makeBox( LEDwireSlotWidth, LEDwireSlotLength, backThickness, 
+               p + LEDcenters[1], dr ) )#LED 2
 
-holes.append(Part.makeBox( LEDwireSlotWidth, LEDwireSlotLength, 
-               backThickness, p - LEDspacing, dr ) )#LED right
+holes.append(Part.makeBox( LEDwireSlotWidth, LEDwireSlotLength, backThickness, 
+               p + LEDcenters[2], dr ) )#LED right3
 
 #Gui.activeDocument().resetEdit()
 #Gui.SendMsgToActiveView("ViewFit")
@@ -547,27 +548,15 @@ cover_outside.Placement.Base = originCover # sensitive to Placement after Shape!
 
 doc.recompute() 
 
-#outside = doc.addObject("Part::Box","CoverOutside") 
-#outside.Placement.Base = originCover 
-#outside.Length = length
-#outside.Width  = width
-#outside.Height = coverThickness
-
-
-#makeBox ( length,width,height,[pnt,dir] )
-
 holeLength = 110   # solar panel is 110 x 69
 holeWidth  =  69   # chamfer will be used to reduce outside edge of hole
 
-# an option here would be to do this with something like
-# solarHole = doc.addObject("Part::Cut","SolarHole") 
-# but other holes need to be removed too.
 
 solarHole = Part.makeBox(          
    holeLength,
    holeWidth,
    coverThickness,
-   originCover + FreeCAD.Vector(20, (width - holeWidth)/2, 0),
+   originCover + FreeCAD.Vector(35, (width - holeWidth)/2, 0), # 
    dr ) 
 
 doc.recompute() 
@@ -592,19 +581,20 @@ holes = [solarHole ]
 #makeCylinder ( radius,height,[pnt,dir,angle] )
 
 # position
-p = originCover + LEDcenter
+p = originCover
 
 
 holes.append( 
-  Part.makeCylinder( LEDholeDia / 2, coverThickness,  p,  dr, 360 ) ) #LED center
+  Part.makeCylinder( LEDholeDia / 2, coverThickness,  
+                   p + LEDcenters[0],  dr, 360 ) ) #LED 1
 
 holes.append( 
-  Part.makeCylinder( LEDholeDia / 2, coverThickness,  p -
-                                LEDspacing, dr, 360 ) ) #LED left
+  Part.makeCylinder( LEDholeDia / 2, coverThickness,  
+                   p + LEDcenters[1],  dr, 360 ) ) #LED 2
 
 holes.append( 
-  Part.makeCylinder( LEDholeDia / 2, coverThickness,  p +
-                                LEDspacing, dr, 360 ) ) #LED right
+  Part.makeCylinder( LEDholeDia / 2, coverThickness, 
+                   p + LEDcenters[2],  dr, 360 ) ) #LED 3
 
 #Gui.activeDocument().resetEdit()
 #Gui.SendMsgToActiveView("ViewFit")
