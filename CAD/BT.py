@@ -397,13 +397,24 @@ glandBack = glandBack.makeFillet(1.5, edges) # radius = seal  dia/2 =3/2
 
 doc.recompute() 
 
-#add = [glandBack ]  no need, glandBack is only addition
+add = [glandBack ]  
 
-plus = doc.addObject("Part::Feature","Gland")
-plus.Shape = glandBack   # glandBack.fuse(add) glandBack is the only addition
+# add wall for GPS. top right beside LEDs
+gps_wall_vert = Part.makeBox( 15, 2, 25, 
+               originBack + FreeCAD.Vector(wall, 3 + width/2, backThickness), dr )
+
+add.append(gps_wall_vert)
+
+gps_wall_horiz = Part.makeBox( 2, 30, 25, 
+               originBack + FreeCAD.Vector(wall + 15, 3 + width/2, backThickness), dr )
+
+add.append(gps_wall_horiz)
+
+plus = doc.addObject("Part::Feature","Plus")
+plus.Shape = add[0].fuse(add) # or glandBack.fuse(add)  
 
 doc.addObject("Part::MultiFuse","Fusion")
-doc.Fusion.Shapes = [doc.BackOutside, doc.Gland,]
+doc.Fusion.Shapes = [doc.BackOutside, doc.Plus,]
 
 doc.SolarBack.addObject(doc.Fusion) #mv Fusion into part SolarBack
 
@@ -444,23 +455,20 @@ for pos in prongs_top :
 #makeCylinder ( radius,height,[pnt,dir,angle] )
 
 # position
-h =  coverThickness + backThickness - LEDholeDepth
-p = originBack + FreeCAD.Vector(0, 0, h)   
+h =  LEDholeDepth - coverThickness #should not go all the way through
+p = originBack   
 
 
 # these holes need to be slightly bigger than in cover as the LED base needs to
 # go into them, but cover can go on after base is already in.
 holes.append( 
-  Part.makeCylinder( (LEDholeDia + 1.0) / 2, backThickness,  
-                      p + LEDcenters[0],  dr, 360 ) ) #LED 1
+  Part.makeCylinder( (LEDholeDia + 1.0) / 2, h, p + LEDcenters[0], dr, 360 ) ) #LED 1
 
 holes.append( 
-  Part.makeCylinder( (LEDholeDia + 1.0) / 2, backThickness,  
-                      p + LEDcenters[1], dr, 360 ) ) #LED 2
+  Part.makeCylinder( (LEDholeDia + 1.0) / 2, h, p + LEDcenters[1], dr, 360 ) ) #LED 2
 
 holes.append( 
-  Part.makeCylinder( (LEDholeDia + 1.0) / 2, backThickness, 
-                      p + LEDcenters[2], dr, 360 ) ) #LED 3
+  Part.makeCylinder( (LEDholeDia + 1.0) / 2, h, p + LEDcenters[2], dr, 360 ) ) #LED 3
 
 #  wire slots
 
