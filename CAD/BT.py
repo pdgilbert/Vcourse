@@ -406,37 +406,10 @@ doc.addObject("Part::Feature","GPSh").Shape =  Part.makeBox(
      2, 30, 25, originBack + FreeCAD.Vector(wall + 15, 3 + width/2, backThickness),dr)
 
 
-#  Fuse the body objects 
-#  note that edges at fused joint cannot be selected, at least not in GUI view
-
-doc.addObject("Part::MultiFuse","Fusion")
-# next causes view to disappear until doc.recompute() 
-#in model view this adds  BT>Fusion with [..] bodies but only seen after doc.recompute() 
-doc.Fusion.Shapes = [doc.BackOutside, doc.Gland, doc.GPSv, doc.GPSh,] 
-
-doc.SolarBack.addObject(doc.Fusion) #mv Fusion into part SolarBack
-doc.recompute() 
-
-#  Above fuse can also be done by the following but view does not appear until fusion and
-#  only Plus is indicated in the model tree view, so understanding and debugging are harder.
-#  However, for writing functions this might be preferred, since in the above the part name
-# becomes an object atribute, and ."Fusion". syntax doe not work.
-# add = [glandBack ]  
-# gps_wall_vert = Part.makeBox( 15, 2, 25, 
-#               originBack + FreeCAD.Vector(wall, 3 + width/2, backThickness), dr )
-# add.append(gps_wall_vert)
-# add.append(gps_wall_horiz)
-# plus = doc.addObject("Part::Feature","Plus")
-# plus.Shape = add[0].fuse(add) # or glandBack.fuse(add)  
-# doc.addObject("Part::MultiFuse","Fusion")
-# doc.Fusion.Shapes = [doc.BackOutside, doc.Plus,] 
-# doc.recompute() 
-
-
 # add stud pins for boards
 
 def makePin(num, x, y, bsRad, hdRad, part, p = originBack + FreeCAD.Vector(0,  0,  backThickness)) :
-   base = doc.addObject("Part::Cylinder", "PinsBase"+num)
+   base = doc.addObject("Part::Cylinder", "PinBase"+num)
    # Note that Shape and Placement from Part.makeCylinder get lost on recompute() so this
    #   base.Shape =  Part.makeCylinder(3.0/2, 4.0)  # looses values and returns to defaults
    # and
@@ -447,7 +420,7 @@ def makePin(num, x, y, bsRad, hdRad, part, p = originBack + FreeCAD.Vector(0,  0
    base.Height = 4.0
    base.Placement = FreeCAD.Placement(p + FreeCAD.Vector(wall+x,  y,   0 ), dr, 360 )
    
-   head = doc.addObject("Part::Cylinder", "PinsHead"+num)
+   head = doc.addObject("Part::Cylinder", "PinHead"+num)
    head.Radius =  hdRad
    head.Height = 5.0
    head.Placement = FreeCAD.Placement(p + FreeCAD.Vector(wall+x,  y,  4.0), dr, 360 )
@@ -477,14 +450,44 @@ makePin("8", 78, 80, 5.0/2, 1.8/2, "SolarBack")
 
 # power O Pi zero plus board  pins 42x40
 
-makePin("5", 55, 31, 5.0/2, 1.8/2, "SolarBack") 
-makePin("6", 55, 71, 5.0/2, 1.8/2, "SolarBack") 
-makePin("7", 100, 31, 5.0/2, 1.8/2, "SolarBack") 
-makePin("8", 100, 71, 5.0/2, 1.8/2, "SolarBack") 
+makePin("9",   55, 31, 5.0/2, 1.8/2, "SolarBack") 
+makePin("10",  55, 71, 5.0/2, 1.8/2, "SolarBack") 
+makePin("11", 100, 31, 5.0/2, 1.8/2, "SolarBack") 
+makePin("12", 100, 71, 5.0/2, 1.8/2, "SolarBack") 
 
-#doc.addObject("Part::MultiFuse","Pins")
-#doc.Pins.Shapes = [doc.PinsBase1, doc.PinsHead1, doc.PinsBase2, doc.PinsHead2, 
-                   doc.PinsBase3, doc.PinsHead3, doc.PinsBase4, doc.PinsHead4, ] 
+
+#  Fuse the body objects 
+#  note that edges at fused joint cannot be selected, at least not in GUI view
+
+doc.addObject("Part::MultiFuse","Fusion")
+# next causes view to disappear until doc.recompute() 
+#in model view this adds  BT>Fusion with [..] bodies but only seen after doc.recompute() 
+doc.Fusion.Shapes = [doc.BackOutside, doc.Gland, doc.GPSv, doc.GPSh,
+    doc.PinBase1,  doc.PinHead1,  doc.PinBase2,  doc.PinHead2, 
+    doc.PinBase3,  doc.PinHead3,  doc.PinBase4,  doc.PinHead4,
+    doc.PinBase5,  doc.PinHead5,  doc.PinBase6,  doc.PinHead6, 
+    doc.PinBase7,  doc.PinHead7,  doc.PinBase8,  doc.PinHead8,
+    doc.PinBase9,  doc.PinHead9,  doc.PinBase10, doc.PinHead10, 
+    doc.PinBase11, doc.PinHead11, doc.PinBase12, doc.PinHead12, ]
+
+doc.SolarBack.addObject(doc.Fusion) #mv Fusion into part SolarBack
+doc.recompute() 
+
+#  Above fuse can also be done by the following but view does not appear until fusion and
+#  only Plus is indicated in the model tree view, so understanding and debugging are harder.
+#  However, for writing functions this might be preferred, since in the above the part name
+# becomes an object atribute, and ."Fusion". syntax doe not work.
+# add = [glandBack ]  
+# gps_wall_vert = Part.makeBox( 15, 2, 25, 
+#               originBack + FreeCAD.Vector(wall, 3 + width/2, backThickness), dr )
+# add.append(gps_wall_vert)
+# add.append(gps_wall_horiz)
+# plus = doc.addObject("Part::Feature","Plus")
+# plus.Shape = add[0].fuse(add) # or glandBack.fuse(add)  
+# doc.addObject("Part::MultiFuse","Fusion")
+# doc.Fusion.Shapes = [doc.BackOutside, doc.Plus,] 
+# doc.recompute() 
+
 
 holes = []
 
