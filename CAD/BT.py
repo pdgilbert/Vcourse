@@ -345,7 +345,7 @@ doc.Tip = doc.addObject('App::Part','SolarBack')
 
 back_out = Part.makeBox ( length,width,backThickness)  #,[pnt,dir] )
 
-# CAN BE CLEANER, DON'T NEED back_out AND back_outside
+# MIGHT BE CLEANER, DON'T NEED back_out AND back_outside
 
 #  round corners
 edges = []
@@ -398,15 +398,16 @@ doc.addObject("Part::Feature","Gland").Shape = glandBack.makeFillet(1.5, edges)
 doc.recompute() 
 
 
-# add wall for GPS. top right beside LEDs
+# add wall for GPS. top right beside LEDs.  Add 2.0 for clearance
 doc.addObject("Part::Feature","GPSv").Shape =  Part.makeBox( 
-     15, 2, 25, originBack + FreeCAD.Vector(wall, 3 + width/2, backThickness), dr)
+     15, 2, 25, originBack + FreeCAD.Vector(wall+2.0, 3 + width/2, backThickness), dr)
 
 doc.addObject("Part::Feature","GPSh").Shape =  Part.makeBox( 
      2, 30, 25, originBack + FreeCAD.Vector(wall + 15, 3 + width/2, backThickness),dr)
 
 
 #  Fuse the body objects 
+#  note that edges at fused joint cannot be selected, at least not in GUI view
 
 doc.addObject("Part::MultiFuse","Fusion")
 # next causes view to disappear until doc.recompute() 
@@ -418,6 +419,8 @@ doc.recompute()
 
 #  Above fuse can also be done by the following but view does not appear until fusion and
 #  only Plus is indicated in the model tree view, so understanding and debugging are harder.
+#  However, for writing functions this might be preferred, since in the above the part name
+# becomes an object atribute, and ."Fusion". syntax doe not work.
 # add = [glandBack ]  
 # gps_wall_vert = Part.makeBox( 15, 2, 25, 
 #               originBack + FreeCAD.Vector(wall, 3 + width/2, backThickness), dr )
@@ -429,6 +432,59 @@ doc.recompute()
 # doc.Fusion.Shapes = [doc.BackOutside, doc.Plus,] 
 # doc.recompute() 
 
+
+# add stud pins for boards
+
+def makePin(num, x, y, bsRad, hdRad, part, p = originBack + FreeCAD.Vector(0,  0,  backThickness)) :
+   base = doc.addObject("Part::Cylinder", "PinsBase"+num)
+   # Note that Shape and Placement from Part.makeCylinder get lost on recompute() so this
+   #   base.Shape =  Part.makeCylinder(3.0/2, 4.0)  # looses values and returns to defaults
+   # and
+   #   base.Shape =  Part.makeCylinder(3.0/2, 4.0, 
+   #      p + FreeCAD.Vector(wall+26,  17,   0 ), dr, 360 ) # loose placement on recompute()
+   
+   base.Radius = bsRad
+   base.Height = 4.0
+   base.Placement = FreeCAD.Placement(p + FreeCAD.Vector(wall+x,  y,   0 ), dr, 360 )
+   
+   head = doc.addObject("Part::Cylinder", "PinsHead"+num)
+   head.Radius =  hdRad
+   head.Height = 5.0
+   head.Placement = FreeCAD.Placement(p + FreeCAD.Vector(wall+x,  y,  4.0), dr, 360 )
+   
+   doc.SolarBack.addObject(base) #mv  into part SolarBack
+   doc.SolarBack.addObject(head) #mv  into part SolarBack
+   
+   doc.recompute() 
+   
+   return None
+
+#p = originBack + FreeCAD.Vector(0,  0,  backThickness)
+
+# power management board pins 19x67
+
+makePin("1", 26, 17, 3.0/2, 1.2/2, "SolarBack") # doc.SolarBack" still hardcoded in function
+makePin("2", 26, 84, 3.0/2, 1.2/2, "SolarBack") 
+makePin("3", 45, 17, 3.0/2, 1.2/2, "SolarBack") 
+makePin("4", 45, 84, 3.0/2, 1.2/2, "SolarBack") 
+
+# power R Pi zero board pins 23x58
+
+makePin("5", 55, 22, 5.0/2, 1.8/2, "SolarBack") 
+makePin("6", 55, 80, 5.0/2, 1.8/2, "SolarBack") 
+makePin("7", 78, 22, 5.0/2, 1.8/2, "SolarBack") 
+makePin("8", 78, 80, 5.0/2, 1.8/2, "SolarBack") 
+
+# power O Pi zero plus board  pins 42x40
+
+makePin("5", 55, 31, 5.0/2, 1.8/2, "SolarBack") 
+makePin("6", 55, 71, 5.0/2, 1.8/2, "SolarBack") 
+makePin("7", 100, 31, 5.0/2, 1.8/2, "SolarBack") 
+makePin("8", 100, 71, 5.0/2, 1.8/2, "SolarBack") 
+
+#doc.addObject("Part::MultiFuse","Pins")
+#doc.Pins.Shapes = [doc.PinsBase1, doc.PinsHead1, doc.PinsBase2, doc.PinsHead2, 
+                   doc.PinsBase3, doc.PinsHead3, doc.PinsBase4, doc.PinsHead4, ] 
 
 holes = []
 
@@ -503,6 +559,9 @@ doc.recompute()
 # Gui.ActiveDocument.Fusion.ShapeColor=Gui.ActiveDocument.Outside.ShapeColor
 # Gui.ActiveDocument.Fusion.DisplayMode=Gui.ActiveDocument.Outside.DisplayMode
 
+# note that 
+#  less = doc.addObject("Part::Feature","Less").Shape = holes[0].fuse(holes)
+# does not seem to work. It leave the holes and removes the good part
 less = doc.addObject("Part::Feature","Less")
 less.Shape = holes[0].fuse(holes)   
 
@@ -525,10 +584,10 @@ for e in doc.Back.Shape.Edges :
           if  length - 10.0 < p0  < length - 0.5  : edges.append(e)  # bottom
           if       0.5      < p0  <     10.0      : edges.append(e)  # top
 
-edges = list(set(edges)) # unique elements
 
-BackFinished = doc.addObject("Part::Feature","BackFinished")
-BackFinished.Shape = doc.Back.Shape.makeFillet(0.5, edges)
+doc.addObject("Part::Feature","BackFinished").Shape = doc.Back.Shape.makeFillet(
+   0.5, list(set(edges))) # unique edge elements
+
 doc.SolarBack.addObject(doc.BackFinished) #mv BackFinished (body) into part SolarBack
 
 doc.recompute() 
