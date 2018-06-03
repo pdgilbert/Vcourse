@@ -345,6 +345,8 @@ doc.Tip = doc.addObject('App::Part','SolarBack')
 
 back_out = Part.makeBox ( length,width,backThickness)  #,[pnt,dir] )
 
+# CAN BE CLEANER, DON'T NEED back_out AND back_outside
+
 #  round corners
 edges = []
 for e in back_out.Edges :
@@ -352,8 +354,6 @@ for e in back_out.Edges :
    if e.Vertexes[1].Point[2] == 0 and e.Vertexes[0].Point[2] == backThickness : edges.append(e)
 
 edges = list(set(edges)) # unique elements
-
-doc.recompute() 
 
 back_outside = doc.addObject("Part::Feature","BackOutside")
 back_outside.Shape = back_out.makeFillet(6, edges)
@@ -393,32 +393,42 @@ for e in glandBack.Edges :
    if e.Vertexes[0].Point[0] ==  e.Vertexes[1].Point[0] and \
       e.Vertexes[0].Point[1] ==  e.Vertexes[1].Point[1] :  edges.append(e)
 
-glandBack = glandBack.makeFillet(1.5, edges) # radius = seal  dia/2 =3/2 
-
+# radius = seal  dia/2 =3/2   
+doc.addObject("Part::Feature","Gland").Shape = glandBack.makeFillet(1.5, edges) 
 doc.recompute() 
 
-add = [glandBack ]  
 
 # add wall for GPS. top right beside LEDs
-gps_wall_vert = Part.makeBox( 15, 2, 25, 
-               originBack + FreeCAD.Vector(wall, 3 + width/2, backThickness), dr )
+doc.addObject("Part::Feature","GPSv").Shape =  Part.makeBox( 
+     15, 2, 25, originBack + FreeCAD.Vector(wall, 3 + width/2, backThickness), dr)
 
-add.append(gps_wall_vert)
+doc.addObject("Part::Feature","GPSh").Shape =  Part.makeBox( 
+     2, 30, 25, originBack + FreeCAD.Vector(wall + 15, 3 + width/2, backThickness),dr)
 
-gps_wall_horiz = Part.makeBox( 2, 30, 25, 
-               originBack + FreeCAD.Vector(wall + 15, 3 + width/2, backThickness), dr )
 
-add.append(gps_wall_horiz)
-
-plus = doc.addObject("Part::Feature","Plus")
-plus.Shape = add[0].fuse(add) # or glandBack.fuse(add)  
+#  Fuse the body objects 
 
 doc.addObject("Part::MultiFuse","Fusion")
-doc.Fusion.Shapes = [doc.BackOutside, doc.Plus,]
+# next causes view to disappear until doc.recompute() 
+#in model view this adds  BT>Fusion with [..] bodies but only seen after doc.recompute() 
+doc.Fusion.Shapes = [doc.BackOutside, doc.Gland, doc.GPSv, doc.GPSh,] 
 
 doc.SolarBack.addObject(doc.Fusion) #mv Fusion into part SolarBack
-
 doc.recompute() 
+
+#  Above fuse can also be done by the following but view does not appear until fusion and
+#  only Plus is indicated in the model tree view, so understanding and debugging are harder.
+# add = [glandBack ]  
+# gps_wall_vert = Part.makeBox( 15, 2, 25, 
+#               originBack + FreeCAD.Vector(wall, 3 + width/2, backThickness), dr )
+# add.append(gps_wall_vert)
+# add.append(gps_wall_horiz)
+# plus = doc.addObject("Part::Feature","Plus")
+# plus.Shape = add[0].fuse(add) # or glandBack.fuse(add)  
+# doc.addObject("Part::MultiFuse","Fusion")
+# doc.Fusion.Shapes = [doc.BackOutside, doc.Plus,] 
+# doc.recompute() 
+
 
 holes = []
 
