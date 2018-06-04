@@ -368,16 +368,25 @@ doc.recompute()
 
 clr = 0.2  #clearance
 w = wall - 3  # outside edge of box to inside edge of gland groove
- 
+
+# relative to originBack
+# pos for inside box is wall - (3 + clr) = w -clr
+# which is outside edge of box to inside edge of gland tongue
+# pos for outside box is wall - (3 + glandWidth - clr) = w - glandWidth + clr
+# which is outside edge of box to outside edge of gland tongue
+# len   of inside  box is length - 2 * (wall - 3 - clr) =  length - 2 * (w -clr)
+# width of inside  box is  width - 2 * (wall - 3 - clr) =  width  - 2 * (w -clr)
+# len   of outside box is length - 2 * (wall - 3 - glandWidth + clr)  
+# width of outside box is  width - 2 * (wall - 3 - glandWidth + clr) =  width  - 2 * (w -glandWidth + clr)
+
 gland_inside = Part.makeBox( length - 2 * (w - clr), 
-               width - 2 * (w- clr),  glandTongue, 
-               originBack + FreeCAD.Vector(w, w, backThickness), dr )
+                              width - 2 * (w - clr),  glandTongue, 
+               originBack + FreeCAD.Vector(w - clr, w - clr, backThickness), dr )
 
 
-gland_outside = Part.makeBox( length - 2 * (w - clr - glandWidth), 
-            width - 2 * (w - clr - glandWidth),  glandTongue, 
-            originBack + FreeCAD.Vector(w - clr - glandWidth, 
-                                        w - clr - glandWidth, 
+gland_outside = Part.makeBox( length - 2 * (w + clr - glandWidth), 
+                               width - 2 * (w + clr - glandWidth),  glandTongue, 
+            originBack + FreeCAD.Vector(w + clr - glandWidth, w + clr - glandWidth, 
                                         backThickness), dr )
 
 
@@ -834,6 +843,9 @@ doc.SolarCover.addObject(doc.CoverPreFinished) #mv PreFinished into part SolarCo
 
 doc.recompute() 
 
+makeSTL("SolarCover", "CoverPreFinished")
+
+#NEXT SOMEHOW MANGLES STL GENERATION
 # Fillet cover outside edges
 edges=[]
 for e in doc.CoverPreFinished.Shape.Edges :
