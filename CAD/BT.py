@@ -417,7 +417,14 @@ doc.addObject("Part::Feature","GPSh").Shape =  Part.makeBox(
 
 # add stud pins for boards
 
-def makePin(num, x, y, bsRad, hdRad, part, p = originBack + FreeCAD.Vector(0,  0,  backThickness)) :
+def makePin(num, x, y, bsRad, bsHt, hdRad, hdHt, part, 
+       p = originBack + FreeCAD.Vector(0,  0,  backThickness)) :
+   ''' 
+   num is string appended to name or boy object in doc
+   x, y  center wall and originBack + backThickness
+   bsRad, hdRad base and pin radius
+   bsHt,  hdHt  base and pin height
+   '''
    base = doc.addObject("Part::Cylinder", "PinBase"+num)
    # Note that Shape and Placement from Part.makeCylinder get lost on recompute() so this
    #   base.Shape =  Part.makeCylinder(3.0/2, 4.0)  # looses values and returns to defaults
@@ -426,13 +433,13 @@ def makePin(num, x, y, bsRad, hdRad, part, p = originBack + FreeCAD.Vector(0,  0
    #      p + FreeCAD.Vector(wall+26,  17,   0 ), dr, 360 ) # loose placement on recompute()
    
    base.Radius = bsRad
-   base.Height = 4.0
+   base.Height = bsHt
    base.Placement = FreeCAD.Placement(p + FreeCAD.Vector(wall+x,  y,   0 ), dr, 360 )
    
    head = doc.addObject("Part::Cylinder", "PinHead"+num)
    head.Radius =  hdRad
-   head.Height = 5.0
-   head.Placement = FreeCAD.Placement(p + FreeCAD.Vector(wall+x,  y,  4.0), dr, 360 )
+   head.Height = hdHt
+   head.Placement = FreeCAD.Placement(p + FreeCAD.Vector(wall+x,  y,  bsHt), dr, 360 )
    
    doc.SolarBack.addObject(base) #mv  into part SolarBack
    doc.SolarBack.addObject(head) #mv  into part SolarBack
@@ -445,24 +452,25 @@ def makePin(num, x, y, bsRad, hdRad, part, p = originBack + FreeCAD.Vector(0,  0
 
 # power management board pins 19x67
 
-makePin("1", 26, 17, 3.0/2, 1.2/2, "SolarBack") # doc.SolarBack" still hardcoded in function
-makePin("2", 26, 84, 3.0/2, 1.2/2, "SolarBack") 
-makePin("3", 45, 17, 3.0/2, 1.2/2, "SolarBack") 
-makePin("4", 45, 84, 3.0/2, 1.2/2, "SolarBack") 
+# doc.SolarBack" still hardcoded in function
+makePin("1", 26, 17, 3.0/2, 4.0,  1.2/2, 5.0,  "SolarBack") 
+makePin("2", 26, 84, 3.0/2, 4.0,  1.2/2, 5.0,  "SolarBack") 
+makePin("3", 45, 17, 3.0/2, 4.0,  1.2/2, 5.0,  "SolarBack") 
+makePin("4", 45, 84, 3.0/2, 4.0,  1.2/2, 5.0,  "SolarBack") 
 
 # power R Pi zero board pins 23x58
 
-makePin("5", 55, 22, 5.0/2, 1.8/2, "SolarBack") 
-makePin("6", 55, 80, 5.0/2, 1.8/2, "SolarBack") 
-makePin("7", 78, 22, 5.0/2, 1.8/2, "SolarBack") 
-makePin("8", 78, 80, 5.0/2, 1.8/2, "SolarBack") 
+makePin("5", 55, 22, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("6", 55, 80, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("7", 78, 22, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("8", 78, 80, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
 
 # power O Pi zero plus board  pins 42x40
 
-makePin("9",   55, 31, 5.0/2, 1.8/2, "SolarBack") 
-makePin("10",  55, 71, 5.0/2, 1.8/2, "SolarBack") 
-makePin("11", 100, 31, 5.0/2, 1.8/2, "SolarBack") 
-makePin("12", 100, 71, 5.0/2, 1.8/2, "SolarBack") 
+makePin("9",  55, 31, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("10", 55, 71, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("11", 97, 31, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("12", 97, 71, 5.0/2, 2.0,  2.5/2, 5.0, 2 "SolarBack") 
 
 
 #  Fuse the body objects 
