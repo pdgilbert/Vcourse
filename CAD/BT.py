@@ -467,10 +467,10 @@ makePin("8", 78, 80, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack")
 
 # power O Pi zero plus board  pins 42x40
 
-makePin("9",  55, 31, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
-makePin("10", 55, 71, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
-makePin("11", 97, 31, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
-makePin("12", 97, 71, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("9",   60, 27, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("10",  60, 67, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("11", 102, 27, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("12", 102, 67, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
 
 
 #  Fuse the body objects 
