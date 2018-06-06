@@ -57,12 +57,19 @@ dr = FreeCAD.Vector(0,0,1)
 # Outside dimensions
 length = 161 # top to bottom
 width  = 102 # side to side
-height = 55  # front to back of box, not including cover and back
+height = 50  # front to back of box, not including cover and back
 
 wall = 13.0
 backwall = 10.0
 coverThickness = 3.0
 backThickness  = 3.0
+
+GPSwallHeight = 28
+
+# GPSwallHeight is highest  part of solarBack, and the battery must fit between it and
+# inside back of the Box, so
+#  height - backwall < GPSwallHeight + 9  (9mm thick battery)
+#   50    - 10       <     28        + 9
 
 # prongs
 # reference locations (center, outside edge of slot holes)
@@ -409,10 +416,10 @@ doc.recompute()
 
 # add wall for GPS. top right beside LEDs.  Add 2.0 for clearance
 doc.addObject("Part::Feature","GPSv").Shape =  Part.makeBox( 
-     15, 2, 28, originBack + FreeCAD.Vector(wall + 2.0, 49, backThickness), dr)
+     15, 2, GPSwallHeight, originBack + FreeCAD.Vector(wall + 2.0, 49, backThickness), dr)
 
 doc.addObject("Part::Feature","GPSh").Shape =  Part.makeBox( 
-     2, 30, 28, originBack + FreeCAD.Vector(wall + 15, 49, backThickness),dr)
+     2, 30, GPSwallHeight, originBack + FreeCAD.Vector(wall + 15, 49, backThickness),dr)
 
 
 # add stud pins for boards
