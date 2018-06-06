@@ -92,9 +92,9 @@ glandWidth  = 3.6  # 20% larger than 3.0 seal dia.
 glandDepth  = 4.4  # glandTongue + 75% of 3.0 seal dia.
 
 #  LEDs  vertical at top
-LEDcenters = (FreeCAD.Vector( 16, width/2, 0),
-              FreeCAD.Vector( 24, width/2, 0),
-              FreeCAD.Vector( 32, width/2, 0))
+LEDcenters = (FreeCAD.Vector( 16, 35, 0),
+              FreeCAD.Vector( 24, 35, 0),
+              FreeCAD.Vector( 32, 35, 0))
 LEDholeDia   = 5.2
 LEDholeDepth = 4.0    #should not go alll the wy through cover and back
 LEDwireSlotWidth   = 3.6
@@ -409,10 +409,10 @@ doc.recompute()
 
 # add wall for GPS. top right beside LEDs.  Add 2.0 for clearance
 doc.addObject("Part::Feature","GPSv").Shape =  Part.makeBox( 
-     15, 2, 25, originBack + FreeCAD.Vector(wall+2.0, 3 + width/2, backThickness), dr)
+     15, 2, 28, originBack + FreeCAD.Vector(wall + 2.0, 49, backThickness), dr)
 
 doc.addObject("Part::Feature","GPSh").Shape =  Part.makeBox( 
-     2, 30, 25, originBack + FreeCAD.Vector(wall + 15, 3 + width/2, backThickness),dr)
+     2, 30, 28, originBack + FreeCAD.Vector(wall + 15, 49, backThickness),dr)
 
 
 # add stud pins for boards
@@ -453,24 +453,24 @@ def makePin(num, x, y, bsRad, bsHt, hdRad, hdHt, part,
 # power management board pins 19x67
 
 # doc.SolarBack" still hardcoded in function
-makePin("1", 26, 17, 3.0/2, 4.0,  1.2/2, 5.0,  "SolarBack") 
-makePin("2", 26, 84, 3.0/2, 4.0,  1.2/2, 5.0,  "SolarBack") 
-makePin("3", 45, 17, 3.0/2, 4.0,  1.2/2, 5.0,  "SolarBack") 
-makePin("4", 45, 84, 3.0/2, 4.0,  1.2/2, 5.0,  "SolarBack") 
+makePin("1",  60, 15, 3.0/2, 4.0,  2.0/2, 5.0,  "SolarBack") 
+makePin("2",  60, 34, 3.0/2, 4.0,  2.0/2, 5.0,  "SolarBack") 
+makePin("3", 127, 15, 3.0/2, 4.0,  2.0/2, 5.0,  "SolarBack") 
+makePin("4", 127, 34, 3.0/2, 4.0,  2.0/2, 5.0,  "SolarBack") 
 
 # power R Pi zero board pins 23x58
 
-makePin("5", 55, 22, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
-makePin("6", 55, 80, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
-makePin("7", 78, 22, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
-makePin("8", 78, 80, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("5", 30, 29, 5.0/2, 3.0,  3.5/2, 5.0,  "SolarBack") 
+makePin("6", 30, 87, 5.0/2, 3.0,  3.5/2, 5.0,  "SolarBack") 
+makePin("7", 53, 29, 5.0/2, 3.0,  3.5/2, 5.0,  "SolarBack") 
+makePin("8", 53, 87, 5.0/2, 3.0,  3.5/2, 5.0,  "SolarBack") 
 
 # power O Pi zero plus board  pins 42x40
 
-makePin("9",   60, 27, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
-makePin("10",  60, 67, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
-makePin("11", 102, 27, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
-makePin("12", 102, 67, 5.0/2, 2.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("9",   25, 43, 5.0/2, 7.0,  3.5/2, 5.0,  "SolarBack") 
+makePin("10",  25, 83, 5.0/2, 7.0,  3.5/2, 5.0,  "SolarBack") 
+makePin("11",  67, 43, 5.0/2, 7.0,  3.5/2, 5.0,  "SolarBack") 
+makePin("12",  67, 83, 5.0/2, 7.0,  3.5/2, 5.0,  "SolarBack") 
 
 
 #  Fuse the body objects 
