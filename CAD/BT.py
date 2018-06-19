@@ -670,8 +670,8 @@ cover_outside.Placement.Base = originCover # sensitive to Placement after Shape!
 
 doc.recompute() 
 
-holeLength = 110   # solar panel is 110 x 69
-holeWidth  =  69   # chamfer will be used to reduce outside edge of hole
+holeLength = 112   # solar panel is 110 x 69. Add 2mm so it sits in better.
+holeWidth  =  71   # chamfer will be used to reduce outside edge of hole
 
 
 solarHole = Part.makeBox(          
