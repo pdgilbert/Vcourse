@@ -679,7 +679,7 @@ solarHole = Part.makeBox(
    holeLength,
    holeWidth,
    coverThickness,
-   originCover + FreeCAD.Vector(35, (width - holeWidth)/2, 0), # 
+   originCover + FreeCAD.Vector(40, (width - holeWidth)/2, 0), # 
    dr ) 
 
 doc.recompute() 
