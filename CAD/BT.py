@@ -103,9 +103,10 @@ glandDepth  = 4.4  # glandTongue + 75% of 3.0 seal dia.
 LEDcenters = (FreeCAD.Vector( 16, 35, 0),
               FreeCAD.Vector( 24, 35, 0),
               FreeCAD.Vector( 32, 35, 0))
-LEDholeDia   = 5.2
-LEDholeDepth = 4.0    #should not go alll the wy through cover and back
-LEDwireSlotWidth   = 3.6
+LEDholeDia   = 5.5
+LEDbaseDia   = 6.2
+LEDholeDepth = 4.0    #should not go all the wy through cover and back
+LEDwireSlotWidth   = 3.0
 LEDwireSlotLength  = LEDholeDia - 0.2
 
 strapSlotWidth  = 25.0
@@ -573,13 +574,13 @@ p = originBack
 # these holes need to be slightly bigger than in cover as the LED base needs to
 # go into them, but cover can go on after base is already in.
 holes.append( 
-  Part.makeCylinder( (LEDholeDia + 1.0) / 2, h, p + LEDcenters[0], dr, 360 ) ) #LED 1
+  Part.makeCylinder( LEDbaseDia/2, h, p + LEDcenters[0], dr, 360 ) ) #LED 1
 
 holes.append( 
-  Part.makeCylinder( (LEDholeDia + 1.0) / 2, h, p + LEDcenters[1], dr, 360 ) ) #LED 2
+  Part.makeCylinder( LEDbaseDia/2, h, p + LEDcenters[1], dr, 360 ) ) #LED 2
 
 holes.append( 
-  Part.makeCylinder( (LEDholeDia + 1.0) / 2, h, p + LEDcenters[2], dr, 360 ) ) #LED 3
+  Part.makeCylinder( LEDbaseDia/2, h, p + LEDcenters[2], dr, 360 ) ) #LED 3
 
 #  wire slots
 
