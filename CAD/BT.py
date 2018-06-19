@@ -61,6 +61,7 @@ height = 50  # front to back of box, not including cover and back
 
 wall = 13.0
 backwall = 10.0
+indent = 5.0  # removed from inside of walls
 coverThickness = 3.0
 backThickness  = 3.0
 
@@ -181,7 +182,24 @@ inside = Part.makeBox(
 
 #Part.show(inside)
  
-holes = []  # these will be fused to inside
+holes = []  # these will be fused to inside and removed
+
+# indent in bottom
+holes.append(Part.makeBox(          
+   length - 2 * (wall - indent),
+   width  - 2 * (wall - indent),
+   height -  backwall - 2 * indent,
+   originBox + FreeCAD.Vector(wall - indent, wall - indent, backwall + indent),
+   FreeCAD.Vector(0,0,1) ) )
+
+
+# indent in sides (longer, wider box, not full height)
+holes.append(Part.makeBox(          
+   length - 2 * (wall - indent),
+   width  - 2 * (wall - indent),
+   height -  (backwall + 4 * indent ),
+   originBox + FreeCAD.Vector(wall - indent, wall - indent, backwall + indent),
+   FreeCAD.Vector(0,0,1) ) )
 
 #  prong slots
 
@@ -730,9 +748,10 @@ h = backThickness + prongCatchDepth + 0.2
 # add 2 * prongBump to length to make the prong long enough for taper
 
 prongLength = h + 2 * prongBump
+prongInset = 0.5 # inset so prong clears slot edge
 
 for pos in prongs_left :
-   p = originCover + FreeCAD.Vector(pos[0] -w,  pos[1],  coverThickness)
+   p = originCover + FreeCAD.Vector(pos[0] -w,  pos[1] + prongInset,  coverThickness)
 
    prongs.append(
        Part.makeBox( prongWidth, prongThickness, prongLength, p, dr ) )
@@ -757,7 +776,7 @@ for pos in prongs_left :
    prongs.append(z)
 
 for pos in prongs_right :
-   p = originCover + FreeCAD.Vector(pos[0] -w,  pos[1] - prongThickness, coverThickness)
+   p = originCover + FreeCAD.Vector(pos[0] -w,  pos[1] - prongThickness - prongInset, coverThickness)
 
    prongs.append(
        Part.makeBox( prongWidth, prongThickness, prongLength, p, dr ) )
@@ -778,7 +797,7 @@ for pos in prongs_right :
    prongs.append(z)
 
 for pos in prongs_bottom :
-   p = originCover + FreeCAD.Vector(pos[0] - prongThickness,  pos[1] - w, coverThickness)
+   p = originCover + FreeCAD.Vector(pos[0] - prongThickness - prongInset,  pos[1] - w, coverThickness)
 
    prongs.append(
        Part.makeBox( prongThickness, prongWidth,  prongLength, p, dr ) )
@@ -799,7 +818,7 @@ for pos in prongs_bottom :
    prongs.append(z)
 
 for pos in prongs_top :
-   p = originCover + FreeCAD.Vector(pos[0],  pos[1] - w, coverThickness)
+   p = originCover + FreeCAD.Vector(pos[0] + prongInset,  pos[1] - w, coverThickness)
 
    prongs.append(
        Part.makeBox( prongThickness, prongWidth, prongLength, p, dr ) )
@@ -873,7 +892,7 @@ edges = list(set(edges)) # unique elements
 
 # z = doc.CoverCoverPreFinished.Shape.makeChamfer(3.0, edges) 
 coverFinished = doc.addObject("Part::Feature","CoverFinished")
-coverFinished.Shape = doc.CoverPreFinished.Shape.makeFillet(2.5, edges)
+coverFinished.Shape = doc.CoverPreFinished.Shape.makeFillet(2.4, edges)
 doc.SolarCover.addObject(doc.CoverFinished) #mv Finished into part SolarCover
 
 doc.recompute() 
