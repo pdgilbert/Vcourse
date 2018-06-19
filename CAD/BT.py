@@ -478,24 +478,24 @@ def makePin(num, x, y, bsRad, bsHt, hdRad, hdHt, part,
 # power management board pins 19x67
 
 # doc.SolarBack" still hardcoded in function
-makePin("1",  60, 15, 3.0/2, 4.0,  2.0/2, 5.0,  "SolarBack") 
-makePin("2",  60, 34, 3.0/2, 4.0,  2.0/2, 5.0,  "SolarBack") 
-makePin("3", 127, 15, 3.0/2, 4.0,  2.0/2, 5.0,  "SolarBack") 
-makePin("4", 127, 34, 3.0/2, 4.0,  2.0/2, 5.0,  "SolarBack") 
+makePin("1",  60, 15, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
+makePin("2",  60, 34, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
+makePin("3", 127, 15, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
+makePin("4", 127, 34, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
 
 # power R Pi zero board pins 23x58
 
-makePin("5", 30, 29, 5.0/2, 3.0,  3.5/2, 5.0,  "SolarBack") 
-makePin("6", 30, 87, 5.0/2, 3.0,  3.5/2, 5.0,  "SolarBack") 
-makePin("7", 53, 29, 5.0/2, 3.0,  3.5/2, 5.0,  "SolarBack") 
-makePin("8", 53, 87, 5.0/2, 3.0,  3.5/2, 5.0,  "SolarBack") 
+makePin("5", 30, 29, 5.0/2, 3.0,  2.2/2, 5.0,  "SolarBack") 
+makePin("6", 30, 87, 5.0/2, 3.0,  2.2/2, 5.0,  "SolarBack") 
+makePin("7", 53, 29, 5.0/2, 3.0,  2.2/2, 5.0,  "SolarBack") 
+makePin("8", 53, 87, 5.0/2, 3.0,  2.2/2, 5.0,  "SolarBack") 
 
 # power O Pi zero plus board  pins 42x40
 
-makePin("9",   25, 43, 5.0/2, 7.0,  3.5/2, 5.0,  "SolarBack") 
-makePin("10",  25, 83, 5.0/2, 7.0,  3.5/2, 5.0,  "SolarBack") 
-makePin("11",  67, 43, 5.0/2, 7.0,  3.5/2, 5.0,  "SolarBack") 
-makePin("12",  67, 83, 5.0/2, 7.0,  3.5/2, 5.0,  "SolarBack") 
+makePin("9",   25, 43, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("10",  25, 83, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("11",  67, 43, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
+makePin("12",  67, 83, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
 
 
 #  Fuse the body objects 
