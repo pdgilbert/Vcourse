@@ -872,15 +872,15 @@ for e in doc.CoverFusion.Shape.Edges :
 edges = list(set(edges)) # unique elements
 
 coverPreFinished = doc.addObject("Part::Feature","CoverPreFinished")
-coverPreFinished.Shape = doc.CoverFusion.Shape.makeFillet(0.5, edges)
+# fails coverPreFinished.Shape = doc.CoverFusion.Shape.makeFillet(0.5, edges)
+coverPreFinished.Shape = doc.CoverFusion.Shape.makeFillet(0.3, edges)
 
 doc.SolarCover.addObject(doc.CoverPreFinished) #mv PreFinished into part SolarCover
 
 doc.recompute() 
 
-makeSTL("SolarCover", "CoverPreFinished")
+# makeSTL("SolarCover", "CoverPreFinished")
 
-#NEXT SOMEHOW MANGLES STL GENERATION
 # Fillet cover outside edges
 edges=[]
 for e in doc.CoverPreFinished.Shape.Edges :
