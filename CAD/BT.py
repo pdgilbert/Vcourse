@@ -181,27 +181,27 @@ doc.recompute()
 # pnt,dir are used in next and they do make a difference, but they 
 # do not seem to be recorded in .Placement.Base 
 
+# indent below gland to make lip
+lipDepth =  10 
+lip = height -  backwall - lipDepth
+
 opening = Part.makeBox(          
    length - 2 * wall,
    width  - 2 * wall,
-   height -  backwall,
-   originBox + FreeCAD.Vector(wall, wall, backwall),
+   lipDepth,               
+   originBox + FreeCAD.Vector(wall, wall, height -  lipDepth),
    FreeCAD.Vector(0,0,1) ) 
 
 #Part.show(opening)
  
 holes = []  # these will be fused to opening and removed
 
-# indent below gland to make lip
-# 10 is depth of lip
-lip = height -  backwall - 10
-
 interiorBox =Part.makeBox(          
    length - 2 * (wall - indent),
    width  - 2 * (wall - indent),
    lip ) 
 
-#  fillet bottom so it does not cut into strap holes
+#  chamfer bottom so it does not cut into strap holes
 edges = []
 for e in interiorBox.Edges :
    if e.Vertexes[0].Point[2] == 0 and e.Vertexes[1].Point[2] == 0 :
@@ -209,10 +209,11 @@ for e in interiorBox.Edges :
 
 edges = list(set(edges)) # unique elements
 
-interior = interiorBox.makeChamfer(indent, edges) # 0 placement Base
+# Size 11.0 adjusted to not cut into strap holes and leave some material.
+# This has to print on chamfer ange (45 deg) and may be difficult over holes.
+interior = interiorBox.makeChamfer(11.0, edges) # 0 placement Base
 
-#  fillet top so support material is not needed
-# champher size indent makes it coincide with lip inside edge
+#  chamfer top so support material is not needed
 edges = []
 for e in interiorBox.Edges :
    if e.Vertexes[0].Point[2] == lip and e.Vertexes[1].Point[2] == lip :
@@ -220,7 +221,9 @@ for e in interiorBox.Edges :
 
 edges = list(set(edges)) # unique elements
 
+# chamfer size indent makes it coincide with lip inside edge
 interior = interior.makeChamfer(indent, edges) # 0 placement Base
+
 interior.Placement.Base = originBox + FreeCAD.Vector(wall - indent, wall - indent, backwall) 
 
 #type(interiorBox)       is <type 'Part.Solid'>
@@ -378,6 +381,14 @@ remove.Shape = opening.fuse(holes)
 # MainBox = box_outside.cut(remove)
 # see https://www.freecadweb.org/wiki/Topological_data_scripting
 
+
+w = prongSlotLength / 2
+h = height - prongSlotDepth
+
+for pos in prongs_left :
+   p = originBox + FreeCAD.Vector(pos[0] -w,  pos[1],  h)
+
+   # slot
 box=doc.addObject("Part::Cut","Box")
 box.Base = box_outside
 box.Tool = remove
