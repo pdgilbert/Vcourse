@@ -130,7 +130,7 @@ doc.Tip = doc.addObject('App::Part','MainBox')
 
 doc.recompute()
 
-Gui.ActiveDocument=Gui.getDocument(docName)
+Gui.ActiveDocument=Gui.getDocument(docName)  # this adds origin to MainBox
 Gui.activateWorkbench("PartDesignWorkbench")
 Gui.activeView().setActiveObject('pdbody', App.activeDocument().MainBox)
 Gui.activeView().setActiveObject('part', App.activeDocument().MainBox)
@@ -172,7 +172,14 @@ box_outside = doc.addObject("Part::Feature","Outside")
 box_outside.Placement.Base = originBox 
 box_outside.Shape = box_out.makeFillet(6, edges)
 
+# type(box_out.makeFillet(6, edges)) is <type 'Part.Shape'>
+# type(box_outside.Shape)            is <type 'Part.Compound'>
+
 doc.recompute() 
+
+# Part.makeBox ( length,width,height,[pnt,dir] )
+# pnt,dir are used in next and they do make a difference, but they 
+# do not seem to be recorded in .Placement.Base 
 
 inside = Part.makeBox(          
    length - 2 * wall,
@@ -185,22 +192,45 @@ inside = Part.makeBox(
  
 holes = []  # these will be fused to inside and removed
 
-# indent in bottom
-holes.append(Part.makeBox(          
+# indent inside below gland to make lip
+# 10 is depth of lip
+lip = height -  backwall - 10
+
+indents =Part.makeBox(          
    length - 2 * (wall - indent),
    width  - 2 * (wall - indent),
-   height -  backwall - 2 * indent,
-   originBox + FreeCAD.Vector(wall - indent, wall - indent, backwall + indent),
-   FreeCAD.Vector(0,0,1) ) )
+   lip ) 
 
+edges = []
+#  fillet bottom so it does not cut into strap holes
+for e in indents.Edges :
+   if e.Vertexes[0].Point[2] == 0 and e.Vertexes[1].Point[2] == 0 :
+       edges.append(e)
 
-# indent in sides (longer, wider box, not full height)
-holes.append(Part.makeBox(          
-   length - 2 * (wall - indent),
-   width  - 2 * (wall - indent),
-   height -  (backwall + 4 * indent ),
-   originBox + FreeCAD.Vector(wall - indent, wall - indent, backwall + indent),
-   FreeCAD.Vector(0,0,1) ) )
+#  fillet top so support material is not needed
+for e in indents.Edges :
+   if e.Vertexes[0].Point[2] == lip and e.Vertexes[1].Point[2] == lip :
+       edges.append(e)
+
+edges = list(set(edges)) # unique elements
+
+# champher size indent makes it coincide with inside bottom
+# (otherwise fuse inside will cut out part of champher)
+insideIndents = indents.makeChamfer(indent, edges) # 0 placement Base
+insideIndents.Placement.Base = originBox + FreeCAD.Vector(wall - indent, wall - indent, backwall) 
+
+#type(indents)       is <type 'Part.Solid'>
+#type(insideIndents) is <type 'Part.Shape'>
+
+doc.recompute() 
+
+#Part.show(indents)
+#Part.show(insideIndents)
+
+holes.append(insideIndents)
+
+doc.recompute() 
+
 
 #  prong slots
 
@@ -563,6 +593,10 @@ for pos in prongs_top :
                backThickness, p, dr ) )
 
 
+# Solar panel wire hole
+holes.append( 
+  Part.makeCylinder( 2.0, 5, originBack + FreeCAD.Vector(120, width/2, 0), dr, 360 ) )
+
 #LED holes
 #makeCylinder ( radius,height,[pnt,dir,angle] )
 
@@ -582,7 +616,7 @@ holes.append(
 holes.append( 
   Part.makeCylinder( LEDbaseDia/2, h, p + LEDcenters[2], dr, 360 ) ) #LED 3
 
-#  wire slots
+#  LED wire slots
 
 p = originBack -  FreeCAD.Vector(LEDwireSlotWidth/2, LEDwireSlotLength/2, 0)
 
