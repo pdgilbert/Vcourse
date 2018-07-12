@@ -60,8 +60,8 @@ width  = 102 # side to side
 height = 50  # front to back of box, not including cover and back
 
 wall = 13.0
-backwall = 10.0
-indent = 5.0  # removed from inside of walls
+backwall = 5.0
+indent = 5.0  # amount that box interior is bigger than box opening
 coverThickness = 3.0
 backThickness  = 3.0
 
@@ -181,53 +181,57 @@ doc.recompute()
 # pnt,dir are used in next and they do make a difference, but they 
 # do not seem to be recorded in .Placement.Base 
 
-inside = Part.makeBox(          
+opening = Part.makeBox(          
    length - 2 * wall,
    width  - 2 * wall,
    height -  backwall,
    originBox + FreeCAD.Vector(wall, wall, backwall),
    FreeCAD.Vector(0,0,1) ) 
 
-#Part.show(inside)
+#Part.show(opening)
  
-holes = []  # these will be fused to inside and removed
+holes = []  # these will be fused to opening and removed
 
-# indent inside below gland to make lip
+# indent below gland to make lip
 # 10 is depth of lip
 lip = height -  backwall - 10
 
-indents =Part.makeBox(          
+interiorBox =Part.makeBox(          
    length - 2 * (wall - indent),
    width  - 2 * (wall - indent),
    lip ) 
 
-edges = []
 #  fillet bottom so it does not cut into strap holes
-for e in indents.Edges :
+edges = []
+for e in interiorBox.Edges :
    if e.Vertexes[0].Point[2] == 0 and e.Vertexes[1].Point[2] == 0 :
        edges.append(e)
 
+edges = list(set(edges)) # unique elements
+
+interior = interiorBox.makeChamfer(indent, edges) # 0 placement Base
+
 #  fillet top so support material is not needed
-for e in indents.Edges :
+# champher size indent makes it coincide with lip inside edge
+edges = []
+for e in interiorBox.Edges :
    if e.Vertexes[0].Point[2] == lip and e.Vertexes[1].Point[2] == lip :
        edges.append(e)
 
 edges = list(set(edges)) # unique elements
 
-# champher size indent makes it coincide with inside bottom
-# (otherwise fuse inside will cut out part of champher)
-insideIndents = indents.makeChamfer(indent, edges) # 0 placement Base
-insideIndents.Placement.Base = originBox + FreeCAD.Vector(wall - indent, wall - indent, backwall) 
+interior = interior.makeChamfer(indent, edges) # 0 placement Base
+interior.Placement.Base = originBox + FreeCAD.Vector(wall - indent, wall - indent, backwall) 
 
-#type(indents)       is <type 'Part.Solid'>
-#type(insideIndents) is <type 'Part.Shape'>
+#type(interiorBox)       is <type 'Part.Solid'>
+#type(interior) is <type 'Part.Shape'>
 
 doc.recompute() 
 
-#Part.show(indents)
-#Part.show(insideIndents)
+#Part.show(interiorBox)
+#Part.show(interior)
 
-holes.append(insideIndents)
+holes.append(interior)
 
 doc.recompute() 
 
@@ -366,7 +370,7 @@ FreeCAD.Console.PrintMessage('starting compound holes object.\n')
 #Gui.SendMsgToActiveView("ViewFit")
 
 remove = doc.addObject("Part::Feature","Remove")
-remove.Shape = inside.fuse(holes)
+remove.Shape = opening.fuse(holes)
 #or something like remove = Part.makeCompound(holes)
 
 
@@ -757,13 +761,13 @@ holes.append(
 #Gui.SendMsgToActiveView("ViewFit")
 
 CoverRemove = doc.addObject("Part::Feature","CoverRemove")
-CoverRemove.Shape = inside.fuse(holes)
+CoverRemove.Shape = solarHole.fuse(holes)
 
 cover=doc.addObject("Part::Cut","CoverWithHoles")
 cover.Base = cover_outside
 # not sure why next two have opposite effect on what is left.
 cover.Tool = CoverRemove
-#cover.Tool = inside.fuse(holes)
+#cover.Tool = solarHole.fuse(holes)
 
 
 doc.SolarCover.addObject(doc.CoverWithHoles) #mv CoverWithHoles (body) into part SolarCover
