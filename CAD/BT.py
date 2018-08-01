@@ -95,6 +95,12 @@ prongSlotDepth  = height  #20.0
 prongSlotLength = prongWidth + 4.0 # lots of clearance
 prongSlotWidth  = 3.8  # 2 + 1.5 + clearance
 
+# bolt holes are so that bolts can be used if (when) the prongs break.
+bolt_hole_dia  = 3.6 # 3.6mm for 6-32, 4.4mm for 8-32
+bolts_holes =   ((4, 4),          (length/2, 3.5),         (length - 4, 4),
+                 (4, width - 4),  (length/2, width - 3.5), (length - 4, width - 4))
+
+
 glandTongue = 2    # depth into gland, width needs clearance
 glandWidth  = 3.6  # 20% larger than 3.0 seal dia.
 glandDepth  = 4.4  # glandTongue + 75% of 3.0 seal dia.
@@ -288,6 +294,11 @@ for pos in prongs_top :
    #catch cutout
    holes.append(Part.makeBox( prongSlotWidth + 2, prongSlotLength, 
                prongCutoutDepth, p, dr ) )
+
+# bolt holes (backup to prong system)
+for pos in bolts_holes :
+   p = originBox + FreeCAD.Vector(pos[0],  pos[1],  0)
+   holes.append(Part.makeCylinder( bolt_hole_dia /2, height, p, dr, 360 ) )
 
 
 # slots for straps through back edges
@@ -607,6 +618,10 @@ for pos in prongs_top :
    holes.append(Part.makeBox( prongSlotWidth, prongSlotLength, 
                backThickness, p, dr ) )
 
+# bolt holes (backup to prong system)
+for pos in bolts_holes :
+   p = originBack + FreeCAD.Vector(pos[0],  pos[1],  0)
+   holes.append(Part.makeCylinder( bolt_hole_dia /2, height, p, dr, 360 ) )
 
 # Solar panel wire hole
 holes.append( 
@@ -770,6 +785,11 @@ holes.append(
 
 #Gui.activeDocument().resetEdit()
 #Gui.SendMsgToActiveView("ViewFit")
+
+# bolt holes (backup to prong system)
+for pos in bolts_holes :
+   p = originCover + FreeCAD.Vector(pos[0],  pos[1],  0)
+   holes.append(Part.makeCylinder( bolt_hole_dia /2, height, p, dr, 360 ) )
 
 CoverRemove = doc.addObject("Part::Feature","CoverRemove")
 CoverRemove.Shape = solarHole.fuse(holes)
