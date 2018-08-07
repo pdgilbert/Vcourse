@@ -12,6 +12,8 @@ import Mesh, MeshPart, MeshPartGui
 ####### define utility ###################
 
 def makeSTL(part, body = "Box") :
+   # part is string used to generate stl mesh file name.
+   # body is a string indicating an object in doc that has a .Shape attribute
    FreeCAD.Console.PrintMessage('generating stl file.\n')
 
    Gui.activateWorkbench("MeshWorkbench")
@@ -72,33 +74,11 @@ GPSwallHeight = 28
 #  height - backwall < GPSwallHeight + 9  (9mm thick battery)
 #   50    - 10       <     28        + 9
 
-# prongs
-# reference locations (center, outside edge of slot holes)
-# on X-Y plane these are 2mm from outside edges
-# These will be displaced by origin.
-
-# left  and right as in axiometric view. If back and cover are folded over onto
-# the box with LEDs at bottom. left on box will be port and right on prongs
-# will be port.
-prongs_left =   ((20.5, 2),         (60.5, 2),         (100.5, 2),         (141.5, 2))
-prongs_right =  ((20.5, width - 2), (60.5, width - 2), (100.5, width - 2), (141.5, width - 2))
-prongs_bottom = ((length - 2, 20), (length - 2, width/2), (length - 2, width - 20) )
-prongs_top =    ((   2,       20), (      2,    width/2), (      2,    width - 20) )
-
-prongWidth = 6.0
-prongThickness =  1.5  #2.0
-prongBump = 1.5
-prongCutoutDepth = 5.0 # cutout for catch
-prongCatchDepth = height - prongCutoutDepth # from top of box, not through back to cover
-
-prongSlotDepth  = height  #20.0
-prongSlotLength = prongWidth + 4.0 # lots of clearance
-prongSlotWidth  = 3.8  # 2 + 1.5 + clearance
-
-# bolt holes are so that bolts can be used if (when) the prongs break.
-bolt_hole_dia  = 3.6 # 3.6mm for 6-32, 4.4mm for 8-32
-bolts_holes =   ((4, 4),          (length/2, 3.5),         (length - 4, 4),
-                 (4, width - 4),  (length/2, width - 3.5), (length - 4, width - 4))
+bolt_hole_dia  = 3.8 # 3.8mm for M3 with clearance
+bolts_holes =   ((20, 3.5),         (60, 3.5),         (length -60, 3.5),         (length -20, 3.5),
+                 (20, width - 3.5), (60, width - 3.5), (length -60, width - 3.5), (length -20, width - 3.5),
+                 (   3.5,       20),    (     3.5,     width/2),    (     3.5,     width - 20),
+                 (length - 3.5, 20),    (length - 3.5, width/2),    (length - 3.5, width - 20) )
 
 
 glandTongue = 2    # depth into gland, width needs clearance
@@ -245,57 +225,8 @@ holes.append(interior)
 doc.recompute() 
 
 
-#  prong slots
 
-w = prongSlotLength / 2
-h = height - prongSlotDepth
-
-for pos in prongs_left :
-   p = originBox + FreeCAD.Vector(pos[0] -w,  pos[1],  h)
-
-   # slot
-   holes.append(Part.makeBox( prongSlotLength, prongSlotWidth, 
-            prongSlotDepth, p, dr ) )
-
-   #catch cutout
-   holes.append(Part.makeBox( prongSlotLength, prongSlotWidth + 2, 
-            prongCutoutDepth, p, dr ) )
-
-
-for pos in prongs_right :
-   p = originBox + FreeCAD.Vector(pos[0] -w,  pos[1] - prongSlotWidth,  h)
-
-   # slot
-   holes.append(Part.makeBox( prongSlotLength, prongSlotWidth, 
-               prongSlotDepth, p, dr ) )
-
-   #catch cutout
-   holes.append(Part.makeBox( prongSlotLength, prongSlotWidth + 2, 
-               prongCutoutDepth, p + FreeCAD.Vector(0, -2, 0), dr ) )
-
-
-for pos in prongs_bottom :
-   p = originBox + FreeCAD.Vector(pos[0] - prongSlotWidth,  pos[1] - w,  h)
-
-   holes.append(Part.makeBox( prongSlotWidth,  prongSlotLength, 
-               prongSlotDepth, p, dr ) )
-
-   #catch cutout
-   holes.append(Part.makeBox( prongSlotWidth + 2, prongSlotLength, 
-               prongCutoutDepth, p + FreeCAD.Vector(-2, 0, 0), dr ) )
-
-
-for pos in prongs_top :
-   p = originBox + FreeCAD.Vector(pos[0],  pos[1] - w,  h)
-
-   holes.append(Part.makeBox( prongSlotWidth, prongSlotLength, 
-               prongSlotDepth, p, dr ) )
-
-   #catch cutout
-   holes.append(Part.makeBox( prongSlotWidth + 2, prongSlotLength, 
-               prongCutoutDepth, p, dr ) )
-
-# bolt holes (backup to prong system)
+# bolt holes 
 for pos in bolts_holes :
    p = originBox + FreeCAD.Vector(pos[0],  pos[1],  0)
    holes.append(Part.makeCylinder( bolt_hole_dia /2, height, p, dr, 360 ) )
@@ -337,7 +268,7 @@ for pos in strapSlotPos :
 # slot for extra attachment line (saftey)
 # bottom edge: remove 5x5 rectangle positioned on the bottom and extending upward at 45°
 
-pos = 35 # cannot be center because of prong hole
+pos = 35 # cannot be center because of bolt hole
 z = Part.makeBox(50, 5, 5)
 z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( length-5-15, pos,  -10), 
                            FreeCAD.Rotation(FreeCAD.Vector(0, 1, 0), -45))   # -45° about Y) 
@@ -392,12 +323,6 @@ remove.Shape = opening.fuse(holes)
 # MainBox = box_outside.cut(remove)
 # see https://www.freecadweb.org/wiki/Topological_data_scripting
 
-
-w = prongSlotLength / 2
-h = height - prongSlotDepth
-
-for pos in prongs_left :
-   p = originBox + FreeCAD.Vector(pos[0] -w,  pos[1],  h)
 
    # slot
 box=doc.addObject("Part::Cut","Box")
@@ -590,35 +515,7 @@ doc.recompute()
 
 holes = []
 
-#  prong slots
-
-w = prongSlotLength / 2
-
-for pos in prongs_left :
-   p = originBack + FreeCAD.Vector(pos[0] -w,  pos[1],  0)
-
-   holes.append(Part.makeBox( prongSlotLength, prongSlotWidth,
-                backThickness, p, dr ) )
-
-for pos in prongs_right :
-   p = originBack + FreeCAD.Vector(pos[0] -w,  pos[1] - prongSlotWidth, 0)
-
-   holes.append(Part.makeBox( prongSlotLength, prongSlotWidth, 
-                backThickness, p, dr ) )
-
-for pos in prongs_bottom :
-   p = originBack + FreeCAD.Vector(pos[0] - prongSlotWidth,  pos[1] - w, 0)
-
-   holes.append(Part.makeBox( prongSlotWidth,  prongSlotLength, 
-               backThickness, p, dr ) )
-
-for pos in prongs_top :
-   p = originBack + FreeCAD.Vector(pos[0],  pos[1] - w,  0)
-
-   holes.append(Part.makeBox( prongSlotWidth, prongSlotLength, 
-               backThickness, p, dr ) )
-
-# bolt holes (backup to prong system)
+# bolt holes 
 for pos in bolts_holes :
    p = originBack + FreeCAD.Vector(pos[0],  pos[1],  0)
    holes.append(Part.makeCylinder( bolt_hole_dia /2, height, p, dr, 360 ) )
@@ -682,26 +579,6 @@ doc.SolarBack.addObject(doc.Back) #mv Back (body) into part SolarBack
 
 doc.recompute() 
 
-# fillet holes to accommodate fillet on prongs
-edges=[]
-for e in doc.Back.Shape.Edges :
-   for p in e.Vertexes : 
-       p0 =  p.Point[0] - originBack[0]
-       p1 =  p.Point[1] - originBack[1]
-       if p.Point[2] == 0.0 :
-          if       0.5      < p1  <     10.0      : edges.append(e)  # left
-          if  width  - 10.0 < p1  < width  - 0.5  : edges.append(e)  # right
-          if  length - 10.0 < p0  < length - 0.5  : edges.append(e)  # bottom
-          if       0.5      < p0  <     10.0      : edges.append(e)  # top
-
-
-doc.addObject("Part::Feature","BackFinished").Shape = doc.Back.Shape.makeFillet(
-   0.5, list(set(edges))) # unique edge elements
-
-doc.SolarBack.addObject(doc.BackFinished) #mv BackFinished (body) into part SolarBack
-
-doc.recompute() 
-
 Gui.activeDocument().resetEdit()
 Gui.SendMsgToActiveView("ViewFit")
 Gui.activeDocument().activeView().viewAxonometric()
@@ -709,7 +586,7 @@ Gui.activeDocument().activeView().viewAxonometric()
 FreeCAD.Console.PrintMessage('SolarBack object construction complete.\n')
 
 
-makeSTL("SolarBack", "BackFinished")
+makeSTL("SolarBack", "Back")
 
 #######################################
 ################ Cover ################
@@ -786,7 +663,7 @@ holes.append(
 #Gui.activeDocument().resetEdit()
 #Gui.SendMsgToActiveView("ViewFit")
 
-# bolt holes (backup to prong system)
+# bolt holes 
 for pos in bolts_holes :
    p = originCover + FreeCAD.Vector(pos[0],  pos[1],  0)
    holes.append(Part.makeCylinder( bolt_hole_dia /2, height, p, dr, 360 ) )
@@ -805,154 +682,9 @@ doc.SolarCover.addObject(doc.CoverWithHoles) #mv CoverWithHoles (body) into part
 
 doc.recompute() 
 
-
-# add prongs
-
-prongs = []
-
-w = prongWidth / 2
-
-# 0.2 is for clearance for catch to click into place
-
-h = backThickness + prongCatchDepth + 0.2 
-# add 2 * prongBump to length to make the prong long enough for taper
-
-prongLength = h + 2 * prongBump
-prongInset = 0.5 # inset so prong clears slot edge
-
-for pos in prongs_left :
-   p = originCover + FreeCAD.Vector(pos[0] -w,  pos[1] + prongInset,  coverThickness)
-
-   prongs.append(
-       Part.makeBox( prongWidth, prongThickness, prongLength, p, dr ) )
-
-   #catch 
-   z = Part.makeBox( prongWidth,   prongBump,        2 * prongBump, 
-            p + FreeCAD.Vector(0, prongThickness, h), dr )
-
-   # fillet edges to get catch taper
-   edges=[]
-
-   # both edge ends at prong ends and
-   # both edge ends at inside (not at outside)
-   for e in z.Edges :
-      if (e.Vertexes[0].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[1].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[0].Point[1] == p[1] + prongThickness + prongBump ) and \
-         (e.Vertexes[1].Point[1] == p[1] + prongThickness + prongBump ): edges.append(e)
-
-   z = z.makeChamfer(prongBump - 0.2, edges) 
-
-   prongs.append(z)
-
-for pos in prongs_right :
-   p = originCover + FreeCAD.Vector(pos[0] -w,  pos[1] - prongThickness - prongInset, coverThickness)
-
-   prongs.append(
-       Part.makeBox( prongWidth, prongThickness, prongLength, p, dr ) )
-
-   #catch
-   z = Part.makeBox( prongWidth,   prongBump,        2 * prongBump,
-            p + FreeCAD.Vector(0, -prongBump, h), dr )
-
-   edges=[]
-   for e in z.Edges :
-      if (e.Vertexes[0].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[1].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[0].Point[1] == p[1]  - prongBump    ) and \
-         (e.Vertexes[1].Point[1] == p[1]  - prongBump    ): edges.append(e)
-
-   z = z.makeChamfer(prongBump - 0.2, edges) 
-
-   prongs.append(z)
-
-for pos in prongs_bottom :
-   p = originCover + FreeCAD.Vector(pos[0] - prongThickness - prongInset,  pos[1] - w, coverThickness)
-
-   prongs.append(
-       Part.makeBox( prongThickness, prongWidth,  prongLength, p, dr ) )
-
-   #catch
-   z = Part.makeBox(  prongBump,     prongWidth,      2 * prongBump,
-            p + FreeCAD.Vector( - prongBump, 0, h), dr )
-
-   edges=[]
-   for e in z.Edges :
-      if (e.Vertexes[0].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[1].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[0].Point[0] == p[0] - prongBump   ) and \
-         (e.Vertexes[1].Point[0] == p[0] - prongBump   ): edges.append(e)
-
-   z = z.makeChamfer(prongBump - 0.2, edges) 
-
-   prongs.append(z)
-
-for pos in prongs_top :
-   p = originCover + FreeCAD.Vector(pos[0] + prongInset,  pos[1] - w, coverThickness)
-
-   prongs.append(
-       Part.makeBox( prongThickness, prongWidth, prongLength, p, dr ) )
-
-   #catch
-   z = Part.makeBox(  prongBump,     prongWidth,     2 * prongBump, 
-                p + FreeCAD.Vector(prongThickness, 0, h), dr )
-
-   edges=[]
-   for e in z.Edges :
-      if (e.Vertexes[0].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[1].Point[2] == coverThickness + prongLength) and \
-         (e.Vertexes[0].Point[0] == p[0] + prongThickness + prongBump  ) and \
-         (e.Vertexes[1].Point[0] == p[0] + prongThickness + prongBump  ): edges.append(e)
-
-   z = z.makeChamfer(prongBump - 0.2, edges) 
-
-   prongs.append(z)
-
-#def fuseIntoAndAddTo(lst, fuseName, AddToName) : 
-#    fuse = doc.addObject("Part::Feature", fuseName)
-#    fuse.Shape = lst[0].fuse(lst)   
-#    #doc.addObject("Part::MultiFuse","fuseName")
-#    #doc.fuseName.Shapes = lst
-#    doc.recompute() 
-#fuseIntoAndAddTo(prongs, "Prongs", "CoverWithHoles")
-
-CoverAdd = doc.addObject("Part::Feature","Prongs")
-CoverAdd.Shape = prongs[0].fuse(prongs)
-#CoverAdd = doc.addObject("Part::Feature","Prongs").Shape = prongs[0].fuse(prongs)
-
-doc.addObject("Part::MultiFuse","CoverFusion").Shapes = [doc.CoverWithHoles, doc.Prongs,]
-
-doc.SolarCover.addObject(doc.CoverFusion) #mv Fusion into part SolarCover
-
-doc.recompute() 
-
-# fillet prong connection to cover
-edges=[]
-for e in doc.CoverFusion.Shape.Edges :
-   for p in e.Vertexes : 
-       p0 =  p.Point[0] - originCover[0]
-       p1 =  p.Point[1] - originCover[1]
-       if p.Point[2] == coverThickness :
-          if       0.5      < p1  <     10.0      : edges.append(e)  # left
-          if  width  - 10.0 < p1  < width  - 0.5  : edges.append(e)  # right
-          if  length - 10.0 < p0  < length - 0.5  : edges.append(e)  # bottom
-          if       0.5      < p0  <     10.0      : edges.append(e)  # top
-
-edges = list(set(edges)) # unique elements
-
-coverPreFinished = doc.addObject("Part::Feature","CoverPreFinished")
-# fails coverPreFinished.Shape = doc.CoverFusion.Shape.makeFillet(0.5, edges)
-coverPreFinished.Shape = doc.CoverFusion.Shape.makeFillet(0.3, edges)
-
-doc.SolarCover.addObject(doc.CoverPreFinished) #mv PreFinished into part SolarCover
-
-doc.recompute() 
-
-# makeSTL("SolarCover", "CoverPreFinished")
-
 # Fillet cover outside edges
 edges=[]
-for e in doc.CoverPreFinished.Shape.Edges :
+for e in doc.CoverWithHoles.Shape.Edges :
    for p in e.Vertexes : 
       if p.Point[2] == 0 :
          if p.Point[0] == originCover[0]          : edges.append(e)
@@ -960,10 +692,9 @@ for e in doc.CoverPreFinished.Shape.Edges :
 
 edges = list(set(edges)) # unique elements
 
-# z = doc.CoverCoverPreFinished.Shape.makeChamfer(3.0, edges) 
 coverFinished = doc.addObject("Part::Feature","CoverFinished")
-coverFinished.Shape = doc.CoverPreFinished.Shape.makeFillet(2.4, edges)
-doc.SolarCover.addObject(doc.CoverFinished) #mv Finished into part SolarCover
+coverFinished.Shape = doc.CoverWithHoles.Shape.makeFillet(2.4, edges)
+doc.SolarCover.addObject(doc.CoverFinished) #mv CoverFinished into part SolarCover
 
 doc.recompute() 
 
