@@ -8,8 +8,9 @@
 #import FreeCAD, FreeCADGui
 import Part, PartDesignGui
 import Mesh, MeshPart, MeshPartGui
+import math
 
-####### define utility ###################
+####### define utilities ###################
 
 def makeSTL(part, body = "Box") :
    # part is string used to generate stl mesh file name.
@@ -31,6 +32,47 @@ def makeSTL(part, body = "Box") :
 
    Mesh.export([mesh], "./BT-" + part + ".stl")
    return None
+
+
+def hexHole(width = 5.5, depth = 20.0, face_norm = FreeCAD.Vector(1.0, 0, 0),
+        center = FreeCAD.Vector(0, 0, 0)):
+   # width is face to face across hex nut hole (not vertexes circle diameter)
+   # face_norm is normal vector to one of the hex faces, as if center were at zero, 
+   # used to orient the hex hole.
+   # depth is positive in the positive z direction.
+   dr = FreeCAD.Vector(0, 0, 1)
+   # dr is rotation axis = direction of hole. This could be an argument with default z-axis
+   # but nothing other than z-axis has been tested.
+   
+   # 60 deg between vertices, 30 between normal to face and vertex at end of that face.
+   r = (width/2) / math.cos(math.pi/6) # radius of vertexes, math.pi/6 = 30 deg
+   v1 = App.Rotation(dr,  30).multVec(face_norm) # direction but not yet right length
+   v1.Length = r
+   v2 = App.Rotation(dr,  60).multVec(v1)
+   v3 = App.Rotation(dr,  60).multVec(v2)
+   v4 = App.Rotation(dr,  60).multVec(v3)
+   v5 = App.Rotation(dr,  60).multVec(v4)
+   v6 = App.Rotation(dr,  60).multVec(v5)
+   
+   e1 = Part.LineSegment(v6, v1).toShape()
+   e2 = Part.LineSegment(v1, v2).toShape()
+   e3 = Part.LineSegment(v2, v3).toShape()
+   e4 = Part.LineSegment(v3, v4).toShape()
+   e5 = Part.LineSegment(v4, v5).toShape()
+   e6 = Part.LineSegment(v5, v6).toShape()
+   
+   head = Part.Face(Part.Wire([e1, e2, e3, e4, e5, e6]))
+   if depth < 0 : dr = -1 * dr
+   dr.Length = abs(depth)
+   hex_hole = head.extrude(dr)
+   hex_hole.Placement.Base = center
+   return hex_hole
+
+# ex = hexHole(center = FreeCAD.Vector(10, 10, 0))
+# ex.Placement
+# Part.show(ex)
+
+FreeCAD.Console.PrintMessage('finished utilities definition.\n')
 
 #######################################
 
@@ -59,27 +101,35 @@ dr = FreeCAD.Vector(0,0,1)
 # Outside dimensions
 length = 161 # top to bottom
 width  = 102 # side to side
-height = 50  # front to back of box, not including cover and back
+height = 45  # front to back of box, not including cover and back
 
 wall = 13.0
 backwall = 5.0
 indent = 5.0  # amount that box interior is bigger than box opening
-coverThickness = 3.0
+coverThickness = 3.0 # 2.0 might work here, but solar opening needs fine adjustment
 backThickness  = 3.0
 
 GPSwallHeight = 28
 
 # GPSwallHeight is highest  part of solarBack, and the battery must fit between it and
 # inside back of the Box, so
-#  height - backwall < GPSwallHeight + 9  (9mm thick battery)
-#   50    - 10       <     28        + 9
+#  height - backwall > GPSwallHeight + 9  (9mm thick battery)
+#   45    - 5        >    28        + 9
 
+sp = 3.7 # previously 3.5 distance from box edge to bolt hole centers
+bolt_length = 25 # used to calculate recess for nut, effectively shortest possible bolt.
 bolt_hole_dia  = 3.8 # 3.8mm for M3 with clearance
-bolts_holes =   ((20, 3.5),         (60, 3.5),         (length -60, 3.5),         (length -20, 3.5),
-                 (20, width - 3.5), (60, width - 3.5), (length -60, width - 3.5), (length -20, width - 3.5),
-                 (   3.5,       20),    (     3.5,     width/2),    (     3.5,     width - 20),
-                 (length - 3.5, 20),    (length - 3.5, width/2),    (length - 3.5, width - 20) )
 
+#  hex holes for bolts are oriented differently on the sides and on top-bottom, 
+#  so they don't go though.
+bolts_holes_sides = ((20, sp),         (length/2, sp),         (length -20, sp),
+                     (20, width - sp), (length/2, width - sp), (length -20, width - sp))
+
+bolts_holes_tb = ((   sp,       20),    (     sp,     width/2),    (     sp,     width - 20),
+                  (length - sp, 20),    (length - sp, width/2),    (length - sp, width - 20) )
+
+
+bolts_holes = bolts_holes_sides + bolts_holes_tb
 
 glandTongue = 2    # depth into gland, width needs clearance
 glandWidth  = 3.6  # 20% larger than 3.0 seal dia.
@@ -89,15 +139,17 @@ glandDepth  = 4.4  # glandTongue + 75% of 3.0 seal dia.
 LEDcenters = (FreeCAD.Vector( 16, 35, 0),
               FreeCAD.Vector( 24, 35, 0),
               FreeCAD.Vector( 32, 35, 0))
-LEDholeDia   = 5.5
+LEDholeDia   = 5.6
 LEDbaseDia   = 6.2
 LEDholeDepth = 4.0    #should not go all the wy through cover and back
 LEDwireSlotWidth   = 3.0
 LEDwireSlotLength  = LEDholeDia - 0.2
 
-strapSlotWidth  = 25.0
+strapSlotWidth  = 40.0  # previusly 25.0
 strapSlotHeight = 5.0
-strapSlotPos    = (28, 108.5)
+strapSlotPos    = (28, 93.5)# previusly (28, 108.5)
+
+FreeCAD.Console.PrintMessage('finished common variables definition.\n')
 
 #######################################
 ################ MainBox ################
@@ -231,6 +283,19 @@ for pos in bolts_holes :
    p = originBox + FreeCAD.Vector(pos[0],  pos[1],  0)
    holes.append(Part.makeCylinder( bolt_hole_dia /2, height, p, dr, 360 ) )
 
+# recess for nuts, oriented differently on sides and on top-bottom
+recess = height + coverThickness + backThickness  - (bolt_length -5)  # about 31
+for pos in bolts_holes_tb :
+   p = originBox + FreeCAD.Vector(pos[0],  pos[1],  0)
+   z = hexHole(width = 5.5, depth = recess, face_norm = FreeCAD.Vector(1.0, 0, 0), center = p)
+   holes.append(z)
+
+for pos in bolts_holes_sides :
+   p = originBox + FreeCAD.Vector(pos[0],  pos[1],  0)
+   z = hexHole(width = 5.5, depth = recess, face_norm = FreeCAD.Vector(0, 1.0, 0), center = p)
+   holes.append(z)
+
+# Part.show(z)
 
 # slots for straps through back edges
 # 50mm is long enough to go all the way through
@@ -373,7 +438,7 @@ doc.recompute()
 # (3mm is arbitrary, not related to 3mm o-ring cord)
 # tongue is narrower by clr on both sides
 
-clr = 0.2  #clearance
+clr = 0.3  #clearance
 w = wall - 3  # outside edge of box to inside edge of gland groove
 
 # relative to originBack
@@ -415,11 +480,18 @@ doc.recompute()
 
 
 # add wall for GPS. top right beside LEDs.  Add 2.0 for clearance
+
+# vertical
 doc.addObject("Part::Feature","GPSv").Shape =  Part.makeBox( 
      15, 2, GPSwallHeight, originBack + FreeCAD.Vector(wall + 2.0, 49, backThickness), dr)
 
+#horizontal
 doc.addObject("Part::Feature","GPSh").Shape =  Part.makeBox( 
      2, 30, GPSwallHeight, originBack + FreeCAD.Vector(wall + 15, 49, backThickness),dr)
+
+# small ledge to prevent lifting
+doc.addObject("Part::Feature","GPSl").Shape =  Part.makeBox( 
+     2, 6, 10, originBack + FreeCAD.Vector(wall + 8, 49, backThickness),dr)
 
 
 # add stud pins for boards
@@ -460,19 +532,20 @@ def makePin(num, x, y, bsRad, bsHt, hdRad, hdHt, part,
 # power management board pins 19x67
 
 # doc.SolarBack" still hardcoded in function
-makePin("1",  65, 15, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
-makePin("2",  65, 34, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
-makePin("3", 132, 15, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
-makePin("4", 132, 34, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
 
-# power R Pi zero board pins 23x58
+makePin("1", 106, 17, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
+makePin("2", 106, 84, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
+makePin("3", 125, 17, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
+makePin("4", 125, 84, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack") 
 
-makePin("5", 32, 19, 5.0/2, 3.0,  2.2/2, 5.0,  "SolarBack") 
-makePin("6", 32, 77, 5.0/2, 3.0,  2.2/2, 5.0,  "SolarBack") 
-makePin("7", 55, 19, 5.0/2, 3.0,  2.2/2, 5.0,  "SolarBack") 
-makePin("8", 55, 77, 5.0/2, 3.0,  2.2/2, 5.0,  "SolarBack") 
+# R Pi zero board pins 23x58
 
-# power O Pi zero plus board  pins 42x40
+makePin("5", 35, 19, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
+makePin("6", 35, 77, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
+makePin("7", 58, 19, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
+makePin("8", 58, 77, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
+
+# O Pi zero plus board  pins 42x40
 
 makePin("9",   25, 43, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
 makePin("10",  25, 83, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack") 
@@ -486,7 +559,7 @@ makePin("12",  67, 83, 5.0/2, 7.0,  2.5/2, 5.0,  "SolarBack")
 doc.addObject("Part::MultiFuse","Fusion")
 # next causes view to disappear until doc.recompute() 
 #in model view this adds  BT>Fusion with [..] bodies but only seen after doc.recompute() 
-doc.Fusion.Shapes = [doc.BackOutside, doc.Gland, doc.GPSv, doc.GPSh,
+doc.Fusion.Shapes = [doc.BackOutside, doc.Gland, doc.GPSv, doc.GPSh, doc.GPSl,
     doc.PinBase1,  doc.PinHead1,  doc.PinBase2,  doc.PinHead2, 
     doc.PinBase3,  doc.PinHead3,  doc.PinBase4,  doc.PinHead4,
     doc.PinBase5,  doc.PinHead5,  doc.PinBase6,  doc.PinHead6, 
@@ -522,7 +595,7 @@ for pos in bolts_holes :
 
 # Solar panel wire hole
 holes.append( 
-  Part.makeCylinder( 2.0, 5, originBack + FreeCAD.Vector(120, width/2, 0), dr, 360 ) )
+  Part.makeCylinder( 2.0, 5, originBack + FreeCAD.Vector(110, width/2, 0), dr, 360 ) )
 
 #LED holes
 #makeCylinder ( radius,height,[pnt,dir,angle] )
@@ -592,21 +665,45 @@ makeSTL("SolarBack", "Back")
 ################ Cover ################
 #######################################
 
+# bolt holes 
+# see l. 191 in ProjectEnclosure.py re countersink holes 
+
 doc.Tip = doc.addObject('App::Part','SolarCover')
 
-cover_out = Part.makeBox ( length,width,backThickness)  #,[pnt,dir] )
+cover_out = Part.makeBox ( length,width,coverThickness)  #,[pnt,dir] )
+
+
+# bolt holes 
+r1 = bolt_hole_dia / 2.0
+boreDepth = coverThickness
+for p in bolts_holes :
+    bore = Part.makeCylinder( r1, boreDepth)   #, p, dr, 360 ) )
+    bore.translate(FreeCAD.Vector(p[0], p[1], 0))  # +originCover +  #, point[2])
+    cover_out = cover_out.cut(bore)
+
+# bolt hole countersink 
+r2 = 1.7 * bolt_hole_dia / 2.0 #previously 1.8* then 1.6*
+h = 2.0
+
+for p in bolts_holes:
+    sink = Part.makeCone(r2, r1, h)
+    sink.translate(FreeCAD.Vector(p[0], p[1], 0))  # +originCover +  #, point[2])
+    cover_out = cover_out.cut(sink)
 
 #  round corners
 edges = []
 for e in cover_out.Edges :
-   if e.Vertexes[0].Point[2] == 0 and e.Vertexes[1].Point[2] == coverThickness : edges.append(e)
-   if e.Vertexes[1].Point[2] == 0 and e.Vertexes[0].Point[2] == coverThickness : edges.append(e)
+   # holes have edges but only one vertex (I think)
+   if len(e.Vertexes) == 2: 
+      if e.Vertexes[0].Point[2] == 0 and e.Vertexes[1].Point[2] == coverThickness : edges.append(e)
+      if e.Vertexes[1].Point[2] == 0 and e.Vertexes[0].Point[2] == coverThickness : edges.append(e)
 
 edges = list(set(edges)) # unique elements
 
 doc.recompute() 
 
 cover_outside = doc.addObject("Part::Feature","CoverOutside")
+cover_outside.Shape = cover_out
 cover_outside.Shape = cover_out.makeFillet(6, edges)
 cover_outside.Placement.Base = originCover # sensitive to Placement after Shape!
 
@@ -625,15 +722,18 @@ solarHole = Part.makeBox(
 
 doc.recompute() 
 
-# fillet outside edges of part being removed to hold solar panel
-# both edge ends at coverThickness
-# edge ends all at zero height 
+# Fillet edges of *part being removed* to hold solar panel.
+# These are the edge with ends all at zero height. The result will be that
+# the outside of the cover (bottom in layout) is smaller since the fillet
+# makes the part removed smaller at the bottom.
 edges=[]
 for e in solarHole.Edges :
    if (e.Vertexes[0].Point[2] == 0.0 ) and \
       (e.Vertexes[1].Point[2] == 0.0 ) : edges.append(e)
 
-solarHole = solarHole.makeChamfer(2.5, edges)
+solarHole = solarHole.makeChamfer(1.99, edges)
+
+doc.recompute() 
 
 
 #Part.show(outside)
@@ -663,11 +763,6 @@ holes.append(
 #Gui.activeDocument().resetEdit()
 #Gui.SendMsgToActiveView("ViewFit")
 
-# bolt holes 
-for pos in bolts_holes :
-   p = originCover + FreeCAD.Vector(pos[0],  pos[1],  0)
-   holes.append(Part.makeCylinder( bolt_hole_dia /2, height, p, dr, 360 ) )
-
 CoverRemove = doc.addObject("Part::Feature","CoverRemove")
 CoverRemove.Shape = solarHole.fuse(holes)
 
@@ -693,7 +788,8 @@ for e in doc.CoverWithHoles.Shape.Edges :
 edges = list(set(edges)) # unique elements
 
 coverFinished = doc.addObject("Part::Feature","CoverFinished")
-coverFinished.Shape = doc.CoverWithHoles.Shape.makeFillet(2.4, edges)
+# this fillet does not seem to be working
+coverFinished.Shape = doc.CoverWithHoles.Shape.makeFillet(1.5, edges)
 doc.SolarCover.addObject(doc.CoverFinished) #mv CoverFinished into part SolarCover
 
 doc.recompute() 
