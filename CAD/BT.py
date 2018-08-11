@@ -636,28 +636,11 @@ for pos in bolts_holes :
    p = originBack + FreeCAD.Vector(pos[0],  pos[1],  0)
    holes.append(Part.makeCylinder( bolt_hole_dia /2, height, p, dr, 360 ) )
 
+
 # Solar panel wire hole
 holes.append( 
   Part.makeCylinder( 2.0, 5, originBack + FreeCAD.Vector(110, width/2, 0), dr, 360 ) )
 
-#LED holes
-#makeCylinder ( radius,height,[pnt,dir,angle] )
-
-# position
-h =  LEDholeDepth - coverThickness #should not go all the way through
-p = originBack   
-
-
-# these holes need to be slightly bigger than in cover as the LED base needs to
-# go into them, but cover can go on after base is already in.
-holes.append( 
-  Part.makeCylinder( LEDbaseDia/2, h, p + LEDcenters[0], dr, 360 ) ) #LED 1
-
-holes.append( 
-  Part.makeCylinder( LEDbaseDia/2, h, p + LEDcenters[1], dr, 360 ) ) #LED 2
-
-holes.append( 
-  Part.makeCylinder( LEDbaseDia/2, h, p + LEDcenters[2], dr, 360 ) ) #LED 3
 
 #  LED wire slots
 
@@ -802,6 +785,21 @@ holes.append(
 holes.append( 
   Part.makeCylinder( LEDholeDia / 2, coverThickness, 
                    p + LEDcenters[2],  dr, 360 ) ) #LED 3
+
+# 1mm larger part of LED holes for LED base
+# position
+h =  1.0    
+p = originCover + FreeCAD.Vector(0, 0, coverThickness - 1  )
+
+holes.append( 
+  Part.makeCylinder( LEDbaseDia/2, h, p + LEDcenters[0], dr, 360 ) ) #LED 1
+
+holes.append( 
+  Part.makeCylinder( LEDbaseDia/2, h, p + LEDcenters[1], dr, 360 ) ) #LED 2
+
+holes.append( 
+  Part.makeCylinder( LEDbaseDia/2, h, p + LEDcenters[2], dr, 360 ) ) #LED 3
+
 
 #Gui.activeDocument().resetEdit()
 #Gui.SendMsgToActiveView("ViewFit")
