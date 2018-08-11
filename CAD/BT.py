@@ -786,6 +786,7 @@ holes.append(
   Part.makeCylinder( LEDholeDia / 2, coverThickness, 
                    p + LEDcenters[2],  dr, 360 ) ) #LED 3
 
+
 # 1mm larger part of LED holes for LED base
 # position
 h =  1.0    
