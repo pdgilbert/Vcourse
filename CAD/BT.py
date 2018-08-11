@@ -13,8 +13,11 @@ import math
 ####### define utilities ###################
 
 def makeSTL(part, body = "Box") :
-   # part is string used to generate stl mesh file name.
-   # body is a string indicating an object in doc that has a .Shape attribute
+   ''' 
+   Generate an STL mesh file. part is string used to generate stl file name.
+   body is a string indicating an object in doc that has a .Shape attribute
+   ''' 
+   
    FreeCAD.Console.PrintMessage('generating stl file.\n')
 
    Gui.activateWorkbench("MeshWorkbench")
@@ -36,14 +39,18 @@ def makeSTL(part, body = "Box") :
 
 def hexHole(width = 5.5, depth = 20.0, face_norm = FreeCAD.Vector(1.0, 0, 0),
         center = FreeCAD.Vector(0, 0, 0)):
-   # width is face to face across hex nut hole (not vertexes circle diameter)
-   # face_norm is normal vector to one of the hex faces, as if center were at zero, 
-   # used to orient the hex hole.
-   # depth is positive in the positive z direction.
-   dr = FreeCAD.Vector(0, 0, 1)
-   # dr is rotation axis = direction of hole. This could be an argument with default z-axis
-   # but nothing other than z-axis has been tested.
+   ''' 
+   Generate a hex hole suitable for bolt nut.
+   width is face to face across hex nut hole (not vertexes circle diameter).
+   face_norm is normal vector to one of the hex faces, as if center were at zero, 
+   used to orient the hex hole.
+   depth is positive in the positive z direction.
+   dr is rotation axis = direction of hole. This could be an argument with default z-axis
+   but nothing other than z-axis has been tested.
+   ''' 
    
+   dr = FreeCAD.Vector(0, 0, 1)
+  
    # 60 deg between vertices, 30 between normal to face and vertex at end of that face.
    r = (width/2) / math.cos(math.pi/6) # radius of vertexes, math.pi/6 = 30 deg
    v1 = App.Rotation(dr,  30).multVec(face_norm) # direction but not yet right length
@@ -494,12 +501,47 @@ doc.addObject("Part::Feature","GPSl").Shape =  Part.makeBox(
      2, 6, 10, originBack + FreeCAD.Vector(wall + 8, 49, backThickness),dr)
 
 
+# add walls to support battery during assembly. Midway along length, both sides.
+# After assembly they just push the battery to the back of the box.
+
+# battery edges - these form a shallow cradle to help center the battery.
+#  There is not enough room in the box opening to have walls for the battery.
+# 102=width   102 - 2 * (14 +2) = 70 = near battery width
+
+doc.addObject("Part::Feature","BatL").Shape =  Part.makeBox( 
+     20, 2, GPSwallHeight+ 2, originBack + FreeCAD.Vector(87,        14, backThickness), dr)
+
+doc.addObject("Part::Feature","BatR").Shape =  Part.makeBox( 
+     20, 2, GPSwallHeight+ 2, originBack + FreeCAD.Vector(87, width - 14, backThickness), dr)
+
+
+#supports (under battery during assembly).
+doc.addObject("Part::Feature","BatSupL1").Shape =  Part.makeBox( 
+     2, 10, GPSwallHeight, originBack + FreeCAD.Vector(87, 14, backThickness),dr)
+
+doc.addObject("Part::Feature","BatSupL2").Shape =  Part.makeBox( 
+     2, 10, GPSwallHeight, originBack + FreeCAD.Vector(97, 14, backThickness),dr)
+
+doc.addObject("Part::Feature","BatSupL3").Shape =  Part.makeBox( 
+     10, 2, GPSwallHeight, originBack + FreeCAD.Vector(87, 22, backThickness),dr)
+
+
+doc.addObject("Part::Feature","BatSupR1").Shape =  Part.makeBox( 
+     2, 10, GPSwallHeight, originBack + FreeCAD.Vector(87, width - (14+10), backThickness),dr)
+
+doc.addObject("Part::Feature","BatSupR2").Shape =  Part.makeBox( 
+     2, 10, GPSwallHeight, originBack + FreeCAD.Vector(97, width - (14+10), backThickness),dr)
+
+doc.addObject("Part::Feature","BatSupR3").Shape =  Part.makeBox( 
+     10, 2, GPSwallHeight, originBack + FreeCAD.Vector(87, width - (14+10), backThickness),dr)
+
+
 # add stud pins for boards
 
 def makePin(num, x, y, bsRad, bsHt, hdRad, hdHt, part, 
        p = originBack + FreeCAD.Vector(0,  0,  backThickness)) :
    ''' 
-   num is string appended to name or boy object in doc
+   num is string appended to name or body object in doc
    x, y  center wall and originBack + backThickness
    bsRad, hdRad base and pin radius
    bsHt,  hdHt  base and pin height
@@ -560,6 +602,7 @@ doc.addObject("Part::MultiFuse","Fusion")
 # next causes view to disappear until doc.recompute() 
 #in model view this adds  BT>Fusion with [..] bodies but only seen after doc.recompute() 
 doc.Fusion.Shapes = [doc.BackOutside, doc.Gland, doc.GPSv, doc.GPSh, doc.GPSl,
+    doc.BatL, doc.BatR, doc.BatSupL1, doc.BatSupL2, doc.BatSupL3, doc.BatSupR1, doc.BatSupR2, doc.BatSupR3,
     doc.PinBase1,  doc.PinHead1,  doc.PinBase2,  doc.PinHead2, 
     doc.PinBase3,  doc.PinHead3,  doc.PinBase4,  doc.PinHead4,
     doc.PinBase5,  doc.PinHead5,  doc.PinBase6,  doc.PinHead6, 
