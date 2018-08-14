@@ -305,34 +305,36 @@ for pos in bolts_holes_sides :
 # Part.show(z)
 
 # slots for straps through back edges
+# angled at 55° (previously 45° but changed to improve overhang printing)
 # 50mm is long enough to go all the way through
 # starting 10mm out is enough ensure removed rectangle does not start inside the wall.
-# starting 23mm from edge is enough to leave edge and not to pierce inside.
+# starting 30mm from edge is enough to leave edge and not to pierce inside.
 # slot positioning point is below slot on the left and above slot on the right.
-# 23 on left is about 18+strapSlotHeight (angled) on the right
+# 27 on left is about 10+strapSlotHeight (angled) on the right
 
 for pos in strapSlotPos :
-   # left slots: remove rectangles positioned on the side and extending downward at 45° 
+   # left slots: remove rectangles positioned on the side and extending downward at 55° 
    z = Part.makeBox(strapSlotWidth, 50, strapSlotHeight)
-   z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, -10, 23), 
-                              FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), -45))   # -45° about X) 
+   z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, -10, 27), 
+                              FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), -55))   # -55° about X) 
    holes.append(z ) 
 
-   # flatten 45° edge at slot side opening
-   z = Part.makeBox(strapSlotWidth, 5, strapSlotHeight)
+   # this is a bit crude, identify edge and round would be better
+   # flatten edge at slot side opening to distribute strap tension load
+   z = Part.makeBox(strapSlotWidth, 3, strapSlotHeight)
    z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, 0, 9),
                               FreeCAD.Rotation(dr, 0)) 
    holes.append(z ) 
 
-   # right slots: remove rectangles positioned on the bottom and extending upward at 45°
+   # right slots: remove rectangles positioned on the bottom and extending upward at 55°
    z = Part.makeBox(strapSlotWidth, 50, strapSlotHeight)
-   z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, width-18-strapSlotHeight, -10), 
-                              FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), 45))   # 45° about X) 
+   z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, width-10-strapSlotHeight, -10), 
+                              FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), 55))   # 55° about X) 
    holes.append(z ) 
 
-   # flatten 45° edge at slot side opening
-   z = Part.makeBox(strapSlotWidth, 5, strapSlotHeight)
-   z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, width-5, 9),
+   # flatten edge at slot side opening to distribute strap tension load
+   z = Part.makeBox(strapSlotWidth, 3, strapSlotHeight)
+   z.Placement = FreeCAD.Placement(originBox + FreeCAD.Vector( pos, width-3, 9),
                               FreeCAD.Rotation(dr, 0)) 
    holes.append(z ) 
 
