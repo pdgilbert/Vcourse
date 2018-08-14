@@ -227,7 +227,7 @@ doc.recompute()
 # do not seem to be recorded in .Placement.Base 
 
 # indent below gland to make lip
-lipDepth =  10 
+lipDepth =  5 # previously 10 
 lip = height -  backwall - lipDepth
 
 opening = Part.makeBox(          
