@@ -47,6 +47,10 @@ def hexHole(width = 5.5, depth = 20.0, face_norm = FreeCAD.Vector(1.0, 0, 0),
    depth is positive in the positive z direction.
    dr is rotation axis = direction of hole. This could be an argument with default z-axis
    but nothing other than z-axis has been tested.
+   
+   Hex nuts are supposed to be 1.6 D across faces and 1.8 D across vertexes, 
+   so M3 nut is 4.8mm face to face and 5.4mm vertex to vertex. 
+   Width 5.5 for holes gives some clearance.
    ''' 
    
    dr = FreeCAD.Vector(0, 0, 1)
@@ -137,6 +141,11 @@ bolts_holes_tb = ((   sp,       20),    (     sp,     width/2),    (     sp,    
 
 
 bolts_holes = bolts_holes_sides + bolts_holes_tb
+
+# pongs bolts for charging go tight through base (sealed) and heads protrude through cover
+pong_holes = ((20, 20),  (30,20))
+pong_hole_dia  = 3.6 # 3.6mm for M3 no clearance
+pong_head_dia  = 6.2 # for M3
 
 glandTongue = 2    # depth into gland, width needs clearance
 glandWidth  = 3.6  # 20% larger than 3.0 seal dia.
@@ -638,6 +647,11 @@ for pos in bolts_holes :
    p = originBack + FreeCAD.Vector(pos[0],  pos[1],  0)
    holes.append(Part.makeCylinder( bolt_hole_dia /2, height, p, dr, 360 ) )
 
+# pong bolt holes 
+for pos in pong_holes :
+   p = originBack + FreeCAD.Vector(pos[0],  pos[1],  0)
+   holes.append(Part.makeCylinder( pong_hole_dia /2, height, p, dr, 360 ) )
+
 
 # Solar panel wire hole
 holes.append( 
@@ -702,6 +716,7 @@ cover_out = Part.makeBox ( length,width,coverThickness)  #,[pnt,dir] )
 
 
 # bolt holes 
+bolt_hole_dia = 3.5 ## redefined from above, less clearance
 r1 = bolt_hole_dia / 2.0
 boreDepth = coverThickness
 for p in bolts_holes :
@@ -710,13 +725,20 @@ for p in bolts_holes :
     cover_out = cover_out.cut(bore)
 
 # bolt hole countersink 
-r2 = 1.7 * bolt_hole_dia / 2.0 #previously 1.8* then 1.6*
-h = 2.0
+r2 = 2 * bolt_hole_dia / 2.0  
+h = 1.5
 
 for p in bolts_holes:
     sink = Part.makeCone(r2, r1, h)
     sink.translate(FreeCAD.Vector(p[0], p[1], 0))  # +originCover +  #, point[2])
     cover_out = cover_out.cut(sink)
+
+# pong bolt head holes 
+for p in pong_holes :
+    pong = Part.makeCylinder( pong_head_dia /2, coverThickness) 
+    pong.translate(FreeCAD.Vector(p[0], p[1], 0))  
+    cover_out = cover_out.cut(pong)
+
 
 #  round corners
 edges = []
