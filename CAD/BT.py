@@ -142,8 +142,9 @@ bolts_holes_tb = ((   sp,       20),    (     sp,     width/2),    (     sp,    
 
 bolts_holes = bolts_holes_sides + bolts_holes_tb
 
-# pongs bolts for charging go tight through base (sealed) and heads protrude through cover
-pong_holes = ((20, 20),  (30,20))
+# pongs bolts for charging go tight through base (sealed) and heads protrude through cover.
+# space enough to fasten diode bridge.
+pong_holes = ((18, 20),  (32,20))
 pong_hole_dia  = 3.6 # 3.6mm for M3 no clearance
 pong_head_dia  = 6.2 # for M3
 
