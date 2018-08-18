@@ -151,6 +151,9 @@ pong_head_dia  = 6.2 # for M3
 glandTongue = 2    # depth into gland, width needs clearance
 glandWidth  = 3.6  # 20% larger than 3.0 seal dia.
 glandDepth  = 4.4  # glandTongue + 75% of 3.0 seal dia.
+glandCornerRadius_inside  = 5.0   # previously 1.5
+glandCornerRadius_outside = 8.5   # previously 1.5
+
 
 #  LEDs  vertical at top
 LEDcenters = (FreeCAD.Vector( 16, 35, 0),
@@ -372,21 +375,33 @@ gland_outside = Part.makeBox( length - 2 * (w-glandWidth),
             width -2 * (w-glandWidth),  glandDepth, 
             originBox + FreeCAD.Vector(w-glandWidth, w-glandWidth, height - glandDepth), dr )
 
+# For some reason this works doing the corners first then the botton, but not the other way.
 
-gland2 = gland_outside.cut(gland_inside)
+gland3 = gland_outside.cut(gland_inside)
+# fillet all gland corners (verticle edges so x and y coordinates of 
+#    end points are equal)
+edgesCi=[]
+edgesCo=[]
+for e in gland3.Edges :
+   if e.Vertexes[0].Point[0] ==  e.Vertexes[1].Point[0] and \
+      e.Vertexes[0].Point[1] ==  e.Vertexes[1].Point[1] :
+         if e.Vertexes[0].Point[0] in ( w, length - w ) :
+                edgesCi.append(e)
+         else : edgesCo.append(e)
 
-# fillet all gland edges that touch the bottom, so corners and bottom edges
+gland3i =  gland3.makeFillet(glandCornerRadius_inside,  list(set(edgesCi))) 
+gland2  = gland3i.makeFillet(glandCornerRadius_outside, list(set(edgesCo))) 
+
+# fillet gland bottom edges (both ends at height h)
 h = height - glandDepth
-edges=[]
-
+edgesB=[]
 for e in gland2.Edges :
-   for p in e.Vertexes : 
-      if p.Point[2] == h : edges.append(e)
+   if (e.Vertexes[0].Point[2] == h ) and \
+      (e.Vertexes[1].Point[2] == h ) : edgesB.append(e)
 
-edges = list(set(edges)) # unique elements
-gland = gland2.makeFillet(1.5, edges) # radius = seal  dia/2 =3/2 
+edgesB = list(set(edgesB)) # unique elements
 
-#   NEED TO WORK ON THE GLAND CORNERS
+gland = gland2.makeFillet(1.5, edgesB) # radius = seal  dia/2 =3/2 
 
 holes.append(gland )
 
@@ -470,31 +485,40 @@ w = wall - 3  # outside edge of box to inside edge of gland groove
 # len   of outside box is length - 2 * (wall - 3 - glandWidth + clr)  
 # width of outside box is  width - 2 * (wall - 3 - glandWidth + clr) =  width  - 2 * (w -glandWidth + clr)
 
+# fillet all gland corners (verticle edges so x and y coordinates of 
+#    end points are equal)
+
 gland_inside = Part.makeBox( length - 2 * (w - clr), 
                               width - 2 * (w - clr),  glandTongue, 
                originBack + FreeCAD.Vector(w - clr, w - clr, backThickness), dr )
+
+edgesCi=[]
+for e in gland_inside.Edges :
+   if e.Vertexes[0].Point[0] ==  e.Vertexes[1].Point[0] and \
+      e.Vertexes[0].Point[1] ==  e.Vertexes[1].Point[1] : edgesCi.append(e)
+
+gland_inside  =  gland_inside.makeFillet(glandCornerRadius_inside,  list(set(edgesCi)))
+
 
 
 gland_outside = Part.makeBox( length - 2 * (w + clr - glandWidth), 
                                width - 2 * (w + clr - glandWidth),  glandTongue, 
             originBack + FreeCAD.Vector(w + clr - glandWidth, w + clr - glandWidth, 
                                         backThickness), dr )
+edgesCo=[]
+for e in gland_outside.Edges :
+   if e.Vertexes[0].Point[0] ==  e.Vertexes[1].Point[0] and \
+      e.Vertexes[0].Point[1] ==  e.Vertexes[1].Point[1] : edgesCo.append(e)
+
+gland_outside  =  gland_outside.makeFillet(glandCornerRadius_outside,  list(set(edgesCo)))
+
 
 
 glandBack = gland_outside.cut(gland_inside)
 #Part.show(inside)
+#Part.show(glandBack)
 
-# fillet all gland corners (verticle edges so x and y coordinates of 
-#    end points are equal)
-
-edges=[]
-
-for e in glandBack.Edges :
-   if e.Vertexes[0].Point[0] ==  e.Vertexes[1].Point[0] and \
-      e.Vertexes[0].Point[1] ==  e.Vertexes[1].Point[1] :  edges.append(e)
-
-# radius = seal  dia/2 =3/2   
-doc.addObject("Part::Feature","Gland").Shape = glandBack.makeFillet(1.5, edges) 
+doc.addObject("Part::Feature","Gland").Shape = glandBack
 doc.recompute() 
 
 
