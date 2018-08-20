@@ -37,7 +37,7 @@ def makeSTL(part, body = "Box") :
    return None
 
 
-def hexHole(width = 5.5, depth = 20.0, face_norm = FreeCAD.Vector(1.0, 0, 0),
+def hexHole(width = 6.3, depth = 20.0, face_norm = FreeCAD.Vector(1.0, 0, 0),
         center = FreeCAD.Vector(0, 0, 0)):
    ''' 
    Generate a hex hole suitable for bolt nut.
@@ -49,8 +49,14 @@ def hexHole(width = 5.5, depth = 20.0, face_norm = FreeCAD.Vector(1.0, 0, 0),
    but nothing other than z-axis has been tested.
    
    Hex nuts are supposed to be 1.6 D across faces and 1.8 D across vertexes, 
-   so M3 nut is 4.8mm face to face and 5.4mm vertex to vertex. 
-   Width 5.5 for holes gives some clearance.
+   so M3 nut is 4.8mm face to face and 5.4mm vertex to vertex. (The M3 nuts used measure
+   5.3mm face to face.) Width 6.3 for holes gives clearance. Previously tried smaller but
+   they were too tight, possibly because of print material swelling into the hole. 
+   This could change with better printer calibration.
+   
+   Printing without support material (for were hex hole becomes bore) seems to work better.
+   The hole is cleaner. Set width = 6.3 without support. Needed 6.5 in testing when support
+   material was used. The problem was that the vertexes of the holes were not clean.
    ''' 
    
    dr = FreeCAD.Vector(0, 0, 1)
