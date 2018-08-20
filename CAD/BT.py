@@ -686,7 +686,7 @@ for pos in pong_holes :
 
 # Solar panel wire hole
 holes.append( 
-  Part.makeCylinder( 2.0, 5, originBack + FreeCAD.Vector(110, width/2, 0), dr, 360 ) )
+  Part.makeCylinder( 2.0, 5, originBack + FreeCAD.Vector(105, 10.0 + width/2, 0), dr, 360 ) )
 
 
 #  LED wire slots
