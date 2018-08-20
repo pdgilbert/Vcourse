@@ -545,21 +545,21 @@ doc.addObject("Part::Feature","GPSl").Shape =  Part.makeBox(
 # 102=width   102 - 2 * (14 +2) = 70 = near battery width
 
 doc.addObject("Part::Feature","BatL").Shape =  Part.makeBox( 
-     20, 2, GPSwallHeight+ 2, originBack + FreeCAD.Vector(87,        14, backThickness), dr)
+     20, 1.5, GPSwallHeight+ 2, originBack + FreeCAD.Vector(75,        12.5, backThickness), dr)
 
 doc.addObject("Part::Feature","BatR").Shape =  Part.makeBox( 
-     20, 2, GPSwallHeight+ 2, originBack + FreeCAD.Vector(87, width - 14, backThickness), dr)
+     20, 1.5, GPSwallHeight+ 2, originBack + FreeCAD.Vector(87, width - 14.5, backThickness), dr)
 
 
 #supports (under battery during assembly).
 doc.addObject("Part::Feature","BatSupL1").Shape =  Part.makeBox( 
-     2, 10, GPSwallHeight, originBack + FreeCAD.Vector(87, 14, backThickness),dr)
+     2, 9, GPSwallHeight, originBack + FreeCAD.Vector(75, 12.5, backThickness),dr)
 
 doc.addObject("Part::Feature","BatSupL2").Shape =  Part.makeBox( 
-     2, 10, GPSwallHeight, originBack + FreeCAD.Vector(97, 14, backThickness),dr)
+     2, 9, GPSwallHeight, originBack + FreeCAD.Vector(85, 12.5, backThickness),dr)
 
 doc.addObject("Part::Feature","BatSupL3").Shape =  Part.makeBox( 
-     10, 2, GPSwallHeight, originBack + FreeCAD.Vector(87, 22, backThickness),dr)
+     10, 2, GPSwallHeight, originBack + FreeCAD.Vector(75, 19.5, backThickness),dr)
 
 
 doc.addObject("Part::Feature","BatSupR1").Shape =  Part.makeBox( 
