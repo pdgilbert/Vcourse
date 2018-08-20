@@ -469,10 +469,10 @@ doc.recompute()
 
 # add Gland
 # groove inside is 3mm from inside wall edge, outside is glandWidth more.
-# (3mm is arbitrary, not related to 3mm o-ring cord)
+# (This 3mm is arbitrary, not related to 3mm o-ring cord)
 # tongue is narrower by clr on both sides
 
-clr = 0.3  #clearance
+clr = 0.4  #clearance
 w = wall - 3  # outside edge of box to inside edge of gland groove
 
 # relative to originBack
