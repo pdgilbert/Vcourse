@@ -109,16 +109,16 @@ App.setActiveDocument(docName)
 
 ################ common variables ################
 
-originBox   = FreeCAD.Vector(0, 0, 0)    # main box
-originBack  = FreeCAD.Vector(0, 150, 0)  # behind solar panel
-originCover = FreeCAD.Vector(0, 300, 0)  # over solar panel
+originBox   = FreeCAD.Vector(0.0,   0.0, 0.0)    # main box
+originBack  = FreeCAD.Vector(0.0, 150.0, 0.0)  # behind solar panel
+originCover = FreeCAD.Vector(0.0, 300.0, 0.0)  # over solar panel
 
 dr = FreeCAD.Vector(0,0,1)
 
 # Outside dimensions
-length = 161 # top to bottom
-width  = 102 # side to side
-height = 45  # front to back of box, not including cover and back
+length = 161.0 # top to bottom
+width  = 102.0 # side to side
+height = 45.0  # front to back of box, not including cover and back
 
 wall = 13.0
 backwall = 5.0
@@ -126,7 +126,7 @@ indent = 5.0  # amount that box interior is bigger than box opening
 coverThickness = 3.0 # 2.0 might work here, but solar opening needs fine adjustment
 backThickness  = 3.0
 
-GPSwallHeight = 28
+GPSwallHeight = 28.0
 
 # GPSwallHeight is highest  part of solarBack, and the battery must fit between it and
 # inside back of the Box, so
@@ -134,27 +134,27 @@ GPSwallHeight = 28
 #   45    - 5        >    28        + 9
 
 sp = 3.7 # previously 3.5 distance from box edge to bolt hole centers
-bolt_length = 25 # used to calculate recess for nut, effectively shortest possible bolt.
+bolt_length = 25.0 # used to calculate recess for nut, effectively shortest possible bolt.
 bolt_hole_dia  = 3.8 # 3.8mm for M3 with clearance
 
 #  hex holes for bolts are oriented differently on the sides and on top-bottom, 
 #  so they don't go though.
-bolts_holes_sides = ((20, sp),         (length/2, sp),         (length -20, sp),
-                     (20, width - sp), (length/2, width - sp), (length -20, width - sp))
+bolts_holes_sides = ((20.0, sp),         (length/2, sp),         (length -20.0, sp),
+                     (20.0, width - sp), (length/2, width - sp), (length -20.0, width - sp))
 
-bolts_holes_tb = ((   sp,       20),    (     sp,     width/2),    (     sp,     width - 20),
-                  (length - sp, 20),    (length - sp, width/2),    (length - sp, width - 20) )
+bolts_holes_tb = ((   sp,       20.0),    (     sp,     width/2),    (     sp,     width - 20.0),
+                  (length - sp, 20.0),    (length - sp, width/2),    (length - sp, width - 20.0) )
 
 
 bolts_holes = bolts_holes_sides + bolts_holes_tb
 
 # pongs bolts for charging go tight through base (sealed) and heads protrude through cover.
 # space enough to fasten diode bridge.
-pong_holes = ((18, 23),  (29,23))
+pong_holes = ((18.0, 23.0),  (29.0, 23.0))
 pong_hole_dia  = 3.6 # 3.6mm for M3 no clearance
 pong_head_dia  = 6.2 # for M3
 
-glandTongue = 2    # depth into gland, width needs clearance
+glandTongue = 2.0  # depth into gland, width needs clearance
 glandWidth  = 3.6  # 20% larger than 3.0 seal dia.
 glandDepth  = 4.4  # glandTongue + 75% of 3.0 seal dia.
 glandCornerRadius_inside  = 5.0   # previously 1.5
@@ -162,9 +162,9 @@ glandCornerRadius_outside = 8.5   # previously 1.5
 
 
 #  LEDs  vertical at top
-LEDcenters = (FreeCAD.Vector( 16, 35, 0),
-              FreeCAD.Vector( 24, 35, 0),
-              FreeCAD.Vector( 32, 35, 0))
+LEDcenters = (FreeCAD.Vector( 16.0, 35.0, 0.0),
+              FreeCAD.Vector( 24.0, 35.0, 0.0),
+              FreeCAD.Vector( 32.0, 35.0, 0.0))
 LEDholeDia   = 5.6
 LEDbaseDia   = 6.2
 LEDholeDepth = 4.0    #should not go all the wy through cover and back
@@ -173,7 +173,7 @@ LEDwireSlotLength  = LEDholeDia - 0.2
 
 strapSlotWidth  = 40.0  # previusly 25.0
 strapSlotHeight = 5.0
-strapSlotPos    = (28, 93.5)# previusly (28, 108.5)
+strapSlotPos    = (28.0, 93.5)# previusly (28, 108.5)
 
 FreeCAD.Console.PrintMessage('finished common variables definition.\n')
 
