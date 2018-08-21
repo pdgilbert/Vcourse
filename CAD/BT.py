@@ -117,12 +117,12 @@ dr = FreeCAD.Vector(0,0,1)
 
 # Outside dimensions
 length = 161.0 # top to bottom
-width  = 102.0 # side to side
+width  = 104.0 # side to side
 height = 45.0  # front to back of box, not including cover and back
 
 center = FreeCAD.Vector(length/2, width/2, 0.0) # layout center, height=0
 
-wall = 13.0
+wall = 14.0
 backwall = 5.0
 # It is not clear that indent saves much material. It was originally 5.0, but more width
 # is needed for the bolt hex holes.
@@ -137,12 +137,12 @@ GPSwallHeight = 28.0
 #  height - backwall > GPSwallHeight + 9  (9mm thick battery)
 #   45    - 5        >    28        + 9
 
-sp = 3.7 # previously 3.5 distance from box edge to bolt hole centers
-bolt_length = 25.0 # used to calculate recess for nut, effectively shortest possible bolt.
-bolt_hole_dia  = 3.8 # 3.8mm for M3 with clearance
+sp = 4.5             # previously 3.7, 3.5 distance from box edge to bolt hole centers
+bolt_length = 25.0   # used to calculate recess for nut, effectively shortest possible bolt.
+bolt_hole_dia  = 3.8 # 3.8mm for M3 with clearance and tolerance for cover/back/box lining up.
 
 #  hex holes for bolts are oriented differently on the sides and on top-bottom, 
-#  so they don't go though.
+#  so they don't go through the sides.
 bolts_holes_sides = ((20.0, sp),         (length/2, sp),         (length -20.0, sp),
                      (20.0, width - sp), (length/2, width - sp), (length -20.0, width - sp))
 
@@ -317,12 +317,12 @@ for pos in bolts_holes :
 recess = height + coverThickness + backThickness  - (bolt_length -5)  # about 31
 for pos in bolts_holes_tb :
    p = originBox + FreeCAD.Vector(pos[0],  pos[1],  0)
-   z = hexHole(width = 5.5, depth = recess, face_norm = FreeCAD.Vector(1.0, 0, 0), center = p)
+   z = hexHole(width = 6.3, depth = recess, face_norm = FreeCAD.Vector(1.0, 0, 0), center = p)
    holes.append(z)
 
 for pos in bolts_holes_sides :
    p = originBox + FreeCAD.Vector(pos[0],  pos[1],  0)
-   z = hexHole(width = 5.5, depth = recess, face_norm = FreeCAD.Vector(0, 1.0, 0), center = p)
+   z = hexHole(width = 6.3, depth = recess, face_norm = FreeCAD.Vector(0, 1.0, 0), center = p)
    holes.append(z)
 
 # Part.show(z)
@@ -758,8 +758,10 @@ cover_out = Part.makeBox ( length,width,coverThickness)  #,[pnt,dir] )
 
 
 # bolt holes 
-bolt_hole_dia = 3.5 ## redefined from above, less clearance
-r1 = bolt_hole_dia / 2.0
+# bolt_hole_dia has tolerance to line up cover/ back / box. This is reduced by 0.3 on
+#  the cover so the holes fit tighter. Back and box should accommodate needed tolerance.
+
+r1 = (bolt_hole_dia - 0.3) / 2.0
 boreDepth = coverThickness
 for p in bolts_holes :
     bore = Part.makeCylinder( r1, boreDepth)   #, p, dr, 360 ) )
@@ -767,7 +769,7 @@ for p in bolts_holes :
     cover_out = cover_out.cut(bore)
 
 # bolt hole countersink 
-r2 = 2 * bolt_hole_dia / 2.0  
+r2 = 2 * (bolt_hole_dia - 0.3) / 2.0  
 h = 1.5
 
 for p in bolts_holes:
