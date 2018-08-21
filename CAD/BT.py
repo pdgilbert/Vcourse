@@ -116,11 +116,13 @@ originCover = FreeCAD.Vector(0.0, 300.0, 0.0)  # over solar panel
 dr = FreeCAD.Vector(0,0,1)
 
 # Outside dimensions
-length = 161.0 # top to bottom
+length = 176.0 # previously 161 top to bottom
 width  = 104.0 # side to side
-height = 45.0  # front to back of box, not including cover and back
+height = 35.0  # previously 45 front to back of box, not including cover and back
 
-center = FreeCAD.Vector(length/2, width/2, 0.0) # layout center, height=0
+# Previously used center when length was 161, but with box lengthened to move GPS up
+#  the parts are no longer relative to center.
+originL = FreeCAD.Vector(95.5, width/2, 0.0) # layout origin, height=0
 
 wall = 14.0
 backwall = 5.0
@@ -154,7 +156,7 @@ bolts_holes = bolts_holes_sides + bolts_holes_tb
 
 # pongs bolts for charging go tight through base (sealed) and heads protrude through cover.
 # space enough to fasten diode bridge.
-pong_holes = ((-62.5, -28.0),  (-51.5, -28.0)) # relative to center
+pong_holes = ((-77.5, -28.0),  (-66.5, -28.0)) # relative to originL
 pong_hole_dia  = 3.6 # 3.6mm for M3 no clearance
 pong_head_dia  = 6.2 # for M3
 
@@ -165,19 +167,19 @@ glandCornerRadius_inside  = 5.0   # previously 1.5
 glandCornerRadius_outside = 8.5   # previously 1.5
 
 
-#  LEDs  vertical at top, position relative to center
-LEDcenters = (FreeCAD.Vector(-64.5, -16.0, 0.0),
-              FreeCAD.Vector(-56.5, -16.0, 0.0),
-              FreeCAD.Vector(-48.5, -16.0, 0.0))
+#  LEDs  vertical at top, position relative to originL
+LEDcenters = (FreeCAD.Vector(-79.5, -16.0, 0.0),
+              FreeCAD.Vector(-71.5, -16.0, 0.0),
+              FreeCAD.Vector(-63.5, -16.0, 0.0))
 LEDholeDia   = 5.6
 LEDbaseDia   = 6.2
 LEDholeDepth = 4.0    #should not go all the wy through cover and back
 LEDwireSlotWidth   = 3.0
 LEDwireSlotLength  = LEDholeDia - 0.2
 
-strapSlotWidth  = 40.0  # previusly 25.0
+strapSlotWidth  = 52.0  # previusly 40.0 and 25.0
 strapSlotHeight = 5.0
-strapSlotPos    = (28.0, 93.5)# previusly (28, 108.5)  in X direction relative to origin 0.0
+strapSlotPos    = (28.0, 96.0)# previusly(28.0, 93.5) and (28, 108.5)  X direction relative to origin 0.0
 
 FreeCAD.Console.PrintMessage('finished common variables definition.\n')
 
@@ -531,21 +533,21 @@ glandBack = gland_outside.cut(gland_inside)
 doc.addObject("Part::Feature","Gland").Shape = glandBack
 doc.recompute() 
 
-back_center = originBack + center
+back_originL = originBack + originL
 
 # add wall for GPS. top right beside LEDs.  2.0 down from wall for clearance
 
 # vertical
 doc.addObject("Part::Feature","GPSv").Shape =  Part.makeBox( 
-     15, 2, GPSwallHeight, back_center + FreeCAD.Vector(-65.5, -2.0, backThickness), dr)
+     15, 2, GPSwallHeight, back_originL + FreeCAD.Vector(-80.5, -2.0, backThickness), dr)
 
 #horizontal
 doc.addObject("Part::Feature","GPSh").Shape =  Part.makeBox( 
-     2, 30, GPSwallHeight, back_center + FreeCAD.Vector(-52.5, -2.0, backThickness),dr)
+     2, 30, GPSwallHeight, back_originL + FreeCAD.Vector(-67.5, -2.0, backThickness),dr)
 
 # small ledge to prevent lifting
 doc.addObject("Part::Feature","GPSl").Shape =  Part.makeBox( 
-     2, 6, 10, back_center + FreeCAD.Vector(-59.5, -2.0, backThickness),dr)
+     2, 6, 10, back_originL + FreeCAD.Vector(-74.5, -2.0, backThickness),dr)
 
 
 # add walls to support battery during assembly. Midway along length, both sides.
@@ -555,37 +557,37 @@ doc.addObject("Part::Feature","GPSl").Shape =  Part.makeBox(
 # 102=width   102 - 2 * (14 +2) = 70 = near battery width
 
 doc.addObject("Part::Feature","BatL").Shape =  Part.makeBox( 
-     20, 1.5, GPSwallHeight+ 2, back_center + FreeCAD.Vector(-5.5, -38.5, backThickness), dr)
+     20, 1.5, GPSwallHeight-6, back_originL + FreeCAD.Vector(-5.5, -38.5, backThickness), dr)
 
 doc.addObject("Part::Feature","BatR").Shape =  Part.makeBox( 
-     20, 1.5, GPSwallHeight+ 2, back_center + FreeCAD.Vector(6.5, 36.5, backThickness), dr)
+     20, 1.5, GPSwallHeight-6, back_originL + FreeCAD.Vector(6.5, 36.5, backThickness), dr)
 
 
 #supports (under battery during assembly).
 doc.addObject("Part::Feature","BatSupL1").Shape =  Part.makeBox( 
-     2, 9, GPSwallHeight, back_center + FreeCAD.Vector(-5.5, -38.5, backThickness),dr)
+     2, 9, GPSwallHeight-8, back_originL + FreeCAD.Vector(-5.5, -38.5, backThickness),dr)
 
 doc.addObject("Part::Feature","BatSupL2").Shape =  Part.makeBox( 
-     2, 9, GPSwallHeight, back_center + FreeCAD.Vector( 4.5, -38.5, backThickness),dr)
+     2, 9, GPSwallHeight-8, back_originL + FreeCAD.Vector( 4.5, -38.5, backThickness),dr)
 
 doc.addObject("Part::Feature","BatSupL3").Shape =  Part.makeBox( 
-     10, 2, GPSwallHeight, back_center + FreeCAD.Vector(-5.5, -31.5, backThickness),dr)
+     10, 2, GPSwallHeight-8, back_originL + FreeCAD.Vector(-5.5, -31.5, backThickness),dr)
 
 
 doc.addObject("Part::Feature","BatSupR1").Shape =  Part.makeBox( 
-     2, 10, GPSwallHeight, back_center + FreeCAD.Vector(6.5, 27.0, backThickness),dr)
+     2, 10, GPSwallHeight-8, back_originL + FreeCAD.Vector(6.5, 27.0, backThickness),dr)
 
 doc.addObject("Part::Feature","BatSupR2").Shape =  Part.makeBox( 
-     2, 10, GPSwallHeight, back_center + FreeCAD.Vector(16.5, 27.0, backThickness),dr)
+     2, 10, GPSwallHeight-8, back_originL + FreeCAD.Vector(16.5, 27.0, backThickness),dr)
 
 doc.addObject("Part::Feature","BatSupR3").Shape =  Part.makeBox( 
-     10, 2, GPSwallHeight, back_center + FreeCAD.Vector(6.5, 27.0, backThickness),dr)
+     10, 2, GPSwallHeight-8, back_originL + FreeCAD.Vector(6.5, 27.0, backThickness),dr)
 
 
 # add stud pins for boards
 
 def makePin(nm, x, y, bsRad, bsHt, hdRad, hdHt, part, 
-             center = back_center + FreeCAD.Vector(0,  0,  backThickness), dr = dr) :
+             center = back_originL + FreeCAD.Vector(0,  0,  backThickness), dr = dr) :
    ''' 
    nm          is string appended to name or body object in doc
    x, y         layout points (for Placement) relative to center
@@ -691,7 +693,7 @@ for pos in bolts_holes :
 
 # pong bolt holes 
 for pos in pong_holes :
-   p = back_center + FreeCAD.Vector(pos[0],  pos[1],  0)
+   p = back_originL + FreeCAD.Vector(pos[0],  pos[1],  0)
    holes.append(Part.makeCylinder( pong_hole_dia /2, height, p, dr, 360 ) )
 
 
@@ -702,7 +704,7 @@ holes.append(
 
 #  LED wire slots
 
-p = back_center -  FreeCAD.Vector(LEDwireSlotWidth/2, LEDwireSlotLength/2, 0)
+p = back_originL -  FreeCAD.Vector(LEDwireSlotWidth/2, LEDwireSlotLength/2, 0)
 
 holes.append(Part.makeBox( LEDwireSlotWidth, LEDwireSlotLength, backThickness, 
                p + LEDcenters[0], dr ) )#LED 1
@@ -780,7 +782,7 @@ for p in bolts_holes:
 # pong bolt head holes 
 for p in pong_holes :
     pong = Part.makeCylinder( pong_head_dia /2, coverThickness) 
-    pong.translate(center + FreeCAD.Vector(p[0], p[1], 0))  
+    pong.translate(originL + FreeCAD.Vector(p[0], p[1], 0))  
     cover_out = cover_out.cut(pong)
 
 
@@ -839,7 +841,7 @@ holes = [solarHole ]
 #makeCylinder ( radius,height,[pnt,dir,angle] )
 
 # position
-p = originCover + center
+p = originCover + originL
 
 
 holes.append( 
@@ -858,7 +860,7 @@ holes.append(
 # 1mm larger part of LED holes for LED base
 # position
 h =  1.0    
-p = originCover + center + FreeCAD.Vector(0, 0, coverThickness - 1  )
+p = originCover + originL + FreeCAD.Vector(0, 0, coverThickness - 1  )
 
 holes.append( 
   Part.makeCylinder( LEDbaseDia/2, h, p + LEDcenters[0], dr, 360 ) ) #LED 1
