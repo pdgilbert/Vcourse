@@ -724,17 +724,17 @@ makePin("4", 57.5,  33.0, 3.0/2, 4.0,  1.5/2, 5.0,  "SolarBack")
 
 # R Pi zero board pins 23x58
 
-makePin("5", -32.5, -32.5, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
-makePin("6", -32.5,  26.0, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
-makePin("7",  -9.5, -32.5, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
-makePin("8",  -9.5,  26.0, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
+makePin("5", -42.5, -31.5, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
+makePin("6", -42.5,  27.0, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
+makePin("7", -19.5, -31.5, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
+makePin("8", -19.5,  27.0, 5.0/2, 2.0,  2.2/2, 4.0,  "SolarBack") 
 
 # O Pi zero plus board  pins 42x40
 
-makePin("9",   -42.5, -18.0, 5.0/2, 2.0,  2.5/2, 4.0,  "SolarBack") 
-makePin("10",  -42.5,  22.0, 5.0/2, 2.0,  2.5/2, 4.0,  "SolarBack") 
-makePin("11",   -0.5, -18.0, 5.0/2, 2.0,  2.5/2, 4.0,  "SolarBack") 
-makePin("12",   -0.5,  22.0, 5.0/2, 2.0,  2.5/2, 4.0,  "SolarBack") 
+makePin("9",   -52.5, -28.0, 5.0/2, 2.0,  2.5/2, 4.0,  "SolarBack") 
+makePin("10",  -52.5,  12.0, 5.0/2, 2.0,  2.5/2, 4.0,  "SolarBack") 
+makePin("11",  -10.5, -28.0, 5.0/2, 2.0,  2.5/2, 4.0,  "SolarBack") 
+makePin("12",  -10.5,  12.0, 5.0/2, 2.0,  2.5/2, 4.0,  "SolarBack") 
 
 
 #  Fuse the body objects 
