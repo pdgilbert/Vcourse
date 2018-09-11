@@ -658,7 +658,7 @@ doc.addObject("Part::Feature","BatSupL2").Shape =  Part.makeBox(
      1.5, 9, GPSwallHeight-6, back_layoutOrigin + FreeCAD.Vector( 4.5, -38.5, backThickness),dr)
 
 doc.addObject("Part::Feature","BatSupL3").Shape =  Part.makeBox( 
-     10, 1.5, GPSwallHeight-6, back_layoutOrigin + FreeCAD.Vector(-5.5, -31.5, backThickness),dr)
+     10, 1.5, GPSwallHeight-6, back_layoutOrigin + FreeCAD.Vector(-5.5, -31.0, backThickness),dr)
 
 
 doc.addObject("Part::Feature","BatSupR1").Shape =  Part.makeBox( 
