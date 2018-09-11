@@ -644,31 +644,31 @@ doc.addObject("Part::Feature","GPSl").Shape =  Part.makeBox(
 # 102=width   102 - 2 * (14 +2) = 70 = near battery width
 
 doc.addObject("Part::Feature","BatL").Shape =  Part.makeBox( 
-     20, 1.5, GPSwallHeight-6, back_layoutOrigin + FreeCAD.Vector(-5.5, -38.5, backThickness), dr)
+     20, 1.0, GPSwallHeight-4, back_layoutOrigin + FreeCAD.Vector(-5.5, -38.5, backThickness), dr)
 
 doc.addObject("Part::Feature","BatR").Shape =  Part.makeBox( 
-     20, 1.5, GPSwallHeight-6, back_layoutOrigin + FreeCAD.Vector(6.5, 36.5, backThickness), dr)
+     20, 1.0, GPSwallHeight-4, back_layoutOrigin + FreeCAD.Vector(6.5, 36.5, backThickness), dr)
 
 
-#supports (under battery during assembly).
+#supports under battery (during assembly).
 doc.addObject("Part::Feature","BatSupL1").Shape =  Part.makeBox( 
-     2, 9, GPSwallHeight-8, back_layoutOrigin + FreeCAD.Vector(-5.5, -38.5, backThickness),dr)
+     1.5, 9, GPSwallHeight-6, back_layoutOrigin + FreeCAD.Vector(-5.5, -38.5, backThickness),dr)
 
 doc.addObject("Part::Feature","BatSupL2").Shape =  Part.makeBox( 
-     2, 9, GPSwallHeight-8, back_layoutOrigin + FreeCAD.Vector( 4.5, -38.5, backThickness),dr)
+     1.5, 9, GPSwallHeight-6, back_layoutOrigin + FreeCAD.Vector( 4.5, -38.5, backThickness),dr)
 
 doc.addObject("Part::Feature","BatSupL3").Shape =  Part.makeBox( 
-     10, 2, GPSwallHeight-8, back_layoutOrigin + FreeCAD.Vector(-5.5, -31.5, backThickness),dr)
+     10, 1.5, GPSwallHeight-6, back_layoutOrigin + FreeCAD.Vector(-5.5, -31.5, backThickness),dr)
 
 
 doc.addObject("Part::Feature","BatSupR1").Shape =  Part.makeBox( 
-     2, 10, GPSwallHeight-8, back_layoutOrigin + FreeCAD.Vector(6.5, 27.0, backThickness),dr)
+     1.5, 10, GPSwallHeight-6, back_layoutOrigin + FreeCAD.Vector(6.5, 27.0, backThickness),dr)
 
 doc.addObject("Part::Feature","BatSupR2").Shape =  Part.makeBox( 
-     2, 10, GPSwallHeight-8, back_layoutOrigin + FreeCAD.Vector(16.5, 27.0, backThickness),dr)
+     1.5, 10, GPSwallHeight-6, back_layoutOrigin + FreeCAD.Vector(16.5, 27.0, backThickness),dr)
 
 doc.addObject("Part::Feature","BatSupR3").Shape =  Part.makeBox( 
-     10, 2, GPSwallHeight-8, back_layoutOrigin + FreeCAD.Vector(6.5, 27.0, backThickness),dr)
+     10, 1.5, GPSwallHeight-6, back_layoutOrigin + FreeCAD.Vector(6.5, 27.0, backThickness),dr)
 
 
 # add stud pins for boards
