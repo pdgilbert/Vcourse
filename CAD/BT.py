@@ -626,15 +626,19 @@ doc.recompute()
 
 # vertical
 doc.addObject("Part::Feature","GPSv").Shape =  Part.makeBox( 
-     15, 2, GPSwallHeight, back_layoutOrigin + FreeCAD.Vector(-80.5, -2.0, backThickness), dr)
+     13, 1, GPSwallHeight, back_layoutOrigin + FreeCAD.Vector(-79.5, -1.0, backThickness), dr)
 
 #horizontal
 doc.addObject("Part::Feature","GPSh").Shape =  Part.makeBox( 
-     2, 30, GPSwallHeight, back_layoutOrigin + FreeCAD.Vector(-67.5, -2.0, backThickness),dr)
+     1, 30, GPSwallHeight, back_layoutOrigin + FreeCAD.Vector(-67.5, -1.0, backThickness),dr)
 
-# small ledge to prevent lifting
+# port side small ledge to prevent lifting
 doc.addObject("Part::Feature","GPSl").Shape =  Part.makeBox( 
-     2, 6, 10, back_layoutOrigin + FreeCAD.Vector(-74.5, -2.0, backThickness),dr)
+     1, 6, 10, back_layoutOrigin + FreeCAD.Vector(-74.5, -1.0, backThickness),dr)
+
+# starboard side small ledge to prevent lifting
+doc.addObject("Part::Feature","GPSl").Shape =  Part.makeBox( 
+     1, 4, 10, back_layoutOrigin + FreeCAD.Vector(-74.5, 32.0, backThickness),dr)
 
 
 # add walls to support battery during assembly. Midway along length, both sides.
