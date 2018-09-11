@@ -166,9 +166,9 @@ pong_holes = ((-77.5, -28.0),  (-66.5, -28.0)) # relative to layoutOrigin
 pong_hole_dia  = 3.6 # 3.6mm for M3 no clearance
 pong_head_dia  = 6.2 # for M3
 
-glandTongue = 2.0  # depth into gland, width needs clearance
+glandTongue = 3.0  # depth into gland, width needs clearance
 glandWidth  = 3.6  # 20% larger than 3.0 seal dia.
-glandDepth  = 4.4  # glandTongue + 75% of 3.0 seal dia.
+glandDepth  = 5.4  # glandTongue + 75% of 3.0 seal dia.
 glandCornerRadius_inside  = 5.0   # previously 1.5
 glandCornerRadius_outside = 8.5   # previously 1.5
 
