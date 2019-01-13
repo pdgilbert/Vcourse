@@ -146,19 +146,34 @@ GPSwallHeight = 28.0
 #   45    - 5        >    28        + 9
 
 sp = 4.5             # previously 3.7, 3.5 distance from box edge to bolt hole centers
+spp =sp + 2.0        # slightly more for corner
 bolt_length = 25.0   # used to calculate recess for nut, effectively shortest possible bolt.
 bolt_hole_dia  = 3.8 # 3.8mm for M3 with clearance and tolerance for cover/back/box lining up.
 
 #  hex holes for bolts are oriented differently on the sides and on top-bottom, 
 #  so they don't go through the sides.
-bolts_holes_sides = ((20.0, sp),         (length/2, sp),         (length -20.0, sp),
-                     (20.0, width - sp), (length/2, width - sp), (length -20.0, width - sp))
+# top and bottom
+tbNorm   = FreeCAD.Vector(1.0, 0, 0)
+# sides
+sideNorm = FreeCAD.Vector(0, 1.0, 0) 
+# corners
+cornNorm = FreeCAD.Vector(1.0, 1.0, 0) 
 
-bolts_holes_tb = ((   sp,       20.0),    (     sp,     width/2),    (     sp,     width - 20.0),
-                  (length - sp, 20.0),    (length - sp, width/2),    (length - sp, width - 20.0) )
+#bolts_holes = (
+#  (20.0, sp, sideNorm),         (length/2, sp, sideNorm),         (length -20.0, sp, sideNorm),
+#  (20.0, width - sp, sideNorm), (length/2, width - sp, sideNorm), (length -20.0, width - sp, sideNorm),
+#  (   sp,       20.0, tbNorm),    (     sp,     width/2, tbNorm),    (     sp,     width - 20.0, tbNorm),
+#  (length - sp, 20.0, tbNorm),    (length - sp, width/2, tbNorm),    (length - sp, width - 20.0, tbNorm)
+#  )
 
 
-bolts_holes = bolts_holes_sides + bolts_holes_tb
+bolts_holes = (
+  (length/2,  sp,  sideNorm), (length/2,   width - sp, sideNorm),
+  (   sp,   width/2, tbNorm), (length - sp,  width/2,  tbNorm), 
+  (spp,           spp,  cornNorm),  (    spp,      width - spp, cornNorm),
+  (length - spp,  spp,  cornNorm),  (length - spp, width - spp, cornNorm),
+  )
+
 
 # pongs bolts for charging go tight through base (sealed) and heads protrude through cover.
 # space enough to fasten diode bridge.
@@ -323,14 +338,9 @@ for pos in bolts_holes :
 
 # recess for nuts, oriented differently on sides and on top-bottom
 recess = height + coverThickness + backThickness  - (bolt_length -5)  # about 31
-for pos in bolts_holes_tb :
+for pos in bolts_holes :
    p = originBox + FreeCAD.Vector(pos[0],  pos[1],  0)
-   z = hexHole(width = 6.3, depth = recess, face_norm = FreeCAD.Vector(1.0, 0, 0), center = p)
-   holes.append(z)
-
-for pos in bolts_holes_sides :
-   p = originBox + FreeCAD.Vector(pos[0],  pos[1],  0)
-   z = hexHole(width = 6.3, depth = recess, face_norm = FreeCAD.Vector(0, 1.0, 0), center = p)
+   z = hexHole(width = 6.3, depth = recess, face_norm = pos[2], center = p)
    holes.append(z)
 
 # Part.show(z)
