@@ -24,7 +24,8 @@ except RuntimeError:
 # https://pinout.xyz/pinout/io_pi_zero#
 
 # using  board pin numbers not broadcom numbers  GPIO.BCM vs GPIO.BOARD
-RED    =  12                                    #    18        pin 12
+# changed 12 to 22 to avoid LoRa SX127x conflict
+RED    =  22                                    #    25        pin 22
 GREEN  =  16                                    #    23        pin 16
 BLUE   =  18                                    #    24        pin 18  
 
